@@ -1,0 +1,24 @@
+<div class="container">
+    <h1>User List</h1>
+    <ul *ngIf="users.length > 0; else noData">
+      <li *ngFor="let user of users">
+        <strong>Name:</strong> {{ user.name }}<br />
+        <strong>Email:</strong> {{ user.email }}<br />
+      </li>
+    </ul>
+    <ng-template #noData>
+      <p>No users found.</p>
+    </ng-template>
+  </div>
+  <div class="container">
+    <h1>User by email</h1>
+    <ul *ngIf="users2.length > 0; else noData">
+      <li *ngFor="let user of users2">
+        <strong>Name:</strong> {{ user.name }}<br />
+        <strong>role:</strong> {{ user.role }}<br />
+      </li>
+    </ul>
+    <ng-template #noData>
+      <p>No users found.</p>
+    </ng-template>
+  </div>

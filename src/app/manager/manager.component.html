@@ -1,0 +1,142 @@
+<app-navbar></app-navbar>
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Promote/Demote</h2>
+    <table class="table table-striped table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>Employee Name</th>
+          <th>Email</th>
+          <th>Current Role</th>
+          <th>Change Role</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+       <tr *ngFor="let user of users">
+        <td>{{ user.name }}</td>
+         <td>{{ user.email }}</td>
+        <td>{{ user.role }}</td>
+        <td>
+    <select class="form-select"id="role" [(ngModel)]="user.newRole" required>
+      <option value="" disabled selected>Select Role</option>
+      <option value="Executive">Executive</option>
+      <option value="Team Lead">Team Lead</option>
+      <option value="Manager">Manager</option>
+    </select>
+  </td>
+  <td>
+    <button
+      class="btn btn-primary"
+      [disabled]="!user.newRole"
+      (click)="updateRole(user)"
+    >
+      Update
+    </button>
+  </td>
+</tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="container mt-4">
+    <h2 class="text-center mb-4">Team Generation</h2>
+  
+    <!-- Team Name Input -->
+    <div class="mb-3">
+      <label for="teamName" class="form-label">Team Name:</label>
+      <input
+        type="text"
+        id="teamName"
+        class="form-control"
+        [(ngModel)]="teamName"
+        placeholder="Enter team name"
+        required
+      />
+    </div>
+  
+    <!-- Manager Dropdown -->
+    <div class="mb-3">
+      <label for="manager" class="form-label">Select Manager:</label>
+      <select
+        id="manager"
+        class="form-select"
+        [(ngModel)]="selectedManager"
+        required
+      >
+        <option value="" disabled selected>Select a Team Leader</option>
+        <option *ngFor="let manager of managers" [value]="manager.id">
+          {{ manager.name }} ({{ manager.email }})
+        </option>
+      </select>
+    </div>
+  
+    <!-- Employee Table -->
+    <table class="table table-striped table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>Employee ID</th>
+          <th>Employee Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Select</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users">
+          <td>{{ user.id }}</td>
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.role }}</td>
+          <td>
+            <input
+              type="checkbox"
+              [(ngModel)]="user.selected"
+              (change)="toggleEmployeeSelection(user.id)"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <!-- Create Team Button -->
+    <button
+      class="btn btn-primary mt-3 w-100"
+      [disabled]="!teamName || !selectedManager || selectedEmployees.length === 0"
+      (click)="createTeam()"
+    >
+      Create Team
+    </button>
+  </div>
+  <div class="container mt-4">
+    <h2 class="text-center mb-4">Team Deletion</h2>
+  
+    <table class="table table-striped table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>Team Name</th>
+          <th>Manager</th>
+          <th>Team Members</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let team of teams">
+          <td>{{ team.name }}</td>
+          <td>{{ team.managerId }}</td>
+          <td>
+            <ul>
+              <li *ngFor="let employee of team.employees">{{ employee }}</li>
+            </ul>
+          </td>
+          <td>
+            <button class="btn btn-danger" (click)="deleteTeam(team.id)">
+              Delete Team
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <p *ngIf="teams.length === 0" class="text-center">No teams available.</p>
+  </div>
+  
+

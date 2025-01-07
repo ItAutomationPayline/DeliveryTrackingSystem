@@ -1,0 +1,53 @@
+<div class="container d-flex justify-content-center align-items-center vh-100">
+  <div class="card shadow p-4" style="width: 30rem;">
+    <h3 class="text-center mb-4">Register</h3>
+    <form (ngSubmit)="register()">
+      <div class="mb-3">
+        <label for="name">Name:</label>
+        <input
+          type="text"
+          id="name"
+          class="form-control"
+          placeholder="Enter full name"
+          [(ngModel)]="name"
+          name="name"
+          required
+        />
+        <div *ngIf="name && name.trim().length > 0 && !validateName()" class="text-danger mt-1">
+          Name must be at least 3 characters long.
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="email">Email:</label>
+        <input
+          type="email"
+          id="email"
+          class="form-control"
+          placeholder="Enter your email"
+          [(ngModel)]="email"
+          name="email"
+          required
+        />
+        <div *ngIf="email && email.trim().length === 0" class="text-danger mt-1">
+          Email is required.
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="password">Password:</label>
+        <input
+          type="password"
+          id="password"
+          class="form-control"
+          placeholder="Enter password"
+          [(ngModel)]="password"
+          name="password"
+          required
+        />
+      </div>
+      <button type="submit" class="btn btn-primary w-100" [disabled]="!validateName()">Register</button>
+    </form>
+    <div class="text-center mt-3">
+      <a routerLink="/login">Login</a>
+    </div>
+  </div>
+</div>
