@@ -1,2 +1,32 @@
 <app-navbar></app-navbar>
-<p>executive works!</p>
+<div *ngIf="tasks.length > 0; else noTasks">
+    <h3>Your Pending Tasks</h3>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Deadline</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Loop over tasks and filter for pending status -->
+        <tr *ngFor="let task of tasks">
+          <ng-container *ngIf="task.status != 'completed'; else noTasks">
+            <td>{{ task.description }}</td>
+            <td>{{ task.deadline | date: 'medium' }}</td> <!-- Formatting deadline as date with time -->
+            <td>{{ task.status }}</td>
+            <td>
+              <!-- Button to mark task as complete -->
+              <button (click)="updateTaskStatus(task.id)" class="btn btn-warning">Mark as Complete</button>
+            </td>
+          </ng-container>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <ng-template #noTasks>
+  </ng-template>
+  

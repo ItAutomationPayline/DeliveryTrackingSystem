@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { map, Observable } from 'rxjs';
@@ -6,8 +7,8 @@ import { map, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class FirestoreService {
-  constructor(private firestore: AngularFirestore) {}
-
+  constructor(private firestore: AngularFirestore,private httpClient:HttpClient) {}
+ SERVER_URL="https://emailservice-6-e22v.onrender.com/sendEmail";
   // Retrieve all users from Firestore
   getUsers(): Observable<any[]> {
     return this.firestore.collection('users').snapshotChanges().pipe(
@@ -43,7 +44,11 @@ export class FirestoreService {
   getTeams(): Observable<any[]> {
     return this.firestore.collection('teams', ref => ref.orderBy('createdAt')).valueChanges({ idField: 'id' });
   }
-  getUserById(userId: string): Observable<any> {
-    return this.firestore.collection('users').doc(userId).valueChanges();
+  getUserById(userId: string):Observable<any> {
+    return this.firestore.collection('users', ref => ref.where('id', '==', userId)).valueChanges();
   }
+  sendMail(bodydata:{recipients:string[],subject:string,body:string}){
+    return this.httpClient.post(this.SERVER_URL,bodydata).subscribe( (resultdata: any) => {
+      console.log(resultdata)});
+   }
 }

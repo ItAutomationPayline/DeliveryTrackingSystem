@@ -5,7 +5,6 @@ import { FirestoreService } from '../services/firestore.service';
 @Component({
   selector: 'app-dashboard',
   standalone: false,
-  
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })

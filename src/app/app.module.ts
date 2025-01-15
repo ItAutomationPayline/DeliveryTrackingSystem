@@ -16,6 +16,8 @@ import { ExecutiveComponent } from './executive/executive.component';
 import { TeamLeadComponent } from './team-lead/team-lead.component';
 import { NavbarComponent } from './navbar/navbar.component';
 import { ManagerComponent } from './manager/manager.component';
+import { EmailSenderComponent } from './email-sender/email-sender.component';
+import { TasksCheckerComponent } from './tasks-checker/tasks-checker.component';
 
 @NgModule({
   declarations: [
@@ -27,7 +29,9 @@ import { ManagerComponent } from './manager/manager.component';
     ExecutiveComponent,
     TeamLeadComponent,
     NavbarComponent,
-    ManagerComponent
+    ManagerComponent,
+    EmailSenderComponent,
+    TasksCheckerComponent
   ],
   imports: [
     BrowserModule,
