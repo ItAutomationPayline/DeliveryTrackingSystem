@@ -17,6 +17,7 @@ export class LoginComponent {
   ngOnInit() {
     localStorage.removeItem('authToken');
     localStorage.removeItem('role');
+    localStorage.removeItem('nm');
     localStorage.removeItem('id'); // Clear collection ID on logout or fresh login
     localStorage.removeItem('profilemail');
      if (!sessionStorage.getItem('hasReloaded')) {
@@ -42,6 +43,7 @@ export class LoginComponent {
               const user = data[0]; // Since it's an array, the first document will be the matching user
               const role = user.role;
               localStorage.setItem('profilemail',data[0].email);
+              localStorage.setItem('nm',data[0].name);
               // Save the document ID (collection ID) to localStorage
               const collectionId = user.id; // Assuming `id` is the Firestore document ID
               localStorage.setItem('id', collectionId);
@@ -53,6 +55,14 @@ export class LoginComponent {
               }
                else if (role === "Manager") {
                 this.router.navigateByUrl('/manager');
+                localStorage.setItem('role', role);
+              }
+              else if (role === "QC") {
+                this.router.navigateByUrl('/qc');
+                localStorage.setItem('role', role);
+              }
+              else if (role === "QcLead") {
+                this.router.navigateByUrl('/qclead');
                 localStorage.setItem('role', role);
               }
                else if (role === "Team Lead") {

@@ -18,6 +18,9 @@ import { NavbarComponent } from './navbar/navbar.component';
 import { ManagerComponent } from './manager/manager.component';
 import { EmailSenderComponent } from './email-sender/email-sender.component';
 import { TasksCheckerComponent } from './tasks-checker/tasks-checker.component';
+import { UploadComponent } from './upload/upload.component';
+import { QCComponent } from './qc/qc.component';
+import { QcLeadComponent } from './qc-lead/qc-lead.component';
 
 @NgModule({
   declarations: [
@@ -31,7 +34,10 @@ import { TasksCheckerComponent } from './tasks-checker/tasks-checker.component';
     NavbarComponent,
     ManagerComponent,
     EmailSenderComponent,
-    TasksCheckerComponent
+    TasksCheckerComponent,
+    UploadComponent,
+    QCComponent,
+    QcLeadComponent
   ],
   imports: [
     BrowserModule,

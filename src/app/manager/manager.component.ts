@@ -9,6 +9,7 @@ import { FirestoreService } from '../services/firestore.service';
   templateUrl: './manager.component.html',
   styleUrls: ['./manager.component.css'] // Corrected 'styleUrl' to 'styleUrls'
 })
+
 export class ManagerComponent {
   public users: any[] = [];
   public managers: any[] = [];
@@ -16,6 +17,7 @@ export class ManagerComponent {
   public selectedManager: string = '';
   public teamName: string = '';
   public teams: any[] = [];
+  
   public userMap: Map<string, string> = new Map(); // Map of user IDs to names
 
   constructor(private router: Router,private firestoreService: FirestoreService,private firestore: AngularFirestore) {}

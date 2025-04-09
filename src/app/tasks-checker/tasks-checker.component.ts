@@ -14,25 +14,73 @@ import { Router } from '@angular/router';
   styleUrl: './tasks-checker.component.css',
   providers: [DatePipe]
 })
+
 export class TasksCheckerComponent {
   constructor(private firestore: AngularFirestore, private functions: AngularFireFunctions,private firestoreService: FirestoreService, private datePipe: DatePipe,private router: Router) { this.username = "";}
   rec: string[] = [];
   public user: any[] = [];
   private intervalId: any;
+  private intervalId2: any;
   username:string;
+  public todayDate: number | undefined 
   public sessionTimeout: any;
   public inactivityDuration = 30 * 60 * 1000;// 30 minutes in milliseconds
   public setUsername(value: string) {
     this.username = value;
   }
   ngOnInit() {
-    // Run checkPendingTasks every 5 minutes (300,000 milliseconds)
+    // Run checkPendingTasks every 1 minutes (300,000 milliseconds)
     this.intervalId = setInterval(() => {
       this.checkPendingTasks();
-    }, 60000); // 5 minutes in milliseconds
+    }, 60000); // 1 minutes in milliseconds
+    // this.intervalId2 = setInterval(() => {
+    //   this.checkScheduledTasks();
+    // }, 600000);
     this.startSessionTimer();
   }
-
+  checkScheduledTasks() {
+    // const todayDate: number = new Date().getDate();
+    // const currentTime = new Date();
+    // this.firestore
+    //   .collection('scheduledTasks', (ref) => ref.where('date', '==', todayDate)) // Fetch only pending tasks
+    //   .valueChanges({ idField: 'id' }) // Include the document ID
+    //   .subscribe((tasks: any[]) => {
+    //     tasks.forEach((task) => {
+    //       const task2 = {
+    //         client: task.client,
+    //         assignedTo: task.assignedTo,
+    //         teamId: task.teamId,
+    //         deadline:this.convertToISO(todayDate,task.time),
+    //         description: task.description,
+    //         status: 'pending',
+    //         createdBy: task.createdBy, // Use the logged-in Team Lead's ID
+    //         leadermail:task.leadermail
+    //       };
+    //       this.firestore
+    //       .collection('tasks')
+    //       .add(task2)
+    //       .then(() => {
+    //       })
+    //       .catch((error) => {
+    //         alert('Failed to assign task. Please try again.');
+    //       });
+    //     });
+    //   });
+  }
+  convertToISO(dateInt: number, timeStr: string): string {
+    const now = new Date(); // Get current date
+    const year = now.getFullYear(); // Use current year
+    const month = now.getMonth() + 1; // JS months are 0-based
+    // Ensure date is in `DD` format
+    const day = dateInt.toString().padStart(2, '0');
+    // Extract hours and minutes from time string
+    const [hours, minutes] = timeStr.split(':');
+    const iso=new Date(`${year}-${month.toString().padStart(2, '0')}-${day}T${hours}:${minutes}`).toISOString()
+    // Construct full date-time string
+    const dateTimeString = `${year}-${month.toString().padStart(2, '0')}-${day}T${hours}:${minutes}:00.000Z`;
+  
+    return iso;
+  }
   // Function to check pending tasks and process deadlines
   checkPendingTasks() {
     this.firestore
@@ -84,7 +132,7 @@ export class TasksCheckerComponent {
     let bodydata = {
       "recipients": this.rec,
       "subject": `Task Deadline Missed: ${task.description}`,
-      "body": `Hello,\n\nThe task "${task.description}" assigned to "${name}"  has crossed the deadline.\n\nDeadline: ${formattedDeadline}\n\nPlease take immediate action.`,
+      "body": `Hello,<br><br>The task "${task.description}" assigned to "${name}"  has crossed the deadline.<br><br>Deadline: ${formattedDeadline}<br><br>Please take immediate action.`,
     };
 this.firestoreService.sendMail(bodydata);
   }
@@ -103,6 +151,9 @@ this.firestoreService.sendMail(bodydata);
     // Clear the interval when the component is destroyed
     if (this.intervalId) {
       clearInterval(this.intervalId);
+    if (this.intervalId2) {
+        clearInterval(this.intervalId2);
+      }
     }
   }
   public logout() {

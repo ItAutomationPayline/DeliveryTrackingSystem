@@ -8,7 +8,8 @@ import { map, Observable } from 'rxjs';
 })
 export class FirestoreService {
   constructor(private firestore: AngularFirestore,private httpClient:HttpClient) {}
- SERVER_URL="https://emailservice-6-e22v.onrender.com/sendEmail";
+// SERVER_URL="https://emailservice-5-kq9b.onrender.com/sendEmail";
+  SERVER_URL="https://v0-new-project-hzepur2q591-plhqfw5dn-dayaghans-projects.vercel.app/send-email";
   // Retrieve all users from Firestore
   getUsers(): Observable<any[]> {
     return this.firestore.collection('users').snapshotChanges().pipe(
@@ -21,6 +22,7 @@ export class FirestoreService {
       )
     );
   }
+  
   getUserByEmail(email: string): Observable<any> {
     return this.firestore.collection('users', ref => ref.where('email', '==', email)).valueChanges();
   }
@@ -51,4 +53,42 @@ export class FirestoreService {
     return this.httpClient.post(this.SERVER_URL,bodydata).subscribe( (resultdata: any) => {
       console.log(resultdata)});
    }
+   getUserNameById(id: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.firestore
+        .collection('users')
+        .doc(id)
+        .get()
+        .subscribe((docSnapshot: any) => {
+          if (docSnapshot.exists) {
+            const userData = docSnapshot.data();
+            resolve(userData.name); // assuming 'name' field exists in user doc
+          } else {
+            reject(`No user found with ID: ${id}`);
+          }
+        }, (error: any) => {
+          console.error('Error fetching user:', error);
+          reject('Error fetching user data');
+        });
+    });
+  }
+  getNameById(id: string)
+  {
+    let userName:string;
+    this.firestore
+    .collection('users')
+    .doc(id)
+    .get()
+    .subscribe((docSnapshot: any) => {
+      if (docSnapshot.exists) {
+        const userData = docSnapshot.data();
+        return docSnapshot.name;
+      } else {
+        console.warn(`No user found with ID: ${id}`);
+        return null;
+      }
+    }, (error: any) => {
+      console.error('Error fetching user:', error);
+    });
+  }
 }

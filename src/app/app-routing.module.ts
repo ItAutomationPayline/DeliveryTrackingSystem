@@ -7,6 +7,8 @@ import { ResetPasswordComponent } from './reset-password/reset-password.componen
 import { ExecutiveComponent } from './executive/executive.component';
 import { TeamLeadComponent } from './team-lead/team-lead.component';
 import { ManagerComponent } from './manager/manager.component';
+import { QCComponent } from './qc/qc.component';
+import { QcLeadComponent } from './qc-lead/qc-lead.component';
 
 export const routes: Routes = [
   { path: '', component: LoginComponent },
@@ -16,6 +18,8 @@ export const routes: Routes = [
   { path: 'executive', component: ExecutiveComponent },
   { path: 'teamlead', component: TeamLeadComponent },
   { path: 'manager', component: ManagerComponent },
+  { path: 'qc', component: QCComponent },
+  { path: 'qclead', component: QcLeadComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
 ];
 

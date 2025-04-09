@@ -1,0 +1,7 @@
+<input type="file" (change)="onFileChange($event)" accept=".xlsx, .xls" />
+<table *ngIf="tableData.length">
+  <tr *ngFor="let row of tableData">
+    <td *ngFor="let cell of row">{{ cell }}</td>
+  </tr>
+</table>
+
