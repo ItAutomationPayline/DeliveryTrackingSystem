@@ -77,6 +77,8 @@ div {
     margin-top: 20px;
     text-align: right;
   }
-
-  
-  
+  datalist {
+    position: absolute;
+    background: white;
+    z-index: 1000;
+  }

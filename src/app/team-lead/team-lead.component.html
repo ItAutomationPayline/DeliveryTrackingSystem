@@ -27,14 +27,23 @@
         </select>
       </div>
       <div>
-        <label for="">Client Name:</label>
-        <input type="text" class="form-control" id="Client"[(ngModel)]="ClientName">
+        <label for="">Group Name:</label>
+        <input type="text" class="form-control" id="Client"[(ngModel)]="GroupName" list="GroupList">
+        <datalist id="GroupList">
+          <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
+        </datalist>
       </div>
-
+      <div>
+        <label for="">Client Name:</label>
+        <input type="text" class="form-control" id="Client"[(ngModel)]="ClientName" list="ClientList">
+        <datalist id="ClientList">
+          <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+        </datalist>
+      </div>
           <!-- Task Description -->
           <div>
             <label for="taskDescription">Task Description:</label>
-            <input  type="text"class="form-control"list="dropdownOptions" id="taskDescription"[(ngModel)]="taskDescription" rows="3" cols="50">
+            <input  type="text"class="form-control" list="dropdownOptions" id="taskDescription"[(ngModel)]="taskDescription" rows="3" cols="50">
               <datalist id="dropdownOptions">
                 <option value="Payroll Input Received">
                 <option value="Payroll Processing">
@@ -70,35 +79,98 @@
     </div>
   </div>
 </div>
+<!-- <div class="options" *ngIf="clientDropdownOpen">
+  <div
+    class="option"
+    *ngFor="let client of filteredClients"
+    (click)="selectClient(client)"
+  >
+    {{ client }}
+  </div>
+</div> -->
   <div *ngIf="tasksWithNames.length > 0; else noTasks">
     <h3>Tasks Assigned by You</h3>
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
-          <th>Client</th>
-          <th>Description</th>
-          <th>Assigned To</th>
-          <th>Deadline</th>
-          <th>Status</th>
+          <th>
+            Group<br/>
+            <input 
+              type="text" 
+              [(ngModel)]="filters.group" 
+              list="groupList" 
+              class="form-control" 
+              placeholder="Filter"
+              (focus)="getFilteredGroups()"
+            />
+            <datalist id="groupList">
+              <option *ngFor="let value of filterGroups" [value]="value"></option>
+            </datalist>
+          </th>
+          <th>
+            Client<br/>
+            <input 
+              type="text" 
+              [(ngModel)]="filters.client" 
+              list="clientList" 
+              class="form-control" 
+              placeholder="Filter"
+              (focus)="getFilteredClients()"
+            />
+            <datalist id="clientList">
+              <option *ngFor="let value of filterClients" [value]="value"></option>
+            </datalist>
+          </th>
+          <th>
+            Description<br/>
+            <input type="text" [(ngModel)]="filters.description" class="form-control" placeholder="Filter" list="descriptionlist"(focus)="getFilteredDescription()"/>
+            <datalist id="descriptionlist">
+              <option *ngFor="let value of filterDescription" [value]="value"></option>
+            </datalist>
+          </th>
+          <th>
+            Assigned To<br/>
+            <input type="text" [(ngModel)]="filters.assignedToName" class="form-control" placeholder="Filter" list="AssignedToList"(focus)="getFilteredAssignedTo()"/>
+            <datalist id="AssignedToList">
+              <option *ngFor="let value of filterAssignedTo" [value]="value"></option>
+            </datalist>
+          </th>
+          <th>
+            Deadline<br />
+            <input type="text" [(ngModel)]="filters.deadline" class="form-control" placeholder="Filter" />
+          </th>
+          <th>
+            Status<br/>
+            <input type="text" [(ngModel)]="filters.status" class="form-control" placeholder="Filter" list="StatusList"(focus)="getFilteredStatus()"/>
+            <datalist id="StatusList">
+              <option *ngFor="let value of filterStatus" [value]="value"></option>
+            </datalist>
+          </th>
           <th>Actions</th>
-          <th>Comments</th>
+          <th>
+            Comments<br />
+            <input type="text" [(ngModel)]="filters.comment" class="form-control" placeholder="Filter" />
+            <datalist id="StatusList">
+              <option *ngFor="let value of filterStatus" [value]="value"></option>
+            </datalist>
+          </th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let task of tasksWithNames">
+        <tr *ngFor="let task of filteredTasks()">
           <ng-container *ngIf="task.status != 'completed'">
-          <!-- <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&& task.status != 'completed'"> -->
-          <td>{{ task.client }}</td>
-          <td>{{ task.description }}</td>
-          <td>{{ task.assignedToName }}</td>
-          <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a, EEE' }}</td>
-          <td>{{ task.status }}</td>
-          <td>
-            <button (click)="deleteTask(task.id)" class="btn btn-danger">Delete</button>
-            <button (click)="openEditModal(task)" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
-          </td>
-          <td>{{ task.comment }}</td>
-        </ng-container>
+            <td>{{ task.group }}</td>
+            <td>{{ task.client }}</td>
+            <td>{{ task.description }}</td>
+            <td>{{ task.assignedToName }}</td>
+            <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a, EEE' }}</td>
+            <td>{{ task.status }}</td>
+            <td>
+              <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button>
+              <button (click)="openEditModal(task)" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
+            </td>
+            <td>{{ task.comment }}</td>
+          </ng-container>
         </tr>
       </tbody>
     </table>
@@ -162,6 +234,7 @@
           <table class="table table-striped table-bordered">
             <thead>
               <tr>
+                <th>Group</th>
                 <th>Client</th>
                 <th>Description</th>
                 <th>Assigned To</th>
@@ -174,14 +247,15 @@
             <tbody>
               <tr *ngFor="let task of tasksWithNames">
                <ng-container *ngIf="isTaskDueTomorrowOrEarlier(task.deadline)&& task.status != 'completed'">
+                <td>{{ task.group }}</td>
                 <td>{{ task.client }}</td>
                 <td>{{ task.description }}</td>
                 <td>{{ task.assignedToName }}</td>
                 <td>{{ task.deadline | date: ' dd-MM-yyyy h:mm:ss a, EEE' }}</td>
                 <td>{{ task.status }}</td>
                 <td>
-                  <button (click)="deleteTask(task.id)" class="btn btn-danger">Delete</button>
-                  <button (click)="openEditModal(task)" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
+                  <!-- <button (click)="deleteTask(task.id)" class="btn btn-danger">Delete</button> -->
+                  <button (click)="openEditModal(task)" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
                 </td>
                 <td>{{ task.comment }}</td>
               </ng-container>
@@ -226,8 +300,12 @@
           
             <!-- Client Name -->
             <div>
+              <label for="Client">Group Name:</label>
+              <input type="text" class="form-control" id="Client" [(ngModel)]="GroupName" list="GroupList">
+            </div>
+            <div>
               <label for="Client">Client Name:</label>
-              <input type="text" class="form-control" id="Client" [(ngModel)]="ClientName" />
+              <input type="text" class="form-control" id="Client" [(ngModel)]="ClientName" list="ClientList">
             </div>
           
             <!-- File Upload -->

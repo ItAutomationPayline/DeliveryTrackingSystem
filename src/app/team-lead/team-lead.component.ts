@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { Router } from '@angular/router';
 import { FirestoreService } from '../services/firestore.service';
 import { DatePipe } from '@angular/common';
 import * as XLSX from 'xlsx';
+import { debounce, take } from 'rxjs';
 
 @Component({
   selector: 'app-team-lead',
@@ -14,15 +15,29 @@ import * as XLSX from 'xlsx';
 })
 
 export class TeamLeadComponent {
-  teams: any[] = []; // List of teams led by the team lead
+  teams: any[] = [];
+  // List of teams led by the team lead
   profile:any=localStorage.getItem('profilemail');
   leadmail:string=this.profile.email;
   selectedTeamId: string | null = null;
+  AllClientsAndGroups:any[] = [];
+  AllClients:string[] = [];
+  AllGroups:string[]=[];
   teamMembers: string[] = []; // Members of the selected team
   taskDescription: string = '';
+  GroupName: string = '';
   ClientName: string = '';
+  opsName: string = '';
   TaskName: string = '';
-  ScheduledDate: number =0;
+  ScheduledDate: number = 0;
+  filterThings: string[] = [];
+  filterClients: string[] = [];
+  filterGroups: string[] = [];
+  filterDescription: string[] = [];
+  filterAssignedTo: string[] = [];
+  filterStatus: string[] = [];
+  clientDropdownOpen = false;
+  allClients: string[] = [];
   selectedMemberId: string | null = null;
   taskDeadline: string = ''; // Deadline in ISO format
   membersWithNames: any[] = [];
@@ -46,19 +61,20 @@ export class TeamLeadComponent {
   editSelectedMemberId: string | null = null;
   editTaskDeadline: string = '';
 
-  constructor(private router: Router, private firestore: AngularFirestore,private firestoreService: FirestoreService,private datePipe: DatePipe) {}
+  constructor(private cdRef: ChangeDetectorRef,private router: Router, private firestore: AngularFirestore,private firestoreService: FirestoreService,private datePipe: DatePipe) {}
 
   ngOnInit() {
     const role = localStorage.getItem('role');
     const token = localStorage.getItem('authToken');
     const managerId = localStorage.getItem('id'); // Retrieve logged-in Team Lead's ID from localStorage
     if (!token || role !== 'Manager') {
-    if (!token || role !== 'Team Lead') {
-      this.router.navigateByUrl('/login');
-      return;
+      if (!token || role !== 'Team Lead') {
+        this.router.navigateByUrl('/login');
+        return;
+      }
     }
-  }
       this.teams=[];
+      this.opsName='';
       this.tasksAssigned=[];
       this.memberNames=[];
       this.membersWithNames=[];
@@ -69,20 +85,150 @@ export class TeamLeadComponent {
       this.editTaskDeadline='';
       this.tasksWithNames=[];
       this.scheduledTasksAssigned=[];
-      this.tasksWithNames=[];
+      this.filterClients=[];
+      this.filterAssignedTo=[];
+      this.filterDescription=[];
+      this.filterStatus=[];
       this.scheduledTasksAssignedWithNames=[];
-      //setTimeout(() => {
+      setTimeout(() => {
         this.loadData(managerId); // Your logic here
-      //}, 250);
+      }, 500);
     this.updateMinDeadline();
+    this.getFilteredClients();
+    this.getFilteredDescription();
+    this.loadDescriptionSuggestions();
+    this.fetchClients();
+  }
+  fetchClients()
+  {
+    this.firestore
+    .collection('clients', ref => ref.where('status', '==', 'Active'))
+    .valueChanges({ idField: 'id' }) // Include document ID in the result
+    .subscribe((tasks: any[]) => {
+      this.AllClientsAndGroups = tasks;
+    });
+  }
+  // get uniqueClients(): string[] {
+  //   this.filterClients=Array.from(new Set(this.tasksWithNames.map(t => t.client))).sort();
+  //   return Array.from(new Set(this.tasksWithNames.map(t => t.client))).sort();
+  // }
+  getFilteredClients()
+  {
+    this.filterClients=[];
+    this.filterClients=Array.from(new Set(this.tasksAssigned.map(t => t.client))).sort();
+  }
+  getFilteredGroups()
+  {
+    this.filterGroups=[];
+    this.filterGroups=Array.from(new Set(this.tasksAssigned.map(t => t.group))).sort();
+  }
+  getFilteredDescription()
+  {
+    this.filterDescription=[];
+    this.filterDescription=Array.from(new Set(this.tasksAssigned.map(t => t.description))).sort();
+  }
+  getFilteredAssignedTo()
+  {
+    this.filterAssignedTo=[];
+    this.filterAssignedTo=Array.from(new Set(this.tasksWithNames.map(t => t.assignedToName))).sort();
+  }
+  getFilteredStatus()
+  {
+    this.filterStatus=[];
+    this.filterStatus=Array.from(new Set(this.tasksWithNames.map(t => t.status))).sort();
+  }
+  // get uniqueClients(): string[] {
+  //   return [...new Set(this.data.map(item => item.client).filter(Boolean))];
+  // }
+  filters = {
+    group:'',
+    client: '',
+    description: '',
+    assignedToName: '',
+    deadline: '',
+    status: '',
+    comment: ''
+  };
+  
+  filteredTasks() {
+    return this.tasksWithNames.filter(task =>
+      (!this.filters.group || task.group?.toLowerCase().includes(this.filters.group.toLowerCase()))&&
+      (!this.filters.client || task.client?.toLowerCase().includes(this.filters.client.toLowerCase())) &&
+      (!this.filters.description || task.description?.toLowerCase().includes(this.filters.description.toLowerCase())) &&
+      (!this.filters.assignedToName || task.assignedToName?.toLowerCase().includes(this.filters.assignedToName.toLowerCase())) &&
+      (!this.filters.deadline || new Date(task.deadline).toLocaleString().toLowerCase().includes(this.filters.deadline.toLowerCase())) &&
+      (!this.filters.status || task.status?.toLowerCase().includes(this.filters.status.toLowerCase())) &&
+      (!this.filters.comment || task.comment?.toLowerCase().includes(this.filters.comment.toLowerCase()))
+    );
   }
    sortTasks(tasksWithNames: { client: string; deadline: string }[]): { client: string; deadline: string }[] {
     return tasksWithNames.sort((a, b) => {
       const clientCompare = a.client.localeCompare(b.client);
       if (clientCompare !== 0) return clientCompare;
-  
       return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
     });
+  }
+  // toggleClientDropdown(event: Event) {
+  //   event.stopPropagation();
+  //   this.clientDropdownOpen = true;
+  //   this.allClients=[];
+  //   this.allClients = Array.from(new Set(this.tasksWithNames.map(t => t.client)))
+  //     .filter(client => client)
+  //     .sort();
+  //   this.filteredClients = [...this.allClients];
+  // }
+
+  // toggleDescriptiontDropdown(event: Event) {
+  //   event.stopPropagation();
+  //   this.clientDropdownOpen = true;
+  //   this.allClients=[];
+  //   this.allClients = Array.from(new Set(this.tasksWithNames.map(t => t.description)))
+  //     .filter(client => client)
+  //     .sort();
+  //   this.filteredClients = [...this.allClients];
+  // }
+  
+  // toggleassignedToNametDropdown(event: Event) {
+  //   event.stopPropagation();
+  //   this.clientDropdownOpen = true;
+  //   this.allClients=[];
+  //   this.allClients = Array.from(new Set(this.tasksWithNames.map(t => t.assignedToName)))
+  //     .filter(client => client)
+  //     .sort();
+  //   this.filteredClients = [...this.allClients];
+  // }
+
+  // filterClientSuggestions() {
+  //   const val = this.filters.client?.toLowerCase() || '';
+  //   this.filteredClients = this.allClients.filter(client =>
+  //     client.toLowerCase().includes(val)
+  //   );
+  // }
+  
+  // selectClient(client: string) {
+  //   this.filters.client = client;
+  //   this.clientDropdownOpen = false;
+  // }
+  // selectDescription(client: string) {
+  //   this.filters.description = client;
+  //   this.clientDropdownOpen = false;
+  // }
+  
+  // @HostListener('document:click')
+  // closeClientDropdown() {
+  //   this.clientDropdownOpen = false;
+  // }
+  loadDescriptionSuggestions() {
+    this.filterThings=[];
+    this.filterThings = Array.from(new Set(this.tasksWithNames.map(t => t.description)))
+                        .filter(client => client) // remove empty values
+                        .sort();
+  }
+  loadAssignedToSuggestions() {
+    this.filterThings=[];
+    this.filterThings = Array.from(new Set(this.tasksWithNames.map(t => t.assignedToName)))
+                        .filter(client => client) // remove empty values
+                        .sort();
   }
   onFileChange(event: any) {
     const target: DataTransfer = <DataTransfer>event.target;
@@ -105,10 +251,8 @@ export class TeamLeadComponent {
   
       if (data.length > 1) {
         this.tasksWithDeadlines = [];
-  
         // Extract first row as task descriptions
         const taskHeaders = data[0]; 
-  
         // Iterate over each column to get deadlines
         for (let col = 0; col < taskHeaders.length; col++) {
           const description = taskHeaders[col]; 
@@ -249,14 +393,12 @@ export class TeamLeadComponent {
       .get()
       .subscribe((querySnapshot: any) => {
         const recipients: string[] = [];
-  
         querySnapshot.forEach((doc: any) => {
           const userData = doc.data();
           if (userData.email) {
             recipients.push(userData.email);
           }
         });
-  
         if (recipients.length > 0) {
           const subject = `${this.editTaskClient}: Task Updated: ${updatedTask.description}`;
           const body = `
@@ -298,6 +440,7 @@ export class TeamLeadComponent {
       }
     }
   }
+
   closeScheduledTasksModal() {
     const modal = document.getElementById('updateScheduledTaskModal');
     if (modal) {
@@ -310,12 +453,12 @@ export class TeamLeadComponent {
       }
     }
   }
-
   fetchAssignedTasks() {
     // Query Firestore for tasks where `createdBy` matches the Team Lead's ID
     this.firestore
-      .collection('tasks', ref => ref.where('createdBy', '==', this.teamLeadId))
-      .valueChanges({ idField: 'id' }) // Include document ID in the result
+      .collection('tasks', ref => ref.where('createdBy', '==', this.teamLeadId).where('clientStatus', '==', 'Active'))
+      .valueChanges({ idField: 'id' })
+      .pipe(take(1))
       .subscribe((tasks: any[]) => {
         this.tasksAssigned = tasks;
         console.log('Tasks assigned by you:', this.tasksAssigned);
@@ -323,7 +466,6 @@ export class TeamLeadComponent {
         setTimeout(() => {
           this.sortTasks(this.tasksWithNames);
        }, 500);
-        
       });
   }
   // fetchAssignedScheduledTasks(){
@@ -367,37 +509,37 @@ export class TeamLeadComponent {
   //       });
   //   }
   // }
-  populateAssignedScheduledTasksToNames(){
-    this.scheduledTasksAssignedWithNames = []; // Reset the tasks array with names
-    this.scheduledTasksAssigned.forEach((task) => {
-      const assignedToId = task.assignedTo;
-      // Check if the user's name is already cached
-      if (this.userCache[assignedToId]) {
-        this.scheduledTasksAssignedWithNames.push({
-          ...task,
-          assignedToName: this.userCache[assignedToId], // Add the name from the cache
-        });
-      }
-      else {
-        // Fetch the user's name from Firestore
-        this.firestore
-          .collection('users', (ref) => ref.where('id', '==', assignedToId))
-          .valueChanges()
-          .subscribe((users: any[]) => {
-            if (users.length > 0) {
-              const userName = users[0].name; // Assuming "name" is the field in the "users" collection
-              this.userCache[assignedToId] = userName; // Cache the name for future use
-              this.scheduledTasksAssignedWithNames.push({
-                ...task,
-                assignedToName: userName, // Add the name to the task
-              });
-            } else {
-              console.log(`No user found with ID: ${assignedToId}`);
-            }
-          });
-      }
-    });
-  }
+  // populateAssignedScheduledTasksToNames(){
+  //   this.scheduledTasksAssignedWithNames = []; // Reset the tasks array with names
+  //   this.scheduledTasksAssigned.forEach((task) => {
+  //     const assignedToId = task.assignedTo;
+  //     // Check if the user's name is already cached
+  //     if (this.userCache[assignedToId]) {
+  //       this.scheduledTasksAssignedWithNames.push({
+  //         ...task,
+  //         assignedToName: this.userCache[assignedToId], // Add the name from the cache
+  //       });
+  //     }
+  //     else {
+  //       // Fetch the user's name from Firestore
+  //       this.firestore
+  //         .collection('users', (ref) => ref.where('id', '==', assignedToId))
+  //         .valueChanges()
+  //         .subscribe((users: any[]) => {
+  //           if (users.length > 0) {
+  //             const userName = users[0].name; // Assuming "name" is the field in the "users" collection
+  //             this.userCache[assignedToId] = userName; // Cache the name for future use
+  //             this.scheduledTasksAssignedWithNames.push({
+  //               ...task,
+  //               assignedToName: userName, // Add the name to the task
+  //             });
+  //           } else {
+  //             console.log(`No user found with ID: ${assignedToId}`);
+  //           }
+  //         });
+  //     }
+  //   });
+  // }
   populateAssignedToNames() {
     this.tasksWithNames = []; // Reset the tasks array with names
     this.tasksAssigned.forEach((task) => {
@@ -413,7 +555,7 @@ export class TeamLeadComponent {
         // Fetch the user's name from Firestore
         this.firestore
           .collection('users', (ref) => ref.where('id', '==', assignedToId))
-          .valueChanges()
+          .valueChanges().pipe(take(1))
           .subscribe((users: any[]) => {
             if (users.length > 0) {
               const userName = users[0].name; // Assuming "name" is the field in the "users" collection
@@ -460,7 +602,7 @@ export class TeamLeadComponent {
       this.teamMembers.forEach((id) => {
         this.firestore
           .collection('users', (ref) => ref.where('id', '==', id))
-          .valueChanges()
+          .valueChanges().pipe(take(1))
           .subscribe((users: any[]) => {
             if (users.length > 0) {
               const user = users[0];
@@ -494,7 +636,8 @@ export class TeamLeadComponent {
       if (hh === '00' && min === '00') {
         date.setHours(23, 59, 0); // Replace 00:00 with 11:59 PM
       }else {
-        date.setHours(date.getHours() + 4); // Add 4 hours to given time
+        date.setHours(date.getHours() + 3); // Add 4 hours to given time
+        date.setMinutes(date.getMinutes() + 30); // Add 4 hours to given time
       }
       return date.toISOString();
     }
@@ -522,7 +665,6 @@ export class TeamLeadComponent {
       alert('Please select an executive and upload a valid Excel file.');
       return;
     }
-  
     this.tasksWithDeadlines.forEach((taskData) => {
       taskData.deadlines.forEach((deadline) => {
         const formattedDeadline = this.formatExcelDate(deadline);
@@ -530,13 +672,15 @@ export class TeamLeadComponent {
         const task = {
           assignedTo: this.selectedMemberId,
           teamId: this.selectedTeamId,
+          group:this.GroupName,
           client: this.ClientName,
           description: taskData.description,
           deadline: formattedDeadline, // Convert deadline to ISO format
           completedAt:'',
-          status: 'pending',
+          status: 'Pending',
           createdBy: localStorage.getItem('id'),
           leadermail: this.profile,
+          clientStatus:'Active'
         };
   
         this.firestore
@@ -556,13 +700,15 @@ export class TeamLeadComponent {
       const task = {
         assignedTo: this.selectedMemberId,
         teamId: this.selectedTeamId,
+        group:this.GroupName,
         client:this.ClientName,
         description: this.taskDescription,
         deadline: new Date(this.taskDeadline).toISOString(),
         completedAt:'',
-        status: 'pending',
+        status: 'Pending',
         createdBy: localStorage.getItem('id'), // Use the logged-in Team Lead's ID
-        leadermail:this.profile
+        leadermail:this.profile,
+        clientStatus:'Active'
       };
       this.fetchprofile(task);
       this.firestore
@@ -646,22 +792,23 @@ getUserNameById(id: string){
       this.userName = 'Error fetching name';
     });
 }
-  deleteScheduledTask(taskId: string): void {
-    if (confirm('Are you sure you want to delete this task?')) {
-      this.firestore
-        .collection('scheduledTasks') // Reference to the tasks collection
-        .doc(taskId) // Reference to the specific task document
-        .delete()
-        .then(() => {
-          console.log('Task deleted successfully!');
-          // Optionally, update the tasksWithNames array locally
-          this.tasksWithNames = this.tasksWithNames.filter(task => task.id !== taskId);
-        })
-        .catch(error => {
-          console.error('Error deleting task: ', error);
-        });
-    }
-  }
+  // deleteScheduledTask(taskId: string): void {
+  //   if (confirm('Are you sure you want to delete this task?')) {
+  //     this.firestore
+  //       .collection('scheduledTasks') // Reference to the tasks collection
+  //       .doc(taskId) // Reference to the specific task document
+  //       .delete()
+  //       .then(() => {
+  //         console.log('Task deleted successfully!');
+  //         // Optionally, update the tasksWithNames array locally
+  //         this.tasksWithNames = this.tasksWithNames.filter(task => task.id !== taskId);
+  //       })
+  //       .catch(error => {
+  //         console.error('Error deleting task: ', error);
+  //       });
+  //   }
+  // }
+  
   // get sortedTasks(): Task[] {
   //   return this.tasksWithNames.slice().sort((a, b) => {
   //     // Sort by client name (alphabetically)
