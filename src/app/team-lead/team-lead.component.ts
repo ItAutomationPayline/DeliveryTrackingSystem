@@ -16,6 +16,7 @@ import { debounce, take } from 'rxjs';
 
 export class TeamLeadComponent {
   teams: any[] = [];
+  managerId: any = '';
   // List of teams led by the team lead
   profile:any=localStorage.getItem('profilemail');
   leadmail:string=this.profile.email;
@@ -66,7 +67,7 @@ export class TeamLeadComponent {
   ngOnInit() {
     const role = localStorage.getItem('role');
     const token = localStorage.getItem('authToken');
-    const managerId = localStorage.getItem('id'); // Retrieve logged-in Team Lead's ID from localStorage
+     this.managerId = localStorage.getItem('id'); // Retrieve logged-in Team Lead's ID from localStorage
     if (!token || role !== 'Manager') {
       if (!token || role !== 'Team Lead') {
         this.router.navigateByUrl('/login');
@@ -91,7 +92,7 @@ export class TeamLeadComponent {
       this.filterStatus=[];
       this.scheduledTasksAssignedWithNames=[];
       setTimeout(() => {
-        this.loadData(managerId); // Your logic here
+        this.loadData(this.managerId); // Your logic here
       }, 500);
     this.updateMinDeadline();
     this.getFilteredClients();
@@ -258,7 +259,7 @@ export class TeamLeadComponent {
           const description = taskHeaders[col]; 
           if (description) {
             const deadlines = data.slice(1).map(row => row[col]).filter(deadline => deadline);
-            if (deadlines.length > 0) {
+            if ((deadlines.length > 0)&&(description.trim()!="Day")&&(description.trim()!="PayPeriod")) {
               this.tasksWithDeadlines.push({ description, deadlines });
             }
           }
@@ -576,7 +577,7 @@ export class TeamLeadComponent {
   getTeams(managerId: string) {
     this.firestore
       .collection('teams', (ref) => ref.where('managerId', '==', managerId))
-      .valueChanges()
+      .valueChanges().pipe(take(1))
       .subscribe(
         (data) => {
           if (data && data.length > 0) {
@@ -618,16 +619,13 @@ export class TeamLeadComponent {
   }
   formatExcelDate(value: any): string | null {
     if (!value) return null;
-  
     // Handle Excel serial number
     if (!isNaN(value)) {
       const excelEpoch = new Date(Date.UTC(1899, 11, 30));
       const date = new Date(excelEpoch.getTime() + value * 86400000);
       return this.adjustTime(date).toISOString();
     }
-  
     const strVal = value.toString().trim();
-  
     // Match dd/mm/yyyy hh:mm or dd-mm-yyyy hh:mm
     const datetimeMatch = strVal.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})[ T](\d{2}):(\d{2})$/);
     if (datetimeMatch) {
@@ -669,7 +667,28 @@ export class TeamLeadComponent {
       taskData.deadlines.forEach((deadline) => {
         const formattedDeadline = this.formatExcelDate(deadline);
         console.log("taskDesc"+taskData.description+"Deadline"+formattedDeadline);
-        const task = {
+        let  task = {};
+        if(formattedDeadline!=null){
+        if(taskData.description=="Payroll Reports to QC"){
+        task = {
+          reportType:'Payroll Reports',
+          assignedTo: this.selectedMemberId,
+          teamId: this.selectedTeamId,
+          group:this.GroupName,
+          client: this.ClientName,
+          description: taskData.description,
+          deadline: formattedDeadline, // Convert deadline to ISO format
+          completedAt:'',
+          status: 'Pending',
+          createdBy: localStorage.getItem('id'),
+          leadermail: this.profile,
+          clientStatus:'Active',
+          QcApproval:'Pending',
+          Sequence:0
+        };
+      }
+      else{
+        task = {
           assignedTo: this.selectedMemberId,
           teamId: this.selectedTeamId,
           group:this.GroupName,
@@ -682,48 +701,97 @@ export class TeamLeadComponent {
           leadermail: this.profile,
           clientStatus:'Active'
         };
-  
+      }
         this.firestore
           .collection('tasks')
           .add(task)
           .then(() => console.log('Task assigned:', task))
           .catch((error) => console.error('Error assigning task:', error));
-      });
+        }});
     });
-  
+    this.loadData(this.managerId);
     alert('All tasks assigned successfully!');
   }
   
   // Assign a task to a selected team member
   assignTask() {
     if (this.selectedTeamId||this.selectedMemberId && this.taskDescription && this.taskDeadline) {
-      const task = {
-        assignedTo: this.selectedMemberId,
-        teamId: this.selectedTeamId,
-        group:this.GroupName,
-        client:this.ClientName,
-        description: this.taskDescription,
-        deadline: new Date(this.taskDeadline).toISOString(),
-        completedAt:'',
-        status: 'Pending',
-        createdBy: localStorage.getItem('id'), // Use the logged-in Team Lead's ID
-        leadermail:this.profile,
-        clientStatus:'Active'
-      };
-      this.fetchprofile(task);
-      this.firestore
-        .collection('tasks')
-        .add(task)
-        .then(() => {
-          alert('Task assigned successfully!');
-          this.resetForm();
-        })
-        .catch((error) => {
-          alert('Failed to assign task. Please try again.');
-        });
+     let  task = {};
+    if(this.taskDescription=="Payroll Reports to QC"){
+    task = {
+      reportType:'Payroll Reports',
+      assignedTo: this.selectedMemberId,
+      teamId: this.selectedTeamId,
+      group:this.GroupName,
+      client: this.ClientName,
+      description: this.taskDescription,
+      deadline: new Date(this.taskDeadline).toISOString(), // Convert deadline to ISO format
+      completedAt:'',
+      status: 'Pending',
+      createdBy: localStorage.getItem('id'),
+      leadermail: this.profile,
+      clientStatus:'Active',
+      QcApproval:'Pending',
+      Sequence:0
+    };
+  }
+  else{
+    task = {
+      assignedTo: this.selectedMemberId,
+      teamId: this.selectedTeamId,
+      group:this.GroupName,
+      client: this.ClientName,
+      description: this.taskDescription,
+      deadline: new Date(this.taskDeadline).toISOString(), // Convert deadline to ISO format
+      completedAt:'',
+      status: 'Pending',
+      createdBy: localStorage.getItem('id'),
+      leadermail: this.profile,
+      clientStatus:'Active'
+    };
+  }
+    this.firestore
+      .collection('tasks')
+      .add(task)
+      .then(() => {
+        alert('Task assigned successfully!');
+        this.resetForm();
+        this.loadData(this.managerId);
+      })
+      .catch((error) => {
+        alert('Failed to assign task. Please try again.');
+      });
     }
   }
-
+  // assignTask() {
+  //   if (this.selectedTeamId||this.selectedMemberId && this.taskDescription && this.taskDeadline) {
+  //     const task = {
+  //       assignedTo: this.selectedMemberId,
+  //       teamId: this.selectedTeamId,
+  //       group:this.GroupName,
+  //       client:this.ClientName,
+  //       description: this.taskDescription,
+  //       deadline: new Date(this.taskDeadline).toISOString(),
+  //       completedAt:'',
+  //       status: 'Pending',
+  //       createdBy: localStorage.getItem('id'), // Use the logged-in Team Lead's ID
+  //       leadermail:this.profile,
+  //       clientStatus:'Active'
+  //     };
+  //     this.fetchprofile(task);
+  //     this.firestore
+  //       .collection('tasks')
+  //       .add(task)
+  //       .then(() => {
+  //         alert('Task assigned successfully!');
+  //         this.resetForm();
+  //         this.loadData(this.managerId);
+  //       })
+  //       .catch((error) => {
+  //         alert('Failed to assign task. Please try again.');
+  //       });
+  //   }
+  // }
   fetchprofile(task:any){
     console.log("fetchprofile initiated")
     this.firestore

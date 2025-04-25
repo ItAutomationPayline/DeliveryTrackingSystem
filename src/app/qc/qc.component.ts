@@ -6,7 +6,8 @@ import { HttpClient } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-
+import { increment } from '@angular/fire/firestore';
+import 'firebase/compat/firestore';
 @Component({
   selector: 'app-qc',
   standalone: false,
@@ -89,7 +90,8 @@ export class QCComponent implements OnInit {
       qcPersonId: this.employeeId,
       status: 'in-progress',
       findings: [],
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      qcName:this.nm
     };
     // Directly update the existing QC report with document ID = requestId
     this.firestore.collection('QcReports').doc(requestId).update(report)
@@ -106,9 +108,6 @@ export class QCComponent implements OnInit {
       });
     }
   }
-  
-  
-
   // Load a specific QC report for editing
   loadReport(reportId: string) {
     this.firestore.collection('QcReports').doc(reportId)
@@ -116,6 +115,7 @@ export class QCComponent implements OnInit {
       .subscribe((report: any) => {
         this.currentReport = report;
         this.currentReport.id = reportId;
+        this.currentReport.taskId=report.taskId
       });
   }
 
@@ -139,6 +139,60 @@ export class QCComponent implements OnInit {
       .catch(error => {
         console.error("Error adding finding: ", error);
       });
+  }
+  formatTextarea(event: any) {
+    // Replace newlines with <br> tags and preserve whitespace
+    this.newFinding.description = event.target.value
+      .replace(/\n/g, '<br>')
+      .replace(/\s{2,}/g, ' ');
+  }
+  sendQcFindingsMail(currentReport: any) {
+    const formattedPeriod = this.datePipe.transform(currentReport.Period, 'MMMM-yyyy') || currentReport.Period;
+    // Process all findings with proper formatting
+    let findingsDescriptions = currentReport.findings
+      .map((finding: any, index: number) => {
+        // Ensure description has proper HTML line breaks
+        const formattedDescription = finding.description
+          .replace(/\n/g, '<br>')
+          .replace(/\s{2,}/g, ' ');
+        return `
+          <div style="margin-bottom: 15px;">
+            <strong>Finding ${index + 1}:</strong><br>
+            <strong>Category:</strong> ${finding.category}<br>
+            <strong>Severity:</strong> ${finding.severity}<br>
+            <div style="white-space: pre-wrap; word-wrap: break-word; 
+                        margin-top: 5px; padding: 8px; 
+                        background-color: #f5f5f5; border-radius: 4px;">
+              ${formattedDescription}
+            </div>
+          </div>`;
+      })
+      .join('');
+    this.firestoreService.getUserById(currentReport.ops).subscribe(userData => {
+      if (userData.length > 0) {
+        const user = userData[0];
+        this.rec[0] = user.email;
+        let bodydata = {
+          "recipients": this.rec,
+          "subject": `${currentReport.groupName}:QC Findings - ${currentReport.reportType}- ${formattedPeriod}`,
+          "body": `
+            <html>
+              <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <div style="max-width: 800px; margin: 0 auto;">
+                  <p>Hi ${user.name},</p>
+                  <p>Hope you're doing well.</p>
+                  <p>This is to inform you that the Quality Check (QC) for the ${currentReport.reportType} of client: 
+                  ${currentReport.clientName} for the period of ${formattedPeriod} has been completed.</p>
+                  <p>The following findings were observed during the QC process:</p>
+                  ${findingsDescriptions}
+                  <p>Best regards,<br>${this.nm}</p>
+                </div>
+              </body>
+            </html>`,
+        };
+        this.firestoreService.sendMail(bodydata);
+      }
+    });
   }
   sendQcApprovedMail(currentReport:any)
   {
@@ -179,9 +233,25 @@ if (confirm(`Are you sure QC for ${this.currentReport.reportType} is completed?`
           if(this.currentReport.findings.length==0)
             {
               this.sendQcApprovedMail(this.currentReport);
+              this.firestore.collection('tasks').doc(this.currentReport.taskId)
+              .update({
+                QcApproval: 'Approved'
+              });
             }
             else{
               console.log("Found findings");
+              this.sendQcFindingsMail(this.currentReport);
+              this.firestore
+              .collection('tasks').doc(this.currentReport.taskId)
+              .update({
+                status: 'Pending',
+                Sequence:increment(1)
+              })
+              .then(() => {
+              })
+              .catch((error) => {
+                console.error('Error updating task status: ', error);
+              });
             }
             this.intervalId = setInterval(() => {
               this.currentReport = null;
@@ -190,7 +260,6 @@ if (confirm(`Are you sure QC for ${this.currentReport.reportType} is completed?`
       .catch(error => {
         console.error("Error completing QC report: ", error);
       });
-      
   }
 }
 }

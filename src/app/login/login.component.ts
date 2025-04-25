@@ -61,7 +61,7 @@ export class LoginComponent {
                 this.router.navigateByUrl('/qc');
                 localStorage.setItem('role', role);
               }
-              else if (role === "QcLead") {
+              else if (role === "QCLead") {
                 this.router.navigateByUrl('/qclead');
                 localStorage.setItem('role', role);
               }

@@ -1,1 +1,174 @@
-<p>qc-lead works!</p>
+<div class="qc component">
+  <app-navbar></app-navbar>
+    <ng-template #noTasks>
+      <p>
+        No requests currently available for QC.
+      </p>
+    </ng-template>
+  <div class="qc-container">
+    <h2>Quality Control Dashboard</h2>
+    <p>Welcome, {{ nm }}</p>
+    <div class="qc-sections">
+      <!-- Section for Assigned Requests -->
+      <div class="assigned-requests">
+        <h3>Requests pending for QC</h3>
+        <div *ngIf="assignedRequests.length === 0" class="no-requests">
+          No requests currently available for QC.
+        </div>
+        <div *ngFor="let request of assignedRequests" class="request-card">
+          <ng-container *ngIf="request.AssignedTo === 'Pending'";else noTasks>
+          <h6>Client: {{ request.clientName }}</h6>
+          Type: {{ request.reportType}}<br>
+          Period: {{ request.Period| date: 'MMMM-yyyy'}}<br>
+          Ops: {{ request.opsName}}<br>
+          <button (click)="startQcReport(request.id)">Start QC</button>
+        </ng-container>
+        </div>
+      </div>
+      <!-- Section for Active QC Reports -->
+      <div class="qc-reports">
+        <h3>Your QC Reports in progress</h3>
+        <div *ngIf="QcReports.length === 0" class="no-reports">
+          You have no active QC reports.
+        </div>
+        <div *ngFor="let report of QcReports" class="report-card">
+          <div *ngIf="report.status != 'Completed' &&report.AssignedTo==this.employeeId">
+          <h6>{{ report.clientName }}</h6><br>
+          Type: {{ report.reportType}}<br>
+          <p>Period: {{ report.Period| date: 'MMMM-yyyy' }}</p>
+          <p>Status: {{ report.status }}</p>
+          <p>Findings: {{ report.findings?.length || 0 }}</p>
+          <button (click)="loadReport(report.id)">Open Report</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- QC Report Editor (shown when a report is selected) -->
+    <div *ngIf="currentReport" class="report-editor">
+      <h3>QC Report Editor</h3>
+      <div class="report-status">
+        Status: {{ currentReport.status }} | 
+        Request ID: {{ currentReport.requestId }}
+      </div>
+  
+      <div class="findings-list">
+        <h4>Findings</h4>
+        <div *ngIf="!currentReport.findings || currentReport.findings.length === 0">
+          No findings added yet.
+        </div>
+        <div *ngFor="let finding of currentReport.findings" class="finding-item">
+          <div class="finding-header">
+            <span class="severity {{finding.severity}}">{{ finding.severity }}</span>
+            <span class="category">{{ finding.category }}</span>
+            <span class="timestamp">{{ finding.timestamp?.toDate() | date:'short' }}</span>
+          </div>
+          <div class="finding-description">{{ finding.description }}</div>
+        </div>
+      </div>
+  
+      <div class="add-finding">
+        <h4>Add New Finding</h4>
+        <textarea 
+        [(ngModel)]="newFinding.description" 
+        placeholder="Finding description"
+        style="white-space: pre-wrap; word-wrap: break-word; width: 100%; min-height: 100px;"
+        ></textarea>
+        <select [(ngModel)]="newFinding.severity">
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+        <input type="text" [(ngModel)]="newFinding.category" placeholder="Category" list="categoryList">
+        <datalist id="categoryList">
+          <option value="Input Missed to Process">
+          <option value="Incorrect salary calculation">
+          <option value="Payroll Reports Delayed">
+          <option value="Investment declaration/Proofs not considered/wrong amount considered">
+          <option value="Incorrect Report Format">
+          <option value="Incomplete Reports Provided for QC">
+          <option value="Exception Tracker is not maintained">
+          <option value="Income Tax deducted for New Starter">
+          <option value="ETDS Return">
+          <option value="Statutory Related PF/PT/ESIC/LWF/TDS Challan">
+          <option value="Form 16">
+          <option value="Employee Master not updated">
+          <option value="CTC Master not updated">
+          <option value="Bank Beneficiary Name not updated">
+          <option value="Bank account number not updated">
+          <option value="Bank IFSC code not updated">
+          <option value="Bank Format Incorrect">
+        </datalist>
+        <button (click)="addFinding()" [disabled]="!newFinding.description || !newFinding.category">
+        Add Finding
+        </button>
+      </div>
+  
+      <div class="report-actions">
+        <button (click)="completeQcReport()" [disabled]="currentReport.status === 'completed'">
+          Complete QC Report
+        </button>
+        <button (click)="currentReport = null">Save</button>
+      </div>
+    </div>
+  </div>
+  
+</div>
+<div>
+  <div *ngIf="AllActiveQcReports.length > 0; else noTasks">
+    <h3>All In-Progress and unassigned-QC's</h3>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>
+            Group
+          </th>
+          <th>
+            Client
+          </th>
+          <th>
+            Ops Person
+          </th>
+          <th>
+            Report Type
+          </th>
+          <th>
+            Qc Person
+          </th>
+          <th>
+            Period
+          </th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let task of AllActiveQcReports">
+          <ng-container *ngIf="task.status != 'Completed'">
+            <td>{{ task.groupName }}</td>
+            <td>{{ task.clientName }}</td>
+            <td>{{ task.opsName }}</td>
+            <td>{{ task.reportType }}</td>
+            <td>{{ task.qcName }}</td>
+            <td>{{ task.Period | date: 'MMMM-yyyy' }}</td>
+            <td>{{ task.status }}</td>
+            <td>
+            <select class="form-select" id="role" [(ngModel)]="selectedQC" required>
+              <option value="" disabled selected>Select QC</option>
+              <option *ngFor="let qc of QcTeam" [value]="qc.id">
+                {{ qc.name }}
+              </option>
+            </select>
+            <button (click)="assignQc(task.id,selectedQC)" class="btn btn-dark">Assign</button>
+          </td>
+            <td>
+              <!-- <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button> -->
+              <!-- <button (click)="openEditModal(task)" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button> -->
+            </td>
+            <td>{{ task.comment }}</td>
+          </ng-container>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

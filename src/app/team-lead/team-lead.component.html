@@ -47,7 +47,7 @@
               <datalist id="dropdownOptions">
                 <option value="Payroll Input Received">
                 <option value="Payroll Processing">
-                <option value="Payroll reports sent to QC">
+                <option value="Payroll Reports to QC">
                 <option value="Payroll reports sent to client">
                 <option value="Bank file">
                 <option value="Upload individual IT report on UKG portal">
@@ -158,7 +158,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let task of filteredTasks()">
-          <ng-container *ngIf="task.status != 'completed'">
+          <ng-container *ngIf="task.status != 'Completed'">
             <td>{{ task.group }}</td>
             <td>{{ task.client }}</td>
             <td>{{ task.description }}</td>
@@ -246,7 +246,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let task of tasksWithNames">
-               <ng-container *ngIf="isTaskDueTomorrowOrEarlier(task.deadline)&& task.status != 'completed'">
+               <ng-container *ngIf="isTaskDueTomorrowOrEarlier(task.deadline)&& task.status != 'Completed'">
                 <td>{{ task.group }}</td>
                 <td>{{ task.client }}</td>
                 <td>{{ task.description }}</td>

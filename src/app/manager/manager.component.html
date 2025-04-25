@@ -30,13 +30,12 @@
                     <option value="" disabled selected>Select Role</option>
                     <option value="Executive">Executive</option>
                     <option value="QC">QC</option>
-                    <option value="QcLead">QcLead</option>
+                    <option value="QCLead">QC Lead</option>
                     <option value="Team Lead">Team Lead</option>
                     <option value="Manager">Manager</option>
                   </select>
                 </td>
                 <td>
-                  
                   <button class="btn btn-primary" [disabled]="!user.newRole" (click)="updateRole(user)">
                     Update
                   </button>
@@ -59,7 +58,7 @@
     <div id="collapseEight" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
       <div class="accordion-body">
         <div class="p-4 max-w-3xl mx-auto bg-white rounded-xl shadow space-y-6">
-          <h2 class="text-2xl font-semibold">Add New Client</h2>
+          <h3 class="text-2xl font-semibold">Add New Client</h3>
         
           <!-- Add Client Form -->
           <form (ngSubmit)="addClient()" #clientForm="ngForm" class="space-y-3">
@@ -88,6 +87,35 @@
               Add Client
             </button>
           </form>
+
+          <!-- Excel Upload Section -->
+          <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-3">Import Clients from Excel</h3>
+            <div class="flex items-center space-x-4">
+              <input
+                type="file"
+                id="excelUpload"
+                accept=".xlsx, .xls"
+                (change)="onFileChange($event)"
+                class="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100"
+              />
+              <button
+                (click)="uploadExcel()"
+                class="btn btn-success"
+                [disabled]="!excelFile"
+              >
+                Upload Excel
+              </button>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">
+              Note: Excel file should have columns for "Group Name" and "Client Name".
+            </p>
+          </div>
         
           <!-- Clients Table -->
           <div>
@@ -114,7 +142,6 @@
                         (change)="toggleStatus(client)"
                       />
                     </div>
-                      <!-- <span>{{ client.status }}</span> -->
                     </label>
                   </td>
                 </tr>
@@ -362,6 +389,137 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="accordion" id="accordion9">
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNine" aria-expanded="false" aria-controls="collapseNine">
+        View Today's Status
+      </button>
+    </h2>
+    <div id="collapseNine" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+      <div class="accordion-body">
+        <div *ngIf="tasksWithNames.length > 0">
+          <h3>All Today's Tasks</h3>
+          <table class="table table-striped table-bordered">
+            <thead>
+              <tr>
+                <th>
+                  Group<br />
+                  <input type="text" [(ngModel)]="filters.group" list="groupList" class="form-control"(focus)="getFilteredGroups()"placeholder="Filter">
+                  <datalist id="groupList">
+                    <option *ngFor="let value of filterGroup" value={{value}} placeholder="">
+                  </datalist>
+                </th>
+                <th>
+                  Client<br/>
+                  <input type="text" [(ngModel)]="filters.client" list="clientList" class="form-control"(focus)="getFilteredClients()"placeholder="Filter">
+                  <datalist id="clientList">
+                    <option *ngFor="let value of filterClients" value={{value}} placeholder="">
+                  </datalist>
+                </th>
+                <th>
+                  Description<br />
+                  <input type="text" [(ngModel)]="filters.description"list="descriptionList" class="form-control" placeholder="Filter"(focus)="getFilteredDescription()" />
+                  <datalist id="descriptionList">
+                    <option *ngFor="let value of filterDescription" value={{value}}>
+                  </datalist>
+                </th>
+                <th>
+                  Assigned To<br />
+                  <input type="text" [(ngModel)]="filters.assignedToName"list="AssignedToList" class="form-control" placeholder="Filter"(focus)="getFilteredAssignedTo()" />
+                  <datalist id="AssignedToList">
+                    <option *ngFor="let value of filterAssignedTo" value={{value}}>
+                  </datalist>
+                </th>
+                <th>
+                  Deadline<br/>
+                  <input type="text" [(ngModel)]="filters.deadline" class="form-control" placeholder="Filter" />
+                </th>
+                <th>
+                  Status<br/>
+                  <input type="text" [(ngModel)]="filters.status" class="form-control" list="statusList" placeholder="Filter" (focus)="getFilteredStatus()"/>
+                  <datalist id="statusList">
+                    <option *ngFor="let value of filterStatus" value={{value}}>
+                  </datalist>
+                </th>
+                <th>Actions</th>
+                <th>
+                  Comments<br />
+                  <input type="text" [(ngModel)]="filters.comment" class="form-control" placeholder="Filter"list="commentList" (focus)="getFilteredComments()"/>
+                  <datalist id="commentList">
+                    <option *ngFor="let value of filterComments" value={{value}}>
+                  </datalist>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let task of filteredTasks()">
+                <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&& task.status != 'Completed'">
+                <td>{{ task.group }}</td>
+                <td>{{ task.client }}</td>
+                <td>{{ task.description }}</td>
+                <td>{{ task.assignedToName }}</td>
+                <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a, EEE' }}</td>
+                <td>{{ task.status }}</td>
+                <td>
+                  <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button>
+                  <button (click)="openEditModal(task)" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
+                </td>
+                <td>{{ task.comment }}</td>
+              </ng-container>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+            <h3>All In-Progress and unassigned-QC's</h3>
+            <table class="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th>
+                    Group
+                  </th>
+                  <th>
+                    Client
+                  </th>
+                  <th>
+                    Ops Person
+                  </th>
+                  <th>
+                    Report Type
+                  </th>
+                  <th>
+                    Qc Person
+                  </th>
+                  <th>
+                    Period
+                  </th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let task of AllActiveQcReports">
+                  <ng-container *ngIf="task.status != 'Completed'">
+                    <td>{{ task.groupName }}</td>
+                    <td>{{ task.clientName }}</td>
+                    <td>{{ task.opsName }}</td>
+                    <td>{{ task.reportType }}</td>
+                    <td>{{ task.qcName }}</td>
+                    <td>{{ task.Period | date: 'MMMM-yyyy' }}</td>
+                    <td>{{ task.status }}</td>
+                    <td>
+                  </td>
+                    <td>
+                    </td>
+                  </ng-container>
+                </tr>
+              </tbody>
+            </table>
+          </div>
       </div>
     </div>
   </div>

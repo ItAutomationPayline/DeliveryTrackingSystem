@@ -16,8 +16,8 @@
       <tbody>
         <!-- Loop over tasks and filter for pending status -->
         <tr *ngFor="let task of tasks">
-          <ng-container *ngIf="task.status != 'completed'; else noTasks">
-            <!-- <ng-container *ngIf="task.status !== 'completed' && isTaskDueTodayOrEarlier(task.dueDate); else noTasks"> -->
+          <ng-container *ngIf="task.status != 'Completed'; else noTasks">
+            <!-- <ng-container *ngIf="task.status !== 'Completed' && isTaskDueTodayOrEarlier(task.dueDate); else noTasks"> -->
               <td>{{ task.group }}</td>
               <td>{{ task.client }}</td>
             <td>{{ task.description }}</td>
@@ -64,8 +64,8 @@
               <tbody>
                 <!-- Loop over tasks and filter for pending status -->
                 <tr *ngFor="let task of tasks">
-                  <!-- <ng-container *ngIf="task.status != 'completed'; else noTasks"> -->
-                    <ng-container *ngIf="task.status !== 'completed' && isTaskDueTomorrowOrEarlier(task.deadline); else noTasks">
+                  <!-- <ng-container *ngIf="task.status != 'Completed'; else noTasks"> -->
+                    <ng-container *ngIf="task.status !== 'Completed' && isTaskDueTomorrowOrEarlier(task.deadline); else noTasks">
                     <td>{{ task.client }}</td>
                     <td>{{ task.description }}</td>
                     <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a,EEE' }}</td> <!-- Formatting deadline as date with time -->
@@ -86,7 +86,7 @@
     </div>
   </div>
   <!-- for sent to qc -->
-  <div class="accordion" id="accordion4">
+  <!-- <div class="accordion" id="accordion4">
     <div class="accordion-item">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
@@ -130,7 +130,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </div> -->
   <div *ngIf="showModal" class="modal">
     <div class="modal-content">
       <h3>Report Task: {{ selectedTask?.description }}</h3>

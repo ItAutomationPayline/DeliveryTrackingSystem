@@ -43,7 +43,7 @@
         <ng-container *ngIf="request.AssignedTo === 'Pending'";else noTasks>
         <h6>Client: {{ request.clientName }}</h6>
         Type: {{ request.reportType}}<br>
-        Period: {{ request.Period}}<br>
+        Period: {{ request.Period| date: 'MMMM-yyyy'}}<br>
         Ops: {{ request.opsName}}<br>
         <button (click)="startQcReport(request.id)">Start QC</button>
       </ng-container>
@@ -59,7 +59,7 @@
         <div *ngIf="report.status != 'Completed' &&report.AssignedTo==this.employeeId">
         <h6>{{ report.clientName }}</h6><br>
         Type: {{ report.reportType}}<br>
-        <p>Period: {{ report.Period }}</p>
+        <p>Period: {{ report.Period | date: 'MMMM-yyyy'}}</p>
         <p>Status: {{ report.status }}</p>
         <p>Findings: {{ report.findings?.length || 0 }}</p>
         <button (click)="loadReport(report.id)">Open Report</button>
@@ -93,7 +93,11 @@
 
     <div class="add-finding">
       <h4>Add New Finding</h4>
-      <textarea [(ngModel)]="newFinding.description" placeholder="Finding description"></textarea>
+      <textarea 
+      [(ngModel)]="newFinding.description" 
+      placeholder="Finding description"
+      style="white-space: pre-wrap; word-wrap: break-word; width: 100%; min-height: 100px;"
+      ></textarea>
       <select [(ngModel)]="newFinding.severity">
         <option value="Low">Low</option>
         <option value="Medium">Medium</option>
@@ -128,7 +132,7 @@
       <button (click)="completeQcReport()" [disabled]="currentReport.status === 'completed'">
         Complete QC Report
       </button>
-      <button (click)="currentReport = null">Close</button>
+      <button (click)="currentReport = null">Save</button>
     </div>
   </div>
 </div>

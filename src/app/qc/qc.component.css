@@ -32,6 +32,8 @@
     padding: 20px;
     border-radius: 5px;
     background: #f9f9f9;
+    white-space: pre-wrap;
+    word-wrap: break-word;
   }
   
   .finding-item {
@@ -55,6 +57,7 @@
     display: flex;
     gap: 10px;
     margin-bottom: 5px;
+    word-wrap: break-word;
     font-size: 0.9em;
     color: #555;
   }
@@ -68,7 +71,7 @@
   
   .add-finding textarea {
     width: 100%;
-    min-height: 80px;
+    min-height: 200px;
     margin-bottom: 10px;
   }
   

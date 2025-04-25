@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { FirestoreService } from '../services/firestore.service';
 import { take } from 'rxjs';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-manager',
@@ -12,6 +13,7 @@ import { take } from 'rxjs';
 })
 
 export class ManagerComponent {
+  AllActiveQcReports: any[] = [];
   public tasksAssigned: any[] = [];
   public users: any[] = [];
   public managers: any[] = [];
@@ -39,6 +41,7 @@ export class ManagerComponent {
   editTaskDeadline: string = '';
   taskToEdit: any = null;
   userCache: { [key: string]: string } = {};
+  excelFile: File | null = null;
   
   public userMap: Map<string, string> = new Map(); // Map of user IDs to names
 
@@ -59,7 +62,7 @@ export class ManagerComponent {
     this.users=[];
     this.firestoreService.getUsers().subscribe((users) => {
       this.users = users;
-      this.managers = users.filter((user) => user.role === 'Manager' || user.role === 'Team Lead');
+      this.managers = users.filter((user) => user.role === 'Manager' || user.role === 'Team Lead'|| user.role === 'QCLead');
       this.userMap = new Map(users.map((user) => [user.id, user.name]));
       this.fetchTeams();
     });
@@ -76,10 +79,98 @@ export class ManagerComponent {
     this.editTaskDescription='';
     this.editSelectedMemberId='';
     this.editTaskDeadline='';
-    this.tasksWithNames=[]
+    this.tasksWithNames=[];
     this.fetchAssignedTasks();
     this.getAllEmployees();
     this.fetchAllClientList();
+    this.sortClientsByGroupAndName();
+    this.fetchAllQcReports();
+  }
+  fetchAllQcReports(){
+    this.firestore
+     .collection('QcReports', ref => ref.where('status', '!=', 'completed'))
+       .valueChanges({ idField: 'id' })
+       .subscribe((requests: any[]) => {
+         this.AllActiveQcReports = requests;
+       });
+   }
+  sortClientsByGroupAndName() {
+    this.AllClients.sort((a, b) => {
+      const groupA = a.groupName || '';
+      const groupB = b.groupName || '';
+      const clientA = a.clientName || '';
+      const clientB = b.clientName || '';
+  
+      const groupCompare = groupA.localeCompare(groupB, undefined, { sensitivity: 'base' });
+      if (groupCompare !== 0) {
+        return groupCompare;
+      }
+      return clientA.localeCompare(clientB, undefined, { sensitivity: 'base' });
+    });
+  }
+  
+  
+  onFileChange(event: any) {
+    this.excelFile = event.target.files[0];
+  }
+
+  // Upload Excel file and process data
+  uploadExcel() {
+    if (!this.excelFile) {
+      alert('Please select an Excel file first');
+      return;
+    }
+
+    const fileReader = new FileReader();
+    fileReader.onload = (e: any) => {
+      const arrayBuffer = e.target.result;
+      const data = new Uint8Array(arrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      
+      // Assuming first sheet is the one with data
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      // Process each row
+      this.processExcelData(jsonData);
+    };
+    fileReader.readAsArrayBuffer(this.excelFile);
+  }
+
+  // Process and save Excel data to Firestore
+  processExcelData(data: any[]) {
+    const batch = this.firestore.firestore.batch();
+    const clientsRef = this.firestore.collection('clients').ref;
+    
+    data.forEach((row: any) => {
+      // Adjust these property names to match your Excel columns
+      const groupName = row['Group Name'] || row['groupName'] || '';
+      const clientName = row['Client Name'] || row['clientName'] || '';
+      
+      if (groupName && clientName) {
+        const newClientRef = clientsRef.doc();
+        batch.set(newClientRef, {
+          groupName: groupName,
+          clientName: clientName,
+          status: 'Active',
+          timestamp: new Date()
+        });
+      }
+    });
+
+    batch.commit()
+      .then(() => {
+        alert('Clients imported successfully!');
+        this.fetchAllClientList();
+        this.excelFile = null;
+        // Reset file input
+        const fileInput = document.getElementById('excelUpload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+      })
+      .catch(error => {
+        console.error('Error importing clients:', error);
+        alert('Error importing clients. Please check the console for details.');
+      });
   }
   fetchAllClientList()
   {
@@ -90,6 +181,9 @@ export class ManagerComponent {
       .subscribe((clients: any[]) => {
         this.AllClients = clients;
       });
+      setTimeout(() => {
+        this.sortClientsByGroupAndName();
+     }, 1000);
   }
   addClient() {
     const clientData = {
@@ -166,7 +260,14 @@ export class ManagerComponent {
     this.filterStatus=[];
     this.filterStatus=Array.from(new Set(this.tasksWithNames.map(t => t.status))).sort();
   }
-
+  isTaskDueTodayOrEarlier(dueDate: string | Date): boolean {
+    const today = new Date();
+    const taskDate = new Date(dueDate);
+    // Set both dates to midnight to compare only the date part
+    today.setHours(0, 0, 0, 0);
+    taskDate.setHours(0, 0, 0, 0);
+    return taskDate <= today;
+  }
   fetchTeams(): void {
     this.firestoreService.getTeams().subscribe((teams) => {
       this.teams = teams.map((team) => ({

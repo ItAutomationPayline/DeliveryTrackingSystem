@@ -108,16 +108,37 @@ export class ExecutiveComponent {
     if (taskToUpdate) {
       // Add confirmation dialog
       const isConfirmed = window.confirm(
-        `Are you sure you want to mark "${taskToUpdate.description}" as completed?`
+        `Are you sure you want to mark "${taskToUpdate.description}" as Completed?`
       );
       
       if (isConfirmed) {
         // Update the task status to 'completed' only if user confirms
+        if(taskToUpdate.QcApproval!="Approved")
+          {
+            let finalData = {
+              taskId:taskId,
+              reportType:taskToUpdate.reportType,
+              groupName:taskToUpdate.group,
+              clientName: taskToUpdate.client,
+              Period:taskToUpdate.deadline,
+              ops:this.employeeId,
+              AssignedTo:"Pending",
+              opsName:this.nm,
+              status:"Pending"
+            };
+            try {
+              this.firestore.collection('QcReports').add(finalData);
+              alert('Request Sent To QC Successfully!');
+              //this.clientForm.reset();
+            } catch (error) {
+              console.error('Error saving to Firebase:', error);
+            }
+          }
         this.firestore
           .collection('tasks')
           .doc(taskId)
           .update({
-            status: 'completed',
+            status: 'Completed',
             completedAt:new Date().toISOString()
           })
           .then(() => {
@@ -192,8 +213,8 @@ submitReport() {
       const formattedDeadline = this.datePipe.transform(task.deadline, 'MMMM dd, y, h:mm:ss a');
       const bodydata = {
         recipients: [task.leadermail],
-        subject: [task.client] + `:Request for Deadline Extension for: ${task.description}`,
-        body: `${this.nm} requested an extension for the deadline of Task: ${task.description}<br> originally due on <br>Deadline:${formattedDeadline} <br>Due to reason:${reason}.<br>Please take necessary actions.<br><br>Regards,<br>DTS`,
+        subject: [task.group] + `:Request for Deadline Extension for: ${task.description}`,
+        body: `${this.nm} requested an extension for the deadline of Task: ${task.description}<br> originally due on <br>Deadline:${formattedDeadline} <br>Due to reason:${reason}<br>Please take necessary actions.<br><br>Regards,<br>DTS Team`,
       };
       this.firestoreService.sendMail(bodydata);
       this.fetchTasks();
