@@ -124,7 +124,7 @@ export class ExecutiveComponent {
               ops:this.employeeId,
               AssignedTo:"Pending",
               opsName:this.nm,
-              status:"Pending"
+              status:"Pending",
             };
             try {
               this.firestore.collection('QcReports').add(finalData);

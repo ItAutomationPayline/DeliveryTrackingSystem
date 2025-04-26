@@ -89,7 +89,7 @@
   </div>
 </div> -->
   <div *ngIf="tasksWithNames.length > 0; else noTasks">
-    <h3>Tasks Assigned by You</h3>
+    <h3>Today's Tasks Assigned by You</h3>
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
@@ -158,7 +158,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let task of filteredTasks()">
-          <ng-container *ngIf="task.status != 'Completed'">
+          <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&&task.status != 'Completed'">
             <td>{{ task.group }}</td>
             <td>{{ task.client }}</td>
             <td>{{ task.description }}</td>

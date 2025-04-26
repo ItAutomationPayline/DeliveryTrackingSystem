@@ -90,6 +90,33 @@
 
           <!-- Excel Upload Section -->
           <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-3">De-Activate Clients from Excel</h3>
+            <div class="flex items-center space-x-4">
+              <input
+                type="file"
+                id="excelUpload"
+                accept=".xlsx, .xls"
+                (change)="onFileChange($event)"
+                class="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100"
+              />
+              <button
+                (click)="deactivateExcel()"
+                class="btn btn-success"
+                [disabled]="!excelFile"
+              >
+                Upload Excel
+              </button>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">
+              Note: Excel file should have columns for "Group Name" and "Client Name".
+            </p>
+          </div>
+          <div class="mt-6">
             <h3 class="text-xl font-semibold mb-3">Import Clients from Excel</h3>
             <div class="flex items-center space-x-4">
               <input
@@ -116,7 +143,6 @@
               Note: Excel file should have columns for "Group Name" and "Client Name".
             </p>
           </div>
-        
           <!-- Clients Table -->
           <div>
             <h2 class="text-xl font-semibold mt-6 mb-2">Clients List</h2>
@@ -153,6 +179,89 @@
     </div>
   </div>
 </div>
+<div class="accordion" id="accordion10">
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTen" aria-expanded="false" aria-controls="collapseTen">
+        Transfer Client
+      </button>
+    </h2>
+    <div id="collapseTen" class="accordion-collapse collapse" data-bs-parent="#accordion10">
+      <div class="accordion-body p-4">
+        <h3 class="mb-4 text-lg font-semibold">Transfer Client</h3>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <input 
+              type="text" 
+              name="groupName" 
+              [(ngModel)]="selectedgroupName" 
+              placeholder="Group Name" 
+              required 
+              class="form-control p-2 rounded shadow-sm"
+            list="GroupList"/>
+          </div>
+
+          <datalist id="ClientList">
+          <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+          </datalist>
+          <datalist id="GroupList">
+            <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
+            </datalist>
+          <div class="col-md-6 mt-2 mt-md-0">
+            <input 
+              type="text" 
+              name="clientName" 
+              [(ngModel)]="selectedclientName" 
+              placeholder="Client Name" 
+              required 
+              class="form-control p-2 rounded shadow-sm"list="ClientList"
+            />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="fromMember" class="form-label">Transfer From</label>
+            <select 
+              id="fromMember" 
+              class="form-select p-2 rounded shadow-sm" 
+              [(ngModel)]="fromMemberId"
+            >
+              <option value="">Select Member</option>
+              <option *ngFor="let member of membersWithNames" [value]="member.id">
+                {{ member.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-6 mt-2 mt-md-0">
+            <label for="toMember" class="form-label">Transfer To</label>
+            <select 
+              id="toMember" 
+              class="form-select p-2 rounded shadow-sm" 
+              [(ngModel)]="toMemberId"
+            >
+              <option value="">Select Member</option>
+              <option *ngFor="let member of membersWithNames" [value]="member.id">
+                {{ member.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <button 
+          (click)="transferTasks()" 
+          class="btn btn-primary"
+        >
+          Transfer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <div class="accordion" id="accordion3">
   <div class="accordion-item">
     <h2 class="accordion-header">
@@ -309,7 +418,7 @@
     </div>
   </div>
 </div>
-<div class="accordion" id="accordion5">
+<!-- <div class="accordion" id="accordion5">
   <div class="accordion-item">
     <h2 class="accordion-header">
       <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
@@ -392,7 +501,7 @@
       </div>
     </div>
   </div>
-</div>
+</div> -->
 <div class="accordion" id="accordion9">
   <div class="accordion-item">
     <h2 class="accordion-header">
