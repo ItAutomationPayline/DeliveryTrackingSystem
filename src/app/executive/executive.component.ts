@@ -112,9 +112,11 @@ export class ExecutiveComponent {
       );
       
       if (isConfirmed) {
+
         // Update the task status to 'completed' only if user confirms
-        if(taskToUpdate.QcApproval!="Approved")
+        if(taskToUpdate.QcApproval=="Pending")
           {
+            let userNote = prompt("Enter a note/special instruction for qc if any:");
             let finalData = {
               taskId:taskId,
               reportType:taskToUpdate.reportType,
@@ -125,6 +127,7 @@ export class ExecutiveComponent {
               AssignedTo:"Pending",
               opsName:this.nm,
               status:"Pending",
+              note:userNote
             };
             try {
               this.firestore.collection('QcReports').add(finalData);
@@ -251,8 +254,12 @@ submitReport() {
     }
   }
    fetchTasks() {
+    let now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    now.setHours(23, 59, 0, 0);
     this.firestore
-      .collection('tasks', ref => ref.where('assignedTo', '==', this.employeeId ))  // Filter tasks based on employeeId
+      .collection('tasks', ref => ref.where('status', '!=', 'Completed' ).where('assignedTo', '==', this.employeeId ).where('deadline', '<=', tomorrow.toISOString()))  // Filter tasks based on employeeId
       .valueChanges({ idField: 'id' }).pipe(take(1))  // Include document id in result
       .subscribe((tasks: any[]) => {
         this.tasks = tasks;

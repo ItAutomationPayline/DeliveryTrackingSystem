@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { FirestoreService } from '../services/firestore.service';
-import { take } from 'rxjs';
+import { debounceTime, forkJoin, map, of, switchMap, take } from 'rxjs';
 import * as XLSX from 'xlsx';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-manager',
@@ -13,11 +14,13 @@ import * as XLSX from 'xlsx';
 })
 
 export class ManagerComponent {
+  reportForm: FormGroup;
+  reportData: any[] = [];
   AllActiveQcReports: any[] = [];
   AllClientsAndGroups:any[] = [];
-  public tasksAssigned: any[] = [];
-  public users: any[] = [];
-  public managers: any[] = [];
+  tasksAssigned: any[] = [];
+  users: any[] = [];
+  managers: any[] = [];
   groupName = '';
   selectedgroupName: string = '';
   fromMemberId: string = '';
@@ -26,11 +29,11 @@ export class ManagerComponent {
   selectedclientName: string = '';
   isActive = true;
   AllClients: any[] = [];
-  public selectedEmployees: string[] = [];
-  public selectedManager: string = '';
-  public teamName: string = '';
-  public teams: any[] = [];
-  public tasksWithNames: any[] = [];
+  selectedEmployees: string[] = [];
+  selectedManager: string = '';
+  teamName: string = '';
+  teams: any[] = [];
+  tasksWithNames: any[] = [];
   membersWithNames: any[] = [];
   Client: string = '';
   filterStatus: string[] = [];
@@ -47,10 +50,15 @@ export class ManagerComponent {
   taskToEdit: any = null;
   userCache: { [key: string]: string } = {};
   excelFile: File | null = null;
-  
-  public userMap: Map<string, string> = new Map(); // Map of user IDs to names
+  userMap: Map<string, string> = new Map(); // Map of user IDs to names
 
-  constructor(private router: Router,private firestoreService: FirestoreService,private firestore: AngularFirestore) {}
+  constructor(private fb: FormBuilder,private router: Router,private firestoreService: FirestoreService,private firestore: AngularFirestore) 
+  {
+    this.reportForm = this.fb.group({
+      fromDat: ['', Validators.required],
+      toDat: ['', Validators.required]
+    });
+  }
 
   ngOnInit() {
     const role = localStorage.getItem('role');
@@ -92,6 +100,141 @@ export class ManagerComponent {
     this.fetchAllQcReports();
     this.fetchClients();
   }
+   generateReport() {
+    const { fromDat, toDat } = this.reportForm.value;
+    let fr = new Date(fromDat);
+    let t = new Date(toDat);
+    // this.reportForm.reset();
+    console.log("FROM"+fr);
+    console.log("TO"+t);
+    // First, get the tasks based on the date range
+    this.firestore.collection('tasks', ref =>
+      ref.where('deadline', '>=', fr.toISOString())
+         .where('deadline', '<=', t.toISOString())
+    ).valueChanges({ idField: 'id' }).pipe(debounceTime(1000))
+    .subscribe((temp: any[]) => {
+      // Fetch user details for assignedTo and createdBy
+      const userIds = [
+        ...new Set(temp.map(temp => temp.assignedTo).filter(id => id)), // Get unique user IDs for assignedTo
+        ...new Set(temp.map(temp => temp.createdBy).filter(id => id)) // Get unique user IDs for createdBy
+      ];
+
+      const userPromises = userIds.map(id =>
+        this.firestore.collection('users').doc(id).get().toPromise().catch(() => null)
+      );
+
+      forkJoin(userPromises).subscribe((userDocs: any[]) => {
+        const users = userDocs.reduce((acc, doc) => {
+          if (doc && doc.exists) {
+            const userData = doc.data();
+            acc[doc.id] = userData.name || ''; // Store name against user ID
+          }
+          return acc;
+        }, {});
+
+        // Map tasks and replace IDs with names
+        let formattedTask = temp.map(t => ({
+          group: t.group || '',
+          client: t.client || '',
+          clientStatus: t.clientStatus || '',
+          description: t.description || '',
+          deadline: this.formatDate(t.deadline),
+          completedAt: this.formatDate(t.completedAt),
+          createdBy: users[t.createdBy] || '', // Get the name for createdBy
+          assignedTo: users[t.assignedTo] || '', // Get the name for assignedTo
+          status: t.status || '',
+          reportType: t.reportType || '',
+          QcApproval: t.QcApproval || '',
+          comment: t.comment,
+          sequence: t.Sequence !== undefined ? t.Sequence.toString() : '' // Ensure sequence is a string
+        }));
+
+        console.log("ShortListedTasks:",formattedTask);
+        this.downloadExcel(formattedTask);
+        window.location.reload();
+      });
+    });
+}
+  
+
+  // generateReport() {
+  //   const { fromDate, toDate } = this.reportForm.value;
+  //   const from = new Date(fromDate);
+  //   const to = new Date(toDate);
+  //   this.firestore.collection('tasks', ref =>
+  //     ref.where('deadline', '>=', from.toISOString())
+  //        .where('deadline', '<=', to.toISOString())
+  //   ).valueChanges()
+  //   .pipe(take(1))
+  //   .subscribe((tasks: any[]) => {
+  //     const formattedTasks = tasks.map(task => ({
+  //       group: task.group || '',
+  //       client: task.client || '',
+ //       clientStatus: task.clientStatus || '',
+  //       description: task.description || '',
+  //       deadline: this.formatDate(task.deadline),
+  //       completedAt: this.formatDate(task.CompletedAt),
+  //       createdBy: task.createdBy || '',
+  //       assignedTo: task.assignedTo || '',
+  //       status: task.status || '',
+  //       reportType: task.reportType || '',
+  //       QcApproval: task.QcApproval || '',
+  //         sequence: task.Sequence !== undefined ? task.Sequence.toString() : ''
+  //     }));
+  //       this.downloadExcel(formattedTasks);
+  //   });
+  // } 
+  downloadExcel(data: any[]) {
+    // First create an array with correct headings and data
+    const headings = [
+      'Group', 'Client', 'Description', 'Deadline', 
+      'Completed At', 'TL', 'Ops', 'Status', 
+      'Report Type', 'Qc Approval', 'Sequence','Comment'
+    ];
+    const formattedData = data.map(item => ({
+      Group: item.group,
+      Client: item.client,
+      Description: item.description,
+      Deadline: item.deadline,
+      'Completed At': item.completedAt,
+      'TL': item.createdBy,
+      Ops: item.assignedTo,
+      Status: item.status,
+      'Report Type': item.reportType,
+      'Qc Approval': item.QcApproval,
+      Sequence: item.sequence,
+      Comment: item.comment
+    }));
+    const ws = XLSX.utils.json_to_sheet(formattedData, { header: headings });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+    const from = this.reportForm.value.fromDat;
+    const to = this.reportForm.value.toDat;
+    const fileName = `Tasks_report_${from}_to_${to}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  }
+  formatDate(isoTimestamp: string): string {
+    if (!isoTimestamp) return '';
+    
+    const date = new Date(isoTimestamp);
+    
+    // Check if the date is invalid
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    
+    const day = pad(date.getDate());
+    const month = pad(date.getMonth() + 1);
+    const year = date.getFullYear();
+    
+    let hours = date.getHours();
+    const minutes = pad(date.getMinutes());
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours || 12; // Convert 0 to 12
+    
+    return `${day}-${month}-${year} ${hours}:${minutes} ${ampm}`;
+  }
   fetchClients()
   {
     this.firestore
@@ -101,7 +244,7 @@ export class ManagerComponent {
       this.AllClientsAndGroups = tasks;
     });
   }
-  transferTasks() { 
+  transferTasks() {
     console.log("Group"+this.selectedgroupName);
     console.log("Client"+this.selectedclientName);
     console.log("From"+this.fromMemberId);
@@ -126,6 +269,7 @@ export class ManagerComponent {
           });
         });
         alert('Client transferred successfully.');
+        // window.location.reload();
       }, error => {
         console.error('Error transferring tasks: ', error);
         alert('Error transferring tasks.');
@@ -347,6 +491,10 @@ export class ManagerComponent {
           console.log('No users found in the database.');
         }
       });
+      this.sortMemberswithnames(this.membersWithNames);
+      setTimeout(() => {
+        this.sortMemberswithnames(this.membersWithNames);
+      }, 1000);
   }
   getFilteredGroups()
   {
@@ -396,23 +544,24 @@ export class ManagerComponent {
     });
   }
 fetchAssignedTasks() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Normalize time for comparison
-  this.firestore
+  let now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  now.setHours(23, 59, 0, 0); // Normalize time for comparison
+
+  this.firestore 
     .collection('tasks', ref =>
-      ref.where('status', 'in', ['Pending', 'Delayed'])
+      ref
+        .where('status', '!=', 'Completed')
+        .where('deadline', '<=', tomorrow.toISOString())
     )
-    .valueChanges({ idField: 'id' })
-    .subscribe((tasks: any[]) => {
-      // Filter tasks with dueDate <= today
-      const filteredTasks = tasks.filter(task => {
-        const dueDate = new Date(task.deadline);
-        dueDate.setHours(0, 0, 0, 0);
-        return dueDate <= today;
-      });
-      this.tasksAssigned = filteredTasks;
+    .valueChanges()
+    .subscribe((task: any[]) => {
+      this.tasksAssigned = task;
       console.log('Filtered tasks (pending/delayed due today or earlier):', this.tasksAssigned);
+      
       this.populateAssignedToNames();
+
       setTimeout(() => {
         this.sortTasks(this.tasksWithNames);
       }, 500);
@@ -425,39 +574,6 @@ fetchAssignedTasks() {
   get uniqueDescription(): string[] {
     return Array.from(new Set(this.tasksWithNames.map(t => t.description))).sort();
   }
-  // populateAssignedToNames() {
-  //   this.tasksWithNames = []; // Reset the tasks array with names
-  //   this.tasksAssigned.forEach((task) => {
-  //     const assignedToId = task.assignedTo;
-  //     // Check if the user's name is already cached
-  //     if (this.userCache[assignedToId]) {
-  //       this.tasksWithNames.push({
-  //         ...task,
-  //         assignedToName: this.userCache[assignedToId], // Add the name from the cache
-  //       });
-  //     }
-  //     else {
-  //       // Fetch the user's name from Firestore
-  //       this.firestore
-  //         .collection('users', (ref) => ref.where('id', '==', assignedToId))
-  //         .valueChanges()
-  //         .subscribe((users: any[]) => {
-  //           if (users.length > 0) {
-  //             const userName = users[0].name; // Assuming "name" is the field in the "users" collection
-  //             this.userCache[assignedToId] = userName; // Cache the name for future use
-  //             this.tasksWithNames.push({
-  //               ...task,
-  //               assignedToName: userName, // Add the name to the task
-  //             });
-  //           } else {
-  //             console.log(`No user found with ID: ${assignedToId}`);
-  //           }
-  //         });
-  //     }
-  //   });
-  //   this.sortTasks(this.tasksAssigned);
-  //   // this.sortTasks(this.tasksWithNames);
-  // }
   deleteTask(taskId: string): void {
     //if (confirm('Are you sure you want to delete this task?')) {
       this.firestore
@@ -582,6 +698,9 @@ fetchAssignedTasks() {
   
       return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
     });
+  }
+  sortMemberswithnames(tasksWithNames: { name: string }[]): { name: string }[] {
+    return tasksWithNames.sort((a, b) => a.name.localeCompare(b.name));
   }
   createTeam(): void {
     if (!this.teamName || !this.selectedManager || this.selectedEmployees.length === 0) {

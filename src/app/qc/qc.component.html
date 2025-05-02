@@ -1,29 +1,4 @@
 <app-navbar></app-navbar>
-<!-- <div *ngIf="QcReports.length > 0; else noTasks">
-    <h3>Qc Requests</h3>
-    <table class="table table-striped table-bordered">
-      <thead>
-        <tr>
-          <th>Client</th>
-          <th>Period</th>
-          <th>Ops</th>
-          <th>Action</th>
-          <th>Comment</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let task of QcReports">
-            <td>{{ task.clientName }}</td>
-            <td>{{ task.Period }}</td>
-            <td>{{ task.ops }}</td>
-            <td>{{ task.status }}</td>
-            <td>
-            </td>
-            <td>{{ task.comment}}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div> -->
   <ng-template #noTasks>
     <p>
       No requests currently available for QC.
@@ -45,6 +20,7 @@
         Type: {{ request.reportType}}<br>
         Period: {{ request.Period| date: 'MMMM-yyyy'}}<br>
         Ops: {{ request.opsName}}<br>
+        note:{{request.note}}<br>
         <button (click)="startQcReport(request.id)">Start QC</button>
       </ng-container>
       </div>
@@ -59,7 +35,9 @@
         <div *ngIf="report.status != 'Completed' &&report.AssignedTo==this.employeeId">
         <h6>{{ report.clientName }}</h6><br>
         Type: {{ report.reportType}}<br>
+        Ops: {{ report.opsName}}<br>
         <p>Period: {{ report.Period | date: 'MMMM-yyyy'}}</p>
+        note:{{report.note}}<br>
         <p>Status: {{ report.status }}</p>
         <p>Findings: {{ report.findings?.length || 0 }}</p>
         <button (click)="loadReport(report.id)">Open Report</button>

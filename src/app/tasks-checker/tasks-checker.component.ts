@@ -24,6 +24,7 @@ export class TasksCheckerComponent{
   private intervalId: any;
   private intervalId2: any;
   username:string;
+  public storedTasks: any[] = [];
   public todayDate: number | undefined
   public sessionTimeout: any;
   public inactivityDuration = 30 * 60 * 1000;// 30 minutes in milliseconds
@@ -31,48 +32,30 @@ export class TasksCheckerComponent{
     this.username = value;
   }
   ngOnInit() {
+    console.log("StoredTasks:"+this.storedTasks);
     // Run checkPendingTasks every 1 minutes (300,000 milliseconds)
     this.intervalId = setInterval(() => {
-      // this.checkPendingTasks();
-      // this.checkForReminder();
+      this.checkPendingTasks();
     }, 60000);
     this.intervalId = setInterval(() => {
       this.checkForReminder();
     }, 3600000);
-     // 1 minutes in milliseconds
-    // this.intervalId2 = setInterval(() => {
-    //   this.checkScheduledTasks();
-    // }, 600000);
+    this.intervalId = setInterval(() => {
+      this.fetchAllTasks();
+   }, 86400000);
     this.startSessionTimer();
   }
-  checkScheduledTasks() {
-    // const todayDate: number = new Date().getDate();
-    // const currentTime = new Date();
-    // this.firestore
-    //   .collection('scheduledTasks', (ref) => ref.where('date', '==', todayDate)) // Fetch only Pending tasks
-    //   .valueChanges({ idField: 'id' }) // Include the document ID
-    //   .subscribe((tasks: any[]) => {
-    //     tasks.forEach((task) => {
-    //       const task2 = {
-    //         client: task.client,
-    //         assignedTo: task.assignedTo,
-    //         teamId: task.teamId,
-    //         deadline:this.convertToISO(todayDate,task.time),
-    //         description: task.description,
-    //         status: 'Pending',
-    //         createdBy: task.createdBy, // Use the logged-in Team Lead's ID
-    //         leadermail:task.leadermail
-    //       };
-    //       this.firestore
-    //       .collection('tasks')
-    //       .add(task2)
-    //       .then(() => {
-    //       })
-    //       .catch((error) => {
-    //         alert('Failed to assign task. Please try again.');
-    //       });
-    //     });
-    //   });
+  fetchAllTasks()
+  {
+    this.firestore
+          .collection('tasks')
+          .valueChanges({ idField: 'id' }).pipe(
+            debounceTime(1000)
+          )
+          .subscribe((tasks: any[]) => {
+            this.storedTasks = tasks;
+            console.log("StoredTasks:"+this.storedTasks);
+          });
   }
   convertToISO(dateInt: number, timeStr: string): string {
     const now = new Date(); // Get current date
@@ -90,74 +73,67 @@ export class TasksCheckerComponent{
   }
   // Function to check Pending tasks and process deadlines
   checkPendingTasks() {
-    this.firestore
-      .collection('tasks', (ref) => ref.where('status', '==', 'Pending').where('clientStatus', '==', 'Active')) // Fetch only Pending tasks
-      .valueChanges({ idField: 'id' }) // Include the document ID
-      .subscribe((tasks: any[]) => {
-        const currentTime = new Date();
-        tasks.forEach((task) => {
-          const deadline = new Date(task.deadline);
-          // Check if the deadline has passed
-          if ((deadline < currentTime)&& task.status=='Pending') {
-            console.log(`Task ${task.id} has crossed the deadline.`);
-            this.user[0]=this.firestoreService.getUserById(task.assignedTo);
-            //region
-            this.firestoreService.getUserById(task.assignedTo).subscribe(data => {
-              if (data.length > 0) {
-                const user = data[0]; // Since it's an array, the first document will be the matching user
-                this.setUsername(user.name);
-                console.log("name of it :",user.name);
-                this.sendEmail2(task.leadermail, task,user.name);
-              } else {
-                console.log('No user found with this email.');
-              }
-            });
-            //regionends
-            console.log("nameof Delayed: ",this.username);
-            // Send an email to the leader
-            // Update the task's status to Delayed
-            this.firestore
-              .collection('tasks')
-              .doc(task.id)
-              .update({ status: 'Delayed' })
-              .then(() => {
-                console.log(`Task ${task.id} status updated to Delayed.`);
-              })
-              .catch((error) => {
-                console.error(`Error updating task ${task.id}:`, error);
-              });
+    const currentTime = new Date();
+    this.storedTasks // assuming this.storedTasks is already populated with task objects
+      .filter(task => 
+        task.status === 'Pending' &&
+        task.clientStatus === 'Active' &&
+        new Date(task.deadline) < currentTime
+      )
+      .forEach(task => {
+        console.log(`Task ${task.id} has crossed the deadline.`);
+        this.firestoreService.getUserById(task.assignedTo).subscribe(data => {
+          if (data.length > 0) {
+            const user = data[0]; // Since it's an array, the first document will be the matching user
+            this.setUsername(user.name);
+            console.log("name of it:", user.name);
+            this.sendEmail2(task.leadermail, task, user.name);
+          } else {
+            console.log('No user found with this email.');
           }
         });
+        console.log("Name of Delayed: ", this.username);
+        // Update the task's status locally and in Firestore
+        task.status = 'Delayed'; // update in local array if needed
+        this.firestore
+          .collection('tasks')
+          .doc(task.id)
+          .update({ status: 'Delayed' })
+          .then(() => {
+            console.log(`Task ${task.id} status updated to Delayed.`);
+          })
+          .catch((error) => {
+            console.error(`Error updating task ${task.id}:`, error);
+          });
       });
   }
-checkForReminder() {
-  // Unsubscribe from previous subscription if it exists
-  if (this.tasksSubscription) {
-    this.tasksSubscription.unsubscribe();
-  }
-
-  this.tasksSubscription = this.firestore
-    .collection('tasks', (ref) => ref.where('status', '==', 'Pending').where('clientStatus', '==', 'Active'))
-    .valueChanges({ idField: 'id' })
-    .pipe(
-      debounceTime(1000) // Wait for 1 second of inactivity
-    )
-    .subscribe((tasks: any[]) => {
-      const currentTime = new Date();
-      console.log("Reminder function initiated at", currentTime);
-      tasks.forEach((task) => {
-        // Skip if reminder was already sent for this task
+  
+  
+  checkForReminder() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const currentTime = new Date();
+    console.log("Reminder function initiated at", currentTime);
+    this.storedTasks
+      .filter(task => {
+        const deadline = task.deadline?.toDate ? task.deadline.toDate() : new Date(task.deadline);
+        return (
+          task.status === 'Pending' &&
+          task.clientStatus === 'Active' &&
+          deadline >= today &&
+          deadline < tomorrow
+        );
+      })
+      .forEach(task => {
         if (this.reminderSent.has(task.id)) {
           return;
         }
-        // Ensure deadline is a valid date
         const deadline = task.deadline?.toDate ? task.deadline.toDate() : new Date(task.deadline);
         const twoHoursBefore = new Date(deadline.getTime() - 2 * 60 * 60 * 1000);
-                
-        // Check if current time is between twoHoursBefore and deadline
-        if (currentTime >= twoHoursBefore && currentTime < deadline && task.status === 'Pending') {
+        if (currentTime >= twoHoursBefore && currentTime < deadline) {
           console.log(`Sending reminder for task ${task.id}`);
-          // Mark this reminder as sent
           this.reminderSent.add(task.id);
           this.firestoreService.getUserById(task.assignedTo).subscribe(userData => {
             if (userData.length > 0) {
@@ -170,8 +146,8 @@ checkForReminder() {
           });
         }
       });
-    });
-}
+  }
+  
 
   sendGentleReminder(leaderEmail: string, task: any, userName: string) {
     const subject = `${task.group} :Gentle Reminder: ,Task "${task.description}" due soon`;

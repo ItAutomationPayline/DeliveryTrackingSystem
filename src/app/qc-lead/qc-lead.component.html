@@ -21,6 +21,7 @@
           Type: {{ request.reportType}}<br>
           Period: {{ request.Period| date: 'MMMM-yyyy'}}<br>
           Ops: {{ request.opsName}}<br>
+          note:{{request.note}}<br>
           <button (click)="startQcReport(request.id)">Start QC</button>
         </ng-container>
         </div>
@@ -35,7 +36,9 @@
           <div *ngIf="report.status != 'Completed' &&report.AssignedTo==this.employeeId">
           <h6>{{ report.clientName }}</h6><br>
           Type: {{ report.reportType}}<br>
+          Ops: {{ report.opsName}}<br>
           <p>Period: {{ report.Period| date: 'MMMM-yyyy' }}</p>
+          note:{{report.note}}<br>
           <p>Status: {{ report.status }}</p>
           <p>Findings: {{ report.findings?.length || 0 }}</p>
           <button (click)="loadReport(report.id)">Open Report</button>

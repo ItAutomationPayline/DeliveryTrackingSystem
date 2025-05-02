@@ -21,6 +21,7 @@ import { TasksCheckerComponent } from './tasks-checker/tasks-checker.component';
 import { UploadComponent } from './upload/upload.component';
 import { QCComponent } from './qc/qc.component';
 import { QcLeadComponent } from './qc-lead/qc-lead.component';
+import { ReportsDownloaderComponent } from './reports-downloader/reports-downloader.component';
 
 @NgModule({
   declarations: [
@@ -37,7 +38,8 @@ import { QcLeadComponent } from './qc-lead/qc-lead.component';
     TasksCheckerComponent,
     UploadComponent,
     QCComponent,
-    QcLeadComponent
+    QcLeadComponent,
+    ReportsDownloaderComponent
   ],
   imports: [
     BrowserModule,

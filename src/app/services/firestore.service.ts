@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { map, Observable } from 'rxjs';
+import { forkJoin, map, Observable, switchMap, take } from 'rxjs';
+import * as XLSX from 'xlsx';
 
 @Injectable({
   providedIn: 'root'
@@ -50,8 +51,8 @@ export class FirestoreService {
     return this.firestore.collection('users', ref => ref.where('id', '==', userId)).valueChanges();
   }
   sendMail(bodydata:{recipients:string[],subject:string,body:string}){
-    return this.httpClient.post(this.SERVER_URL,bodydata).subscribe( (resultdata: any) => {
-      console.log("ResultData"+resultdata)});
+    // return this.httpClient.post(this.SERVER_URL,bodydata).subscribe( (resultdata: any) => {
+    //   console.log("ResultData"+resultdata)});
    }
    getUserNameById(id: string): Promise<string> {
     return new Promise((resolve, reject) => {

@@ -16,8 +16,8 @@
       <tbody>
         <!-- Loop over tasks and filter for pending status -->
         <tr *ngFor="let task of tasks">
-          <ng-container *ngIf="task.status != 'Completed'; else noTasks">
-            <!-- <ng-container *ngIf="task.status !== 'Completed' && isTaskDueTodayOrEarlier(task.dueDate); else noTasks"> -->
+          <!-- <ng-container *ngIf="task.status != 'Completed'; else noTasks"> -->
+            <ng-container *ngIf="task.status !== 'Completed' && isTaskDueTodayOrEarlier(task.deadline); else noTasks">
               <td>{{ task.group }}</td>
               <td>{{ task.client }}</td>
             <td>{{ task.description }}</td>
@@ -85,52 +85,6 @@
       </div>
     </div>
   </div>
-  <!-- for sent to qc -->
-  <!-- <div class="accordion" id="accordion4">
-    <div class="accordion-item">
-      <h2 class="accordion-header">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-          Send Reports to QC
-        </button>
-      </h2>
-      <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-        <div class="accordion-body">
-          <div style="max-width: 400px; margin: auto; padding-top: 30px;">
-            <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
-              <label for="ReportType">Report Type:</label>
-              <input type="text" id="ReportType" formControlName="ReportType" class="form-control" list="ReportList">
-              <datalist id="ReportList">
-                <option value="Payroll Reports">
-                <option value="Additional input">
-                <option value="Off-Cycle Reports">
-                <option value="Statutory Reports">
-                <option value="PF Reports">
-                <option value="PT Reports">
-                <option value="ESIC Reports">
-                <option value="TDS Reports">
-                <option value="E-TDS Reports">
-              </datalist>
-              <label for="clientName">Group Name:</label>
-              <input type="text" id="groupName" formControlName="groupName" class="form-control" list="groupList">
-              <datalist id="GroupList">
-                <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
-              </datalist>
-              <label for="clientName">Client Name:</label>
-              <input type="text" id="clientName" formControlName="clientName" class="form-control" list="ClientList">
-              <datalist id="ClientList">
-                <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
-              </datalist>
-              <label for="monthYear" class="mt-3">Month & Year:</label>
-              <input type="month" id="monthYear" formControlName="monthYear" class="form-control" />
-              <button type="submit" class="btn btn-success mt-3" [disabled]="!clientForm.valid">
-                Submit
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div> -->
   <div *ngIf="showModal" class="modal">
     <div class="modal-content">
       <h3>Report Task: {{ selectedTask?.description }}</h3>
