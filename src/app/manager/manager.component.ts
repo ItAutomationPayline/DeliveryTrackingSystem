@@ -10,7 +10,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
   selector: 'app-manager',
   standalone: false,
   templateUrl: './manager.component.html',
-  styleUrls: ['./manager.component.css'] // Corrected 'styleUrl' to 'styleUrls'
+  styleUrls: ['./manager.component.css']
 })
 
 export class ManagerComponent {
@@ -50,9 +50,9 @@ export class ManagerComponent {
   taskToEdit: any = null;
   userCache: { [key: string]: string } = {};
   excelFile: File | null = null;
-  userMap: Map<string, string> = new Map(); // Map of user IDs to names
+  userMap: Map<string, string> = new Map();
 
-  constructor(private fb: FormBuilder,private router: Router,private firestoreService: FirestoreService,private firestore: AngularFirestore) 
+  constructor(private fb: FormBuilder,private router: Router,private firestoreService: FirestoreService,private firestore: AngularFirestore)
   {
     this.reportForm = this.fb.group({
       fromDat: ['', Validators.required],

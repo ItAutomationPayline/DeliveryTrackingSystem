@@ -14,7 +14,6 @@ import { Router } from '@angular/router';
   styleUrl: './tasks-checker.component.css',
   providers: [DatePipe]
 })
-
 export class TasksCheckerComponent{
   constructor(private firestore: AngularFirestore, private functions: AngularFireFunctions,private firestoreService: FirestoreService, private datePipe: DatePipe,private router: Router){ this.username = ""; this.tasksSubscription = new Subscription();}
   private reminderSent = new Set<string>(); // To track sent reminders
@@ -42,13 +41,27 @@ export class TasksCheckerComponent{
     }, 3600000);
     this.intervalId = setInterval(() => {
       this.fetchAllTasks();
-   }, 86400000);
-    this.startSessionTimer();
+   }, 60000);
+  }
+  public startTaskChecker()
+  {
+    console.log("taskcheckercalled");
+    this.intervalId = setInterval(() => {
+      this.checkPendingTasks();
+    }, 60000);
+    this.intervalId = setInterval(() => {
+      this.checkForReminder();
+    }, 3600000);
+    this.intervalId = setInterval(() => {
+      this.fetchAllTasks();
+   }, 20000);
   }
   fetchAllTasks()
   {
+    let now = new Date();
+    now.setHours(23, 59, 0, 0);
     this.firestore
-          .collection('tasks')
+    .collection('tasks', ref => ref.where('status', '==', 'Pending').where('deadline', '<=', now.toISOString()))
           .valueChanges({ idField: 'id' }).pipe(
             debounceTime(1000)
           )

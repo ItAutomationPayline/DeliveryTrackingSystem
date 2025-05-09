@@ -15,14 +15,14 @@ import { take } from 'rxjs';
   providers: [DatePipe]
 })
 export class ExecutiveComponent {
-  clientForm: FormGroup;
+ clientForm: FormGroup;
  constructor(private fb: FormBuilder,private router: Router,private firestoreService: FirestoreService,private firestore: AngularFirestore,private http: HttpClient,private datePipe: DatePipe) 
  {
   this.clientForm = this.fb.group({
     ReportType: ['', Validators.required],
     groupName: ['', Validators.required],
     clientName: ['', Validators.required],
-    monthYear: ['', Validators.required], // format: "2025-04"
+    monthYear: ['', Validators.required],
   });
  }
  tasks: any[] = [];
@@ -31,11 +31,11 @@ export class ExecutiveComponent {
  selectedTask: any = null;
  AllClientsAndGroups:any[] = [];
  reasonInput: string = '';
- employeeId: any= localStorage.getItem('id');  // Store the employee's ID
- profile:any=localStorage.getItem('profile'); 
+ employeeId: any= localStorage.getItem('id');
+ profile:any=localStorage.getItem('profile');
  nm:any=localStorage.getItem('nm');
  public sessionTimeout: any;
- public inactivityDuration = 30 * 60 * 1000;// 30 minutes in milliseconds 
+ public inactivityDuration = 30 * 60 * 1000;
 
   ngOnInit() {
     const role = localStorage.getItem('role');
@@ -63,16 +63,15 @@ export class ExecutiveComponent {
   {
     this.firestore
     .collection('clients', ref => ref.where('status', '==', 'Active'))
-    .valueChanges({ idField: 'id' }) // Include document ID in the result
+    .valueChanges({ idField: 'id' })
     .subscribe((tasks: any[]) => {
       this.AllClientsAndGroups = tasks;
     });
   }
-   sortTasks(tasksWithNames: { client: string; deadline: string }[]): { client: string; deadline: string }[] {
+   sortTasks(tasksWithNames: { group: string; deadline: string }[]): { group: string; deadline: string }[] {
     return tasksWithNames.sort((a, b) => {
-      const clientCompare = a.client.localeCompare(b.client);
+      const clientCompare = a.group.localeCompare(b.group);
       if (clientCompare !== 0) return clientCompare;
-  
       return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
     });
   }
@@ -101,18 +100,14 @@ export class ExecutiveComponent {
     return taskDate <= tomorrow;
 }
    updateTaskStatus(taskId: string) {
-  
-    // Find the task by its ID in the tasks array
     const taskToUpdate = this.tasks.find(task => task.id === taskId);
     
     if (taskToUpdate) {
-      // Add confirmation dialog
       const isConfirmed = window.confirm(
         `Are you sure you want to mark "${taskToUpdate.description}" as Completed?`
       );
       
       if (isConfirmed) {
-
         // Update the task status to 'completed' only if user confirms
         if(taskToUpdate.QcApproval=="Pending")
           {
@@ -264,15 +259,11 @@ submitReport() {
       .subscribe((tasks: any[]) => {
         this.tasks = tasks;
         console.log("Assigned tasks: ", this.tasks);
-        this.sortTasks(this.tasks);
+        setTimeout(() => {
+          this.sortTasks(this.tasks);
+        }, 500);
+        
       });
-      // this.firestore
-      // .collection('scheduledTasks', ref => ref.where('assignedTo', '==', this.employeeId ))  // Filter tasks based on employeeId
-      // .valueChanges({ idField: 'id' })  // Include document id in result
-      // .subscribe((tasks: any[]) => {
-      //   this.scheduledTasks = tasks;
-      //   console.log("Assigned scheduled tasks: ", this.tasks);
-      // });
   }
    bodydata={
     "recipients": ["dayaghan.limaye@paylineindia.com", "dayaghanlimaye@gmail.com"],
@@ -291,9 +282,8 @@ submitReport() {
     }, this.inactivityDuration);
   }
 
-  // Reset session timer on user interaction
   resetSessionTimer() {
-    this.startSessionTimer(); // Restart session timer
+    this.startSessionTimer();
   }
 
   // Listen for user interaction events and reset the timer

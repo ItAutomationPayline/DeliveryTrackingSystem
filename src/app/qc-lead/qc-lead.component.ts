@@ -23,7 +23,6 @@ export class QcLeadComponent {
    currentReport: any = null;
    newFinding = {
      description: '',
-     severity: 'Medium',
      category: ''
    };
    employeeId: any = localStorage.getItem('id');
@@ -205,7 +204,7 @@ export class QcLeadComponent {
          updatedAt: new Date()
        })
        .then(() => {
-         this.newFinding = { description: '', severity: 'Medium', category: '' };
+         this.newFinding = { description: '',  category: '' };
        })
        .catch(error => {
          console.error("Error adding finding: ", error);
@@ -230,7 +229,6 @@ export class QcLeadComponent {
            <div style="margin-bottom: 15px;">
              <strong>Finding ${index + 1}:</strong><br>
              <strong>Category:</strong> ${finding.category}<br>
-             <strong>Severity:</strong> ${finding.severity}<br>
              <div style="white-space: pre-wrap; word-wrap: break-word; 
                          margin-top: 5px; padding: 8px; 
                          background-color: #f5f5f5; border-radius: 4px;">

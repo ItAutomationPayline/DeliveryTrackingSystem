@@ -62,7 +62,6 @@
         </div>
         <div *ngFor="let finding of currentReport.findings" class="finding-item">
           <div class="finding-header">
-            <span class="severity {{finding.severity}}">{{ finding.severity }}</span>
             <span class="category">{{ finding.category }}</span>
             <span class="timestamp">{{ finding.timestamp?.toDate() | date:'short' }}</span>
           </div>
@@ -77,11 +76,6 @@
         placeholder="Finding description"
         style="white-space: pre-wrap; word-wrap: break-word; width: 100%; min-height: 100px;"
         ></textarea>
-        <select [(ngModel)]="newFinding.severity">
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
-        </select>
         <input type="text" [(ngModel)]="newFinding.category" placeholder="Category" list="categoryList">
         <datalist id="categoryList">
           <option value="Input Missed to Process">

@@ -52,14 +52,14 @@
                 <option value="Bank file">
                 <option value="Upload individual IT report on UKG portal">
                 <option value="Statutory reports sent to QC">
-               <option value="Statutory reports sent to client">
-               <option value="Check PAN of new joiner on Traces">
-               <option value="Send new joiner details to compliance team to generate UAN number">
-               <option value="ESIC return (Even Nil)">
-               <option value="PF return (IW)">
-               <option value="PT return">
-               <option value="Payslip, IT Sheet, FnF on ESS Portal">
-            </datalist>
+                <option value="Statutory reports sent to client">
+                <option value="Check PAN of new joiner on Traces">
+                <option value="Send new joiner details to compliance team to generate UAN number">
+                <option value="ESIC return (Even Nil)">
+                <option value="PF return (IW)">
+                <option value="PT return">
+                <option value="Payslip, IT Sheet, FnF on ESS Portal">
+              </datalist>
           </div>
           
           <!-- Deadline -->
@@ -98,8 +98,8 @@
             <input 
               type="text" 
               [(ngModel)]="filters.group" 
-              list="groupList" 
-              class="form-control" 
+              list="groupList"
+              class="form-control"
               placeholder="Filter"
               (focus)="getFilteredGroups()"
             />
@@ -166,7 +166,7 @@
             <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a, EEE' }}</td>
             <td>{{ task.status }}</td>
             <td>
-              <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button>
+              <!-- <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button> -->
               <button (click)="openEditModal(task)" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
             </td>
             <td>{{ task.comment }}</td>

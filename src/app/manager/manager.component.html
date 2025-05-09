@@ -545,7 +545,7 @@
             <thead>
               <tr>
                 <th>
-                  Group<br />
+                  Group<br/>
                   <input type="text" [(ngModel)]="filters.group" list="groupList" class="form-control"(focus)="getFilteredGroups()"placeholder="Filter">
                   <datalist id="groupList">
                     <option *ngFor="let value of filterGroup" value={{value}} placeholder="">
@@ -595,7 +595,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let task of filteredTasks()">
-                <!-- <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&& task.status != 'Completed'"> -->
+                <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&& task.status != 'Completed'">
                 <td>{{ task.group }}</td>
                 <td>{{ task.client }}</td>
                 <td>{{ task.description }}</td>
@@ -607,7 +607,7 @@
                   <button (click)="openEditModal(task)" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
                 </td>
                 <td>{{ task.comment }}</td>
-              <!-- </ng-container> -->
+              </ng-container>
               </tr>
             </tbody>
           </table>
@@ -630,12 +630,13 @@
                     Report Type
                   </th>
                   <th>
-                    Qc Person
+                    QC Person
                   </th>
                   <th>
                     Period
                   </th>
                   <th>Status</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -649,7 +650,7 @@
                     <td>{{ task.Period | date: 'MMMM-yyyy' }}</td>
                     <td>{{ task.status }}</td>
                     <td>
-                  </td>
+                    </td>
                     <td>
                     </td>
                   </ng-container>
