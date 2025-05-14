@@ -18,15 +18,15 @@
         <tr *ngFor="let task of tasks">
           <!-- <ng-container *ngIf="task.status != 'Completed'; else noTasks"> -->
             <ng-container *ngIf="task.status !== 'Completed' && isTaskDueTodayOrEarlier(task.deadline); else noTasks">
-              <td>{{ task.group }}</td>
-              <td>{{ task.client }}</td>
+            <td>{{ task.group }}</td>
+            <td>{{ task.client }}</td>
             <td>{{ task.description }}</td>
             <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a,EEE' }}</td> <!-- Formatting deadline as date with time -->
             <td>{{ task.status }}</td>
             <td>
               <!-- Button to mark task as complete -->
-              <button (click)="updateTaskStatus(task.id)" class="btn btn-warning">Mark as Complete</button>
-              <button (click)="openReportModal(task)" class="btn btn-info">Reschedule Task</button>
+              <button (click)="updateTaskStatus(task.id)" class="btn btn-success">Mark as Complete</button>
+              <button (click)="openReportModal(task)" class="btn btn-dark">Reschedule Task</button>
             </td>
             <td>{{ task.comment}}</td>
           </ng-container>

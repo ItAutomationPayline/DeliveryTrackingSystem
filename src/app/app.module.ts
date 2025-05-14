@@ -22,6 +22,7 @@ import { UploadComponent } from './upload/upload.component';
 import { QCComponent } from './qc/qc.component';
 import { QcLeadComponent } from './qc-lead/qc-lead.component';
 import { ReportsDownloaderComponent } from './reports-downloader/reports-downloader.component';
+import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
 
 @NgModule({
   declarations: [
@@ -45,6 +46,7 @@ import { ReportsDownloaderComponent } from './reports-downloader/reports-downloa
     BrowserModule,
     ReactiveFormsModule,
     AngularFireAuthModule,
+    AngularFirestoreModule,
     AngularFireModule.initializeApp(environment.firebase),
     FormsModule,
     HttpClientModule,

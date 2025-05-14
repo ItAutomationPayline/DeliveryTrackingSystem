@@ -99,6 +99,7 @@ export class ExecutiveComponent {
 
     return taskDate <= tomorrow;
 }
+
    updateTaskStatus(taskId: string) {
     const taskToUpdate = this.tasks.find(task => task.id === taskId);
     
@@ -108,9 +109,17 @@ export class ExecutiveComponent {
       );
       
       if (isConfirmed) {
-        // Update the task status to 'completed' only if user confirms
+        if(taskToUpdate.description=="Customer Provides Payroll Inputs"||taskToUpdate.description=="Payroll Input Received"||taskToUpdate.description=="Payroll Inputs to Partner")
+        {
+          const bodydata = {
+          recipients: [taskToUpdate.leadermail],
+          subject: [taskToUpdate.group] + `: Payroll Input Received`,
+          body: `This is to inform you that the payroll input of client ${taskToUpdate.client} has been received.<br>I will proceed with the necessary processing as per the defined timelines.<br><br>Best regards,<br>${this.nm}`,
+          };
+          this.firestoreService.sendMail(bodydata);
+        }
         if(taskToUpdate.QcApproval=="Pending")
-          {
+        {
             let userNote = prompt("Enter a note/special instruction for qc if any:");
             let finalData = {
               taskId:taskId,
@@ -131,7 +140,7 @@ export class ExecutiveComponent {
             } catch (error) {
               console.error('Error saving to Firebase:', error);
             }
-          }
+        }
         this.firestore
           .collection('tasks')
           .doc(taskId)
@@ -140,7 +149,7 @@ export class ExecutiveComponent {
             completedAt:new Date().toISOString()
           })
           .then(() => {
-            console.log(`Task ${taskId} marked as complete`);
+            // console.log(`Task ${taskId} marked as complete`);
             // Refresh the tasks list after the update
             this.fetchTasks();
           })
@@ -253,6 +262,7 @@ submitReport() {
     const tomorrow = new Date(now);
     tomorrow.setDate(now.getDate() + 1);
     now.setHours(23, 59, 0, 0);
+    tomorrow.setHours(23, 59, 0, 0);
     this.firestore
       .collection('tasks', ref => ref.where('status', '!=', 'Completed' ).where('assignedTo', '==', this.employeeId ).where('deadline', '<=', tomorrow.toISOString()))  // Filter tasks based on employeeId
       .valueChanges({ idField: 'id' }).pipe(take(1))  // Include document id in result

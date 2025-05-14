@@ -1,14 +1,30 @@
 <app-navbar></app-navbar>
-<div class="accordion" id="accordion1">
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-        Add/Manage Employees
-      </button>
-    </h2>
-    <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
-        <div class="container mt-4">
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home">Add/Manage Employees</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile1">Add/Manage Clients</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile6">Transfer Clients</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile2">Download Reports</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile3">Team Generation & Details</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile5">View Today's Status</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile7">View Tomorrow's Tasks</button>
+  </li>
+</ul>
+<div class="tab-content mt-3">
+  <div class="tab-pane fade" id="home">
+      <div class="container mt-4">
           <h2 class="text-center mb-4">Promote/Demote <button class="btn btn-warning" routerLink="/register">Add Employee</button> </h2>
           <table class="table table-striped table-bordered">
             <thead class="table-dark">
@@ -44,46 +60,20 @@
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
   </div>
-</div>
-<div class="accordion" id="accordion8">
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEight" aria-expanded="false" aria-controls="collapseEight">
-        Add/Manage Clients
-      </button>
-    </h2>
-    <div id="collapseEight" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
-        <div class="p-4 max-w-3xl mx-auto bg-white rounded-xl shadow space-y-6">
+  <div class="tab-pane fade" id="profile1">
+      <div class="p-4 max-w-3xl mx-auto bg-white rounded-xl shadow space-y-6">
           <h3 class="text-2xl font-semibold">Add New Client</h3>
-        
           <!-- Add Client Form -->
           <form (ngSubmit)="addClient()" #clientForm="ngForm" class="space-y-3">
-            <input
-              type="text"
-              name="groupName"
-              [(ngModel)]="groupName"
-              placeholder="Group Name"
-              required
+            <input type="text" name="groupName" [(ngModel)]="groupName" placeholder="Group Name" required
               class="w-full p-2 border rounded"
             />
         
-            <input
-              type="text"
-              name="clientName"
-              [(ngModel)]="clientName"
-              placeholder="Client Name"
-              required
+            <input type="text"name="clientName"[(ngModel)]="clientName"placeholder="Client Name"required
               class="w-full p-2 border rounded"
             />
-            <button
-              type="submit"
-              [disabled]="clientForm.invalid"
-              class="btn btn-info"
-            >
+            <button type="submit" [disabled]="clientForm.invalid" class="btn btn-info">
               Add Client
             </button>
           </form>
@@ -92,23 +82,14 @@
           <div class="mt-6">
             <h3 class="text-xl font-semibold mb-3">De-Activate Clients from Excel</h3>
             <div class="flex items-center space-x-4">
-              <input
-                type="file"
-                id="excelUpload"
-                accept=".xlsx, .xls"
-                (change)="onFileChange($event)"
+              <input type="file" id="excelUpload"accept=".xlsx, .xls"(change)="onFileChange($event)"
                 class="block w-full text-sm text-gray-500
                   file:mr-4 file:py-2 file:px-4
                   file:rounded-md file:border-0
                   file:text-sm file:font-semibold
                   file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100"
-              />
-              <button
-                (click)="deactivateExcel()"
-                class="btn btn-success"
-                [disabled]="!excelFile"
-              >
+                  hover:file:bg-blue-100"/>
+              <button (click)="deactivateExcel()"class="btn btn-success"[disabled]="!excelFile">
                 Upload Excel
               </button>
             </div>
@@ -119,11 +100,7 @@
           <div class="mt-6">
             <h3 class="text-xl font-semibold mb-3">Import Clients from Excel</h3>
             <div class="flex items-center space-x-4">
-              <input
-                type="file"
-                id="excelUpload"
-                accept=".xlsx, .xls"
-                (change)="onFileChange($event)"
+              <input type="file"id="excelUpload"accept=".xlsx, .xls"(change)="onFileChange($event)"
                 class="block w-full text-sm text-gray-500
                   file:mr-4 file:py-2 file:px-4
                   file:rounded-md file:border-0
@@ -131,11 +108,7 @@
                   file:bg-blue-50 file:text-blue-700
                   hover:file:bg-blue-100"
               />
-              <button
-                (click)="uploadExcel()"
-                class="btn btn-success"
-                [disabled]="!excelFile"
-              >
+              <button (click)="uploadExcel()" class="btn btn-success"[disabled]="!excelFile">
                 Upload Excel
               </button>
             </div>
@@ -161,12 +134,8 @@
                   <td class="p-2 border">
                     <label class="flex items-center space-x-2">
                       <div class="form-check form-switch">
-                      <input
-                      type="checkbox" role="switch"
-                        class="form-check-input"
-                        [checked]="client.status === 'Active'"
-                        (change)="toggleStatus(client)"
-                      />
+                      <input type="checkbox" role="switch"class="form-check-input"
+                        [checked]="client.status === 'Active'"(change)="toggleStatus(client)"/>
                     </div>
                     </label>
                   </td>
@@ -175,143 +144,35 @@
             </table>
           </div>
         </div>
-      </div>
     </div>
-  </div>
-</div>
-<div class="accordion" id="accordion10">
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTen" aria-expanded="false" aria-controls="collapseTen">
-        Transfer Client
-      </button>
-    </h2>
-    <div id="collapseTen" class="accordion-collapse collapse" data-bs-parent="#accordion10">
-      <div class="accordion-body p-4">
-        <h3 class="mb-4 text-lg font-semibold">Transfer Client</h3>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <input 
-              type="text" 
-              name="groupName" 
-              [(ngModel)]="selectedgroupName" 
-              placeholder="Group Name" 
-              required 
-              class="form-control p-2 rounded shadow-sm"
-            list="GroupList"/>
-          </div>
-
-          <datalist id="ClientList">
-          <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
-          </datalist>
-          <datalist id="GroupList">
-            <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
-            </datalist>
-          <div class="col-md-6 mt-2 mt-md-0">
-            <input 
-              type="text" 
-              name="clientName" 
-              [(ngModel)]="selectedclientName" 
-              placeholder="Client Name" 
-              required 
-              class="form-control p-2 rounded shadow-sm"list="ClientList"
-            />
-          </div>
+    <div class="tab-pane fade" id="profile2">
+      <form [formGroup]="reportForm" (ngSubmit)="generateReport()" class="row g-3">
+        <div class="col-md-6">
+        <label for="opsNames" class="form-label">Ops Name</label>
+        <select id="opsNames" class="form-select" formControlName="opsNames">
+          <option value="" selected>All</option>
+          <option *ngFor="let member of membersWithNames" [value]="member.id">{{member.name}}</option>
+        </select>
         </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="fromMember" class="form-label">Transfer From</label>
-            <select 
-              id="fromMember" 
-              class="form-select p-2 rounded shadow-sm" 
-              [(ngModel)]="fromMemberId"
-            >
-              <option value="">Select Member</option>
-              <option *ngFor="let member of membersWithNames" [value]="member.id">
-                {{ member.name }}
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-6 mt-2 mt-md-0">
-            <label for="toMember" class="form-label">Transfer To</label>
-            <select 
-              id="toMember" 
-              class="form-select p-2 rounded shadow-sm" 
-              [(ngModel)]="toMemberId"
-            >
-              <option value="">Select Member</option>
-              <option *ngFor="let member of membersWithNames" [value]="member.id">
-                {{ member.name }}
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <button 
-          (click)="transferTasks()" 
-          class="btn btn-primary"
-        >
-          Transfer
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="accordion" id="accordion11">
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEleven" aria-expanded="false" aria-controls="collapseEleven">
-        Download Reports
-      </button>
-    </h2>
-    <div id="collapseEleven" class="accordion-collapse collapse" data-bs-parent="#accordion11">
-      <div class="accordion-body p-4">
-        <!-- <app-reports-downloader #childRef></app-reports-downloader> -->
-        <form [formGroup]="reportForm" (ngSubmit)="generateReport()" class="row g-3">
           <div class="col-md-6">
             <label for="fromDate" class="form-label">From Date</label>
             <input type="date" id="fromDat" class="form-control" formControlName="fromDat" required>
           </div>
-        
           <div class="col-md-6">
             <label for="toDate" class="form-label">To Date</label>
             <input type="date" id="toDat" class="form-control" formControlName="toDat" required>
           </div>
-        
           <div class="col-12 mt-3">
-            <button type="submit" class="btn btn-primary">Download Report</button>
+            <button type="submit" class="btn btn-secondary">Download Report</button>
           </div>
         </form>
       </div>
-    </div>
-  </div>
-</div>
-
-<div class="accordion" id="accordion3">
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-        Team Generation
-      </button>
-    </h2>
-    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
+      <div class="tab-pane fade" id="profile3">
         <div class="container mt-4">
           <h2 class="text-center mb-4">Team Generation</h2>
-        
           <div class="mb-3">
             <label for="teamName" class="form-label">Team Name:</label>
-            <input
-              type="text"
-              id="teamName"
-              class="form-control"
-              [(ngModel)]="teamName"
-              placeholder="Enter team name"
-              required
-            />
+            <input type="text"id="teamName"class="form-control" [(ngModel)]="teamName"placeholder="Enter team name"required/>
           </div>
         
           <div class="mb-3">
@@ -323,7 +184,6 @@
               </option>
             </select>
           </div>
-        
           <table class="table table-striped table-bordered">
             <thead class="table-dark">
               <tr>
@@ -341,43 +201,22 @@
                 <td>{{ user.email }}</td>
                 <td>{{ user.role }}</td>
                 <td>
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="user.selected"
-                    (change)="toggleEmployeeSelection(user.id)"
-                  />
+                  <input type="checkbox"[(ngModel)]="user.selected"(change)="toggleEmployeeSelection(user.id)"/>
                 </td>
               </tr>
             </tbody>
           </table>
-          <button
-            class="btn btn-primary mt-3 w-100"
-            [disabled]="!teamName || !selectedManager || selectedEmployees.length === 0"
-            (click)="createTeam()"
-          >
+          <button class="btn btn-primary mt-3 w-100" [disabled]="!teamName || !selectedManager || selectedEmployees.length === 0"(click)="createTeam()">
             Create Team
           </button>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="accordion" id="accordion4">
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-        Team Details
-      </button>
-    </h2>
-    <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
+        <br>
         <div class="container mt-4">
-          <h2 class="text-center mb-4">Team Details</h2>
-        
+        <h2 class="text-center mb-4">Team Details</h2>
           <table class="table table-striped table-bordered">
             <thead class="table-dark">
               <tr>
-                <th>Team Name</th>
+                <!-- <th>Team Name</th> -->
                 <th>Manager/Team Leader</th>
                 <th>Team Members</th>
                 <th>Actions</th>
@@ -385,7 +224,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let team of teams">
-                <td>{{ team.name }}</td>
+                <!-- <td>{{ team.name }}</td> -->
                 <td>{{ team.managerName }}</td>
                 <td>
                   <ul>
@@ -398,11 +237,272 @@
               </tr>
             </tbody>
           </table>
-        
           <p *ngIf="teams.length === 0" class="text-center">No teams available.</p>
         </div>
-      </div>
     </div>
+    <div class="tab-pane fade show active" id="profile5">
+      <div *ngIf="tasksWithNames.length > 0">
+        <h3>All Today's Tasks</h3><br>
+        <div  style="display: flex;justify-content: center; vertical-align: middle; gap: 10px; padding: 15px; border: 2px solid #ffffff; border-radius: 10px; background-color: #ffffff;">
+            <input type="text"style="width: 120px;" class="form-control" [(ngModel)]="filters.group" list="groupList" (focus)="getFilteredGroups()"placeholder="Filter Groups">
+            <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.client" list="clientList" (focus)="getFilteredClients()"placeholder="Filter Clients">
+            <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.description"list="descriptionList"  placeholder="Filter Description" (focus)="getFilteredDescription()" />
+            <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.assignedToName"list="AssignedToList"  placeholder="Filter Ops"(focus)="getFilteredAssignedTo()" />
+            <input type="text" class="form-control"style="width: 120px;" [(ngModel)]="filters.status"  list="statusList" placeholder="Filter Status" (focus)="getFilteredStatus()"/> 
+        </div>
+        <br>
+        <table id="myTable" class="table  table-bordered">
+            <thead>
+              <tr>
+                <th>
+                  Group<br/>
+                  <datalist id="groupList">
+                    <option *ngFor="let value of filterGroup" value={{value}} placeholder="">
+                  </datalist>
+                </th>
+                <th>
+                  Client<br/>
+                  <datalist id="clientList">
+                    <option *ngFor="let value of filterClients" value={{value}} placeholder="">
+                  </datalist>
+                </th>
+                <th>
+                  Description<br />
+                  <datalist id="descriptionList">
+                    <option *ngFor="let value of filterDescription" value={{value}}>
+                  </datalist>
+                </th>
+                <th>
+                  Assigned To<br />
+                  <datalist id="AssignedToList">
+                    <option *ngFor="let value of filterAssignedTo" value={{value}}>
+                  </datalist>
+                </th>
+                <th>
+                  Deadline<br/>
+                </th>
+                <th>
+                  Status<br/>
+                  <datalist id="statusList">
+                    <option *ngFor="let value of filterStatus" value={{value}}>
+                  </datalist>
+                </th>
+                <th>Actions<br>
+                </th>
+                <th>
+                  Comments<br />
+                  <datalist id="commentList">
+                    <option *ngFor="let value of filterComments" value={{value}}>
+                  </datalist>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let task of filteredTasks()">
+                <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&& task.status != 'Completed'">
+                <td>{{ task.group }}</td>
+                <td>{{ task.client }}</td>
+                <td>{{ task.description }}</td>
+                <td>{{ task.assignedToName }}</td>
+                <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a' }}</td>
+                <td>{{ task.status }}</td>
+                <td>
+                <div class="dropdown">
+                  <button class="btn btn-dark dropdown-toggle" type="button"id="taskActionsDropdown"
+                    data-bs-toggle="dropdown"aria-expanded="false">
+                    Actions
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                    <li>
+                      <a class="dropdown-item" (click)="deleteTask(task.id)">Delete</a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item"(click)="openEditModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
+                        Update
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+                <td>{{ task.comment }}</td>
+              </ng-container>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <br>
+        <div>
+          <h3>All In-Progress and unassigned-QC's</h3>
+            <br>
+               <table id="myTable" class="table  table-bordered">
+                 <thead>
+                  <tr>
+                    <th> Group</th>
+                    <th>Client</th>
+                    <th>Ops Person</th>
+                    <th>Report Type</th>
+                    <th>Qc Person</th>
+                    <th>Period</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let task of AllActiveQcReports">
+                    <ng-container *ngIf="task.status != 'Completed'">
+                      <td>{{ task.groupName }}</td>
+                      <td>{{ task.clientName }}</td>
+                      <td>{{ task.opsName }}</td>
+                      <td>{{ task.reportType }}</td>
+                      <td>{{ task.qcName }}</td>
+                      <td>{{ task.Period | date: 'MMMM-yyyy' }}</td>
+                      <td>{{ task.status }}</td>
+                      <td class="d-flex align-items-center gap-2">
+                      <select class="form-select" id="role" [(ngModel)]="selectedQC" required>
+                        <option value="" disabled selected>Select QC</option>
+                        <option *ngFor="let qc of QcTeam" [value]="qc.id">
+                          {{ qc.name }}
+                        </option>
+                      </select>
+                      <button (click)="assignQc(task.id,selectedQC)" class="btn btn-dark">Assign</button>
+                    </td>
+                    </ng-container>
+                  </tr>
+                </tbody>
+              </table>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="profile7">
+        <h2>Tomorrow's Tasks</h2>
+        <div *ngIf="tasksWithNames.length > 0"><br>
+        <div  style="display: flex;justify-content: center; vertical-align: middle; gap: 10px; padding: 15px; border: 2px solid #ffffff; border-radius: 10px; background-color: #ffffff;">
+            <input type="text"style="width: 120px;" class="form-control" [(ngModel)]="filters.group" list="groupList" (focus)="getFilteredGroups()"placeholder="Filter Groups">
+            <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.client" list="clientList" (focus)="getFilteredClients()"placeholder="Filter Clients">
+            <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.description"list="descriptionList"  placeholder="Filter Description" (focus)="getFilteredDescription()" />
+            <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.assignedToName"list="AssignedToList"  placeholder="Filter Ops"(focus)="getFilteredAssignedTo()" />
+            <input type="text" class="form-control"style="width: 120px;" [(ngModel)]="filters.status"  list="statusList" placeholder="Filter Status" (focus)="getFilteredStatus()"/> 
+        </div>
+        <br>
+        <table id="myTable" class="table  table-bordered">
+            <thead>
+              <tr>
+                <th>
+                  Group<br/>
+                  <datalist id="groupList">
+                    <option *ngFor="let value of filterGroup" value={{value}} placeholder="">
+                  </datalist>
+                </th>
+                <th>
+                  Client<br/>
+                  <datalist id="clientList">
+                    <option *ngFor="let value of filterClients" value={{value}} placeholder="">
+                  </datalist>
+                </th>
+                <th>
+                  Description<br />
+                  <datalist id="descriptionList">
+                    <option *ngFor="let value of filterDescription" value={{value}}>
+                  </datalist>
+                </th>
+                <th>
+                  Assigned To<br />
+                  <datalist id="AssignedToList">
+                    <option *ngFor="let value of filterAssignedTo" value={{value}}>
+                  </datalist>
+                </th>
+                <th>
+                  Deadline<br/>
+                </th>
+                <th>
+                  Status<br/>
+                  <datalist id="statusList">
+                    <option *ngFor="let value of filterStatus" value={{value}}>
+                  </datalist>
+                </th>
+                <th>Actions<br>
+                </th>
+                <th>
+                  Comments<br />
+                  <datalist id="commentList">
+                    <option *ngFor="let value of filterComments" value={{value}}>
+                  </datalist>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let task of filteredTasks()">
+                <ng-container *ngIf="isTaskDueTomorrowOrEarlier(task.deadline)&& task.status != 'Completed'">
+                <td>{{ task.group }}</td>
+                <td>{{ task.client }}</td>
+                <td>{{ task.description }}</td>
+                <td>{{ task.assignedToName }}</td>
+                <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a' }}</td>
+                <td>{{ task.status }}</td>
+                <td>
+                <div class="dropdown">
+                  <button class="btn btn-dark dropdown-toggle" type="button"
+                    id="taskActionsDropdown"data-bs-toggle="dropdown"aria-expanded="false">
+                    Actions
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                    <li>
+                      <a class="dropdown-item" (click)="deleteTask(task.id)">Delete</a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item"(click)="openEditModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
+                        Update
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+                <td>{{ task.comment }}</td>
+              </ng-container>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <div class="tab-pane fade" id="profile6">
+     <h3 class="mb-4 text-lg font-semibold">Transfer Client</h3>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <input type="text" name="groupName" [(ngModel)]="selectedgroupName" placeholder="Group Name" required  class="form-control p-2 rounded shadow-sm" list="GroupList"/>
+          </div>
+          <datalist id="ClientList">
+          <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+          </datalist>
+          <datalist id="GroupList">
+            <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
+          </datalist>
+          <div class="col-md-6 mt-2 mt-md-0">
+            <input type="text" name="clientName" [(ngModel)]="selectedclientName" placeholder="Client Name" required  class="form-control p-2 rounded shadow-sm" list="ClientList"/>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="fromMember" class="form-label">Transfer From</label>
+            <select id="fromMember" class="form-select p-2 rounded shadow-sm" [(ngModel)]="fromMemberId">
+              <option value="">Select Member</option>
+              <option *ngFor="let member of membersWithNames" [value]="member.id">
+                {{ member.name }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-6 mt-2 mt-md-0">
+            <label for="toMember" class="form-label">Transfer To</label>
+            <select id="toMember"  class="form-select p-2 rounded shadow-sm" [(ngModel)]="toMemberId">
+              <option value="">Select Member</option>
+              <option *ngFor="let member of membersWithNames" [value]="member.id">
+                {{ member.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <button (click)="transferTasks()" class="btn btn-primary">
+          Transfer
+        </button>
   </div>
 </div>
 <div class="modal fade" id="updateTaskModal" tabindex="-1" aria-labelledby="updateTaskModalLabel" aria-hidden="true">
@@ -441,223 +541,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-success" (click)="updateTask()">Save Changes</button>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- <div class="accordion" id="accordion5">
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
-        View All Tasks
-      </button>
-    </h2>
-    <div id="collapseFive" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
-        <div *ngIf="tasksWithNames.length > 0">
-          <h3>All Tasks</h3>
-          <table class="table table-striped table-bordered">
-            <thead>
-              <tr>
-                <th>
-                  Group<br />
-                  <input type="text" [(ngModel)]="filters.group" list="groupList" class="form-control"(focus)="getFilteredGroups()"placeholder="Filter">
-                  <datalist id="groupList">
-                    <option *ngFor="let value of filterGroup" value={{value}} placeholder="">
-                  </datalist>
-                </th>
-                <th>
-                  Client<br/>
-                  <input type="text" [(ngModel)]="filters.client" list="clientList" class="form-control"(focus)="getFilteredClients()"placeholder="Filter">
-                  <datalist id="clientList">
-                    <option *ngFor="let value of filterClients" value={{value}} placeholder="">
-                  </datalist>
-                </th>
-                <th>
-                  Description<br />
-                  <input type="text" [(ngModel)]="filters.description"list="descriptionList" class="form-control" placeholder="Filter"(focus)="getFilteredDescription()" />
-                  <datalist id="descriptionList">
-                    <option *ngFor="let value of filterDescription" value={{value}}>
-                  </datalist>
-                </th>
-                <th>
-                  Assigned To<br />
-                  <input type="text" [(ngModel)]="filters.assignedToName"list="AssignedToList" class="form-control" placeholder="Filter"(focus)="getFilteredAssignedTo()" />
-                  <datalist id="AssignedToList">
-                    <option *ngFor="let value of filterAssignedTo" value={{value}}>
-                  </datalist>
-                </th>
-                <th>
-                  Deadline<br/>
-                  <input type="text" [(ngModel)]="filters.deadline" class="form-control" placeholder="Filter" />
-                </th>
-                <th>
-                  Status<br/>
-                  <input type="text" [(ngModel)]="filters.status" class="form-control" list="statusList" placeholder="Filter" (focus)="getFilteredStatus()"/>
-                  <datalist id="statusList">
-                    <option *ngFor="let value of filterStatus" value={{value}}>
-                  </datalist>
-                </th>
-                <th>Actions</th>
-                <th>
-                  Comments<br />
-                  <input type="text" [(ngModel)]="filters.comment" class="form-control" placeholder="Filter"list="commentList" (focus)="getFilteredComments()"/>
-                  <datalist id="commentList">
-                    <option *ngFor="let value of filterComments" value={{value}}>
-                  </datalist>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let task of filteredTasks()">
-                <td>{{ task.group }}</td>
-                <td>{{ task.client }}</td>
-                <td>{{ task.description }}</td>
-                <td>{{ task.assignedToName }}</td>
-                <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a, EEE' }}</td>
-                <td>{{ task.status }}</td>
-                <td>
-                  <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button>
-                  <button (click)="openEditModal(task)" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
-                </td>
-                <td>{{ task.comment }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div> -->
-<div class="accordion" id="accordion9">
-  <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNine" aria-expanded="false" aria-controls="collapseNine">
-        View Today's Status
-      </button>
-    </h2>
-    <div id="collapseNine" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
-        <div *ngIf="tasksWithNames.length > 0">
-          <h3>All Today's Tasks</h3>
-          <table class="table table-striped table-bordered">
-            <thead>
-              <tr>
-                <th>
-                  Group<br/>
-                  <input type="text" [(ngModel)]="filters.group" list="groupList" class="form-control"(focus)="getFilteredGroups()"placeholder="Filter">
-                  <datalist id="groupList">
-                    <option *ngFor="let value of filterGroup" value={{value}} placeholder="">
-                  </datalist>
-                </th>
-                <th>
-                  Client<br/>
-                  <input type="text" [(ngModel)]="filters.client" list="clientList" class="form-control"(focus)="getFilteredClients()"placeholder="Filter">
-                  <datalist id="clientList">
-                    <option *ngFor="let value of filterClients" value={{value}} placeholder="">
-                  </datalist>
-                </th>
-                <th>
-                  Description<br />
-                  <input type="text" [(ngModel)]="filters.description"list="descriptionList" class="form-control" placeholder="Filter"(focus)="getFilteredDescription()" />
-                  <datalist id="descriptionList">
-                    <option *ngFor="let value of filterDescription" value={{value}}>
-                  </datalist>
-                </th>
-                <th>
-                  Assigned To<br />
-                  <input type="text" [(ngModel)]="filters.assignedToName"list="AssignedToList" class="form-control" placeholder="Filter"(focus)="getFilteredAssignedTo()" />
-                  <datalist id="AssignedToList">
-                    <option *ngFor="let value of filterAssignedTo" value={{value}}>
-                  </datalist>
-                </th>
-                <th>
-                  Deadline<br/>
-                  <input type="text" [(ngModel)]="filters.deadline" class="form-control" placeholder="Filter" />
-                </th>
-                <th>
-                  Status<br/>
-                  <input type="text" [(ngModel)]="filters.status" class="form-control" list="statusList" placeholder="Filter" (focus)="getFilteredStatus()"/>
-                  <datalist id="statusList">
-                    <option *ngFor="let value of filterStatus" value={{value}}>
-                  </datalist>
-                </th>
-                <th>Actions</th>
-                <th>
-                  Comments<br />
-                  <input type="text" [(ngModel)]="filters.comment" class="form-control" placeholder="Filter"list="commentList" (focus)="getFilteredComments()"/>
-                  <datalist id="commentList">
-                    <option *ngFor="let value of filterComments" value={{value}}>
-                  </datalist>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let task of filteredTasks()">
-                <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&& task.status != 'Completed'">
-                <td>{{ task.group }}</td>
-                <td>{{ task.client }}</td>
-                <td>{{ task.description }}</td>
-                <td>{{ task.assignedToName }}</td>
-                <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a, EEE' }}</td>
-                <td>{{ task.status }}</td>
-                <td>
-                  <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button>
-                  <button (click)="openEditModal(task)" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
-                </td>
-                <td>{{ task.comment }}</td>
-              </ng-container>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div>
-            <h3>All In-Progress and unassigned-QC's</h3>
-            <table class="table table-striped table-bordered">
-              <thead>
-                <tr>
-                  <th>
-                    Group
-                  </th>
-                  <th>
-                    Client
-                  </th>
-                  <th>
-                    Ops Person
-                  </th>
-                  <th>
-                    Report Type
-                  </th>
-                  <th>
-                    QC Person
-                  </th>
-                  <th>
-                    Period
-                  </th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let task of AllActiveQcReports">
-                  <ng-container *ngIf="task.status != 'Completed'">
-                    <td>{{ task.groupName }}</td>
-                    <td>{{ task.clientName }}</td>
-                    <td>{{ task.opsName }}</td>
-                    <td>{{ task.reportType }}</td>
-                    <td>{{ task.qcName }}</td>
-                    <td>{{ task.Period | date: 'MMMM-yyyy' }}</td>
-                    <td>{{ task.status }}</td>
-                    <td>
-                    </td>
-                    <td>
-                    </td>
-                  </ng-container>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <button type="button" class="btn btn-success"data-bs-dismiss="modal" (click)="updateTask()">Save Changes</button>
       </div>
     </div>
   </div>

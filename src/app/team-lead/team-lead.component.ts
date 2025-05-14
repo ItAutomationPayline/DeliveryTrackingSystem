@@ -1,11 +1,10 @@
-import { ChangeDetectorRef, Component, HostListener, Injectable } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { Router } from '@angular/router';
 import { FirestoreService } from '../services/firestore.service';
 import { DatePipe } from '@angular/common';
 import * as XLSX from 'xlsx';
-import { debounce, forkJoin, map, switchMap, take } from 'rxjs';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { debounce, take } from 'rxjs';
 
 @Component({
   selector: 'app-team-lead',
@@ -14,8 +13,9 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
   styleUrls: ['./team-lead.component.css'], // Fixed styleUrls typo
   providers: [DatePipe]
 })
+
 export class TeamLeadComponent {
-  reportForm: FormGroup;
+  selfTasks: any[] = [];
   teams: any[] = [];
   managerId: any = '';
   // List of teams led by the team lead
@@ -58,18 +58,14 @@ export class TeamLeadComponent {
   taskToEdit: any = null;
   Client: string = '';
   editTaskDescription: string = '';
+  editTaskGroup: string = '';
   editTaskClient: string = '';
   editTaskDate: string = '';
+  editTaskComment: string = '';
   editSelectedMemberId: string | null = null;
   editTaskDeadline: string = '';
 
-  constructor(private fb: FormBuilder,private cdRef: ChangeDetectorRef,private router: Router, private firestore: AngularFirestore,private firestoreService: FirestoreService,private datePipe: DatePipe) 
-  {
-    this.reportForm = this.fb.group({
-          fromDate: ['', Validators.required],
-          toDate: ['', Validators.required]
-        });
-  }
+  constructor(private cdRef: ChangeDetectorRef,private router: Router, private firestore: AngularFirestore,private firestoreService: FirestoreService,private datePipe: DatePipe) {}
 
   ngOnInit() {
     const role = localStorage.getItem('role');
@@ -100,7 +96,7 @@ export class TeamLeadComponent {
       this.scheduledTasksAssignedWithNames=[];
       setTimeout(() => {
         this.loadData(this.managerId); // Your logic here
-      }, 500);
+      }, 1500);
     this.updateMinDeadline();
     this.getFilteredClients();
     this.getFilteredDescription();
@@ -176,56 +172,6 @@ export class TeamLeadComponent {
       return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
     });
   }
-  // toggleClientDropdown(event: Event) {
-  //   event.stopPropagation();
-  //   this.clientDropdownOpen = true;
-  //   this.allClients=[];
-  //   this.allClients = Array.from(new Set(this.tasksWithNames.map(t => t.client)))
-  //     .filter(client => client)
-  //     .sort();
-  //   this.filteredClients = [...this.allClients];
-  // }
-
-  // toggleDescriptiontDropdown(event: Event) {
-  //   event.stopPropagation();
-  //   this.clientDropdownOpen = true;
-  //   this.allClients=[];
-  //   this.allClients = Array.from(new Set(this.tasksWithNames.map(t => t.description)))
-  //     .filter(client => client)
-  //     .sort();
-  //   this.filteredClients = [...this.allClients];
-  // }
-  
-  // toggleassignedToNametDropdown(event: Event) {
-  //   event.stopPropagation();
-  //   this.clientDropdownOpen = true;
-  //   this.allClients=[];
-  //   this.allClients = Array.from(new Set(this.tasksWithNames.map(t => t.assignedToName)))
-  //     .filter(client => client)
-  //     .sort();
-  //   this.filteredClients = [...this.allClients];
-  // }
-
-  // filterClientSuggestions() {
-  //   const val = this.filters.client?.toLowerCase() || '';
-  //   this.filteredClients = this.allClients.filter(client =>
-  //     client.toLowerCase().includes(val)
-  //   );
-  // }
-  
-  // selectClient(client: string) {
-  //   this.filters.client = client;
-  //   this.clientDropdownOpen = false;
-  // }
-  // selectDescription(client: string) {
-  //   this.filters.description = client;
-  //   this.clientDropdownOpen = false;
-  // }
-  
-  // @HostListener('document:click')
-  // closeClientDropdown() {
-  //   this.clientDropdownOpen = false;
-  // }
   loadDescriptionSuggestions() {
     this.filterThings=[];
     this.filterThings = Array.from(new Set(this.tasksWithNames.map(t => t.description)))
@@ -276,12 +222,6 @@ export class TeamLeadComponent {
   
     reader.readAsBinaryString(target.files[0]);
   }
-  // sortTasks() {
-  //   this.tasksWithNames = this.tasksWithNames.slice().sort((a, b) => 
-  //     a.client.localeCompare(b.client)
-  //   );
-  //   console.log("Sorted Tasks"+this.tasksWithNames);
-  // }
   
   isTaskDueTodayOrEarlier(dueDate: string | Date): boolean {
     const today = new Date();
@@ -329,56 +269,27 @@ export class TeamLeadComponent {
   }
 
   openEditModal(task: any) {
+    this.editTaskGroup=task.group;
     this.editTaskClient=task.client;
     this.taskToEdit = task;
     this.editTaskDescription = task.description;
     this.editSelectedMemberId = task.assignedTo;
+    this.editTaskComment=task.comment;
     const utcDate = new Date(task.deadline);
     utcDate.setMinutes(utcDate.getMinutes() - utcDate.getTimezoneOffset()); // Convert to local time
     this.editTaskDeadline = utcDate.toISOString().slice(0, 16); // Format properly
     console.log("DEADLINE:"+this.editTaskDeadline);
   }
-  openScheduledTasksEditModal(task: any) {
-    this.editTaskClient=task.client;
-    this.taskToEdit = task;
-    this.ScheduledDate = task.date;
-    this.editTaskDescription = task.description;
-    this.editSelectedMemberId = task.assignedTo;
-    this.editTaskDeadline = new Date(task.deadline).toISOString().slice(0, 16);
-  }
-  // updateScheduledTask() {
-  //   if (this.taskToEdit) {
-  //     const updatedTask = {
-  //       description: this.editTaskDescription,
-  //       assignedTo: this.editSelectedMemberId,
-  //       time: this.editTaskDeadline,
-  //     };
-
-  //     this.firestore
-  //       .collection('scheduledTasks')
-  //       .doc(this.taskToEdit.id)
-  //       .update(updatedTask)
-  //       .then(() => {
-  //         alert('Task updated successfully!');
-  //         this.taskToEdit = null;
-  //         this.closeScheduledTasksModal(); // Close modal
-  //         this.fetchAssignedTasks();
-  //       })
-  //       .catch((error) => {
-  //         console.error('Error updating task:', error);
-  //       });
-  //   }
-  // }
-  // Update Task in Firestore
   updateTask() {
     if (this.taskToEdit) {
       const updatedTask = {
+        group:this.editTaskGroup,
         client:this.editTaskClient,
         description: this.editTaskDescription,
         assignedTo: this.editSelectedMemberId,
         deadline: new Date(this.editTaskDeadline).toISOString(),
+        comment:this.editTaskComment
       };
-
       this.firestore
         .collection('tasks')
         .doc(this.taskToEdit.id)
@@ -408,7 +319,7 @@ export class TeamLeadComponent {
           }
         });
         if (recipients.length > 0) {
-          const subject = `${this.editTaskClient}: Task Updated: ${updatedTask.description}`;
+          const subject = `${updatedTask.group}: Task Updated: ${updatedTask.description}`;
           const body = `
             <p>Dear Manager,</p>
             <p>Team Leader ${localStorage.getItem('nm')} updated a task in the DTS with the following details:</p>
@@ -416,6 +327,7 @@ export class TeamLeadComponent {
               <li><strong>Client:</strong> ${updatedTask.client}</li>
               <li><strong>Description:</strong> ${updatedTask.description}</li>
               <li><strong>Deadline:</strong> ${new Date(updatedTask.deadline).toLocaleString()}</li>
+              <li><strong>Reason:</strong> ${updatedTask.comment}</li>
             </ul>
             <p>Best regards,<br>DTS</p>
           `;
@@ -461,104 +373,31 @@ export class TeamLeadComponent {
       }
     }
   }
-  // fetchAssignedTasks() {
-  //   // Query Firestore for tasks where `createdBy` matches the Team Lead's ID
-  //   this.firestore
-  //     .collection('tasks', ref => ref.where('createdBy', '==', this.teamLeadId).where('clientStatus', '==', 'Active'))
-  //     .valueChanges({ idField: 'id' })
-  //     .pipe(take(1))
-  //     .subscribe((tasks: any[]) => {
-  //       this.tasksAssigned = tasks;
-  //       console.log('Tasks assigned by you:', this.tasksAssigned);
-  //       this.populateAssignedToNames();
-  //       setTimeout(() => {
-  //         this.sortTasks(this.tasksWithNames);
-  //      }, 500);
-  //     });
-  // }
+
   fetchAssignedTasks() {
     let now = new Date();
     const tomorrow = new Date(now);
     tomorrow.setDate(now.getDate() + 1);
-    now.setHours(23, 59, 0, 0); // Normalize time for comparison
-    this.firestore.collection('tasks', ref =>
-        ref
-          .where('status', '!=', 'Completed')
-          .where('deadline', '<=', tomorrow.toISOString())
-      )
-      .valueChanges().pipe(take(1))
-      .subscribe((task: any[]) => {
-        this.tasksAssigned = task;
-        console.log('Filtered tasks (pending/delayed due today or earlier):', this.tasksAssigned);
+    now.setHours(23, 59, 0, 0);
+    tomorrow.setHours(23, 59, 0, 0);
+    // Query Firestore for tasks where `createdBy` matches the Team Lead's ID
+    this.firestore
+      .collection('tasks', ref => ref.where('createdBy', '==', this.teamLeadId).where('status', '!=', 'Completed').where('deadline', '<=', tomorrow.toISOString()))
+      .valueChanges({ idField: 'id' })
+      .pipe(take(1))
+      .subscribe((tasks: any[]) => {
+        this.tasksAssigned = tasks;
+        console.log('Tasks assigned by you:', this.tasksAssigned);
         this.populateAssignedToNames();
         setTimeout(() => {
           this.sortTasks(this.tasksWithNames);
-        }, 500);
+       }, 500);
       });
   }
-
   updateMinDeadline() {
     const now = new Date();
     this.minDeadline = now.toISOString().slice(0, 16); // Format as 'YYYY-MM-DDTHH:mm'
   }
-
-  // assignScheduledTask(){
-  //   if (this.selectedTeamId||this.selectedMemberId && this.TaskName && this.ScheduledDate&& this.selectedTime) {
-  //     const task = {
-  //       assignedTo: this.selectedMemberId,
-  //       teamId: this.selectedTeamId,
-  //       client:this.ClientName,
-  //       description: this.TaskName,
-  //       date:this.ScheduledDate,
-  //       time:this.selectedTime,
-  //       status: '',
-  //       createdBy: localStorage.getItem('id'), // Use the logged-in Team Lead's ID
-  //       leadermail:this.profile
-  //     };
-  //     this.fetchprofile(task);
-  //     this.firestore
-  //       .collection('scheduledTasks')
-  //       .add(task)
-  //       .then(() => {
-  //         alert('Task assigned successfully!');
-  //         this.resetForm();
-  //       })
-  //       .catch((error) => {
-  //         alert('Failed to assign task. Please try again.');
-  //       });
-  //   }
-  // }
-  // populateAssignedScheduledTasksToNames(){
-  //   this.scheduledTasksAssignedWithNames = []; // Reset the tasks array with names
-  //   this.scheduledTasksAssigned.forEach((task) => {
-  //     const assignedToId = task.assignedTo;
-  //     // Check if the user's name is already cached
-  //     if (this.userCache[assignedToId]) {
-  //       this.scheduledTasksAssignedWithNames.push({
-  //         ...task,
-  //         assignedToName: this.userCache[assignedToId], // Add the name from the cache
-  //       });
-  //     }
-  //     else {
-  //       // Fetch the user's name from Firestore
-  //       this.firestore
-  //         .collection('users', (ref) => ref.where('id', '==', assignedToId))
-  //         .valueChanges()
-  //         .subscribe((users: any[]) => {
-  //           if (users.length > 0) {
-  //             const userName = users[0].name; // Assuming "name" is the field in the "users" collection
-  //             this.userCache[assignedToId] = userName; // Cache the name for future use
-  //             this.scheduledTasksAssignedWithNames.push({
-  //               ...task,
-  //               assignedToName: userName, // Add the name to the task
-  //             });
-  //           } else {
-  //             console.log(`No user found with ID: ${assignedToId}`);
-  //           }
-  //         });
-  //     }
-  //   });
-  // }
   populateAssignedToNames() {
     this.tasksWithNames = []; // Reset the tasks array with names
     this.tasksAssigned.forEach((task) => {
@@ -781,35 +620,7 @@ export class TeamLeadComponent {
       });
     }
   }
-  // assignTask() {
-  //   if (this.selectedTeamId||this.selectedMemberId && this.taskDescription && this.taskDeadline) {
-  //     const task = {
-  //       assignedTo: this.selectedMemberId,
-  //       teamId: this.selectedTeamId,
-  //       group:this.GroupName,
-  //       client:this.ClientName,
-  //       description: this.taskDescription,
-  //       deadline: new Date(this.taskDeadline).toISOString(),
-  //       completedAt:'',
-  //       status: 'Pending',
-  //       createdBy: localStorage.getItem('id'), // Use the logged-in Team Lead's ID
-  //       leadermail:this.profile,
-  //       clientStatus:'Active'
-  //     };
-  //     this.fetchprofile(task);
-  //     this.firestore
-  //       .collection('tasks')
-  //       .add(task)
-  //       .then(() => {
-  //         alert('Task assigned successfully!');
-  //         this.resetForm();
-  //         this.loadData(this.managerId);
-  //       })
-  //       .catch((error) => {
-  //         alert('Failed to assign task. Please try again.');
-  //       });
-  //   }
-  // }
+  
   fetchprofile(task:any){
     console.log("fetchprofile initiated")
     this.firestore
@@ -878,174 +689,9 @@ getUserNameById(id: string){
       this.userName = 'Error fetching name';
     });
 }
-  // deleteScheduledTask(taskId: string): void {
-  //   if (confirm('Are you sure you want to delete this task?')) {
-  //     this.firestore
-  //       .collection('scheduledTasks') // Reference to the tasks collection
-  //       .doc(taskId) // Reference to the specific task document
-  //       .delete()
-  //       .then(() => {
-  //         console.log('Task deleted successfully!');
-  //         // Optionally, update the tasksWithNames array locally
-  //         this.tasksWithNames = this.tasksWithNames.filter(task => task.id !== taskId);
-  //       })
-  //       .catch(error => {
-  //         console.error('Error deleting task: ', error);
-  //       });
-  //   }
-  // }
-  
-  // get sortedTasks(): Task[] {
-  //   return this.tasksWithNames.slice().sort((a, b) => {
-  //     // Sort by client name (alphabetically)
-  //     if (a.client.toLowerCase() < b.client.toLowerCase()) return -1;
-  //     if (a.client.toLowerCase() > b.client.toLowerCase()) return 1;
-  
-  //     // If client names are the same, sort by deadline (earliest first)
-  //     return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-  //   });
-  // }
-  trackById( item: any) {
-    return item.id; // Ensure 'id' is unique for each item
-  }
-
-  // Reset the form after task assignment
   resetForm() {
     this.taskDescription = '';
     this.selectedMemberId = null;
     this.taskDeadline = '';
   }
-   public generateReport(fromDate:any, toDate:any ) {
-    // this.firestoreService.generateReport(from,to);
-      // // First, get the tasks based on the date range
-      let from = new Date(fromDate);
-    let to = new Date(toDate);
-      this.firestore.collection('tasks', ref =>
-        ref.where('deadline', '>=', from.toISOString())
-           .where('deadline', '<=', to.toISOString())
-      ).valueChanges({ idField: 'id' })
-      .pipe(take(1),
-        switchMap((temp: any[]) => {
-          // Fetch user details for assignedTo and createdBy
-          const userIds = [
-            ...new Set(temp.map(temp => temp.assignedTo).filter(id => id)), // Get unique user IDs for assignedTo
-            ...new Set(temp.map(temp => temp.createdBy).filter(id => id)) // Get unique user IDs for createdBy
-          ];
-    
-          // Return an observable for the user data
-          const userPromises = userIds.map(id => this.firestore.collection('users').doc(id).get().toPromise());
-    
-          return forkJoin(userPromises).pipe(
-            map((userDocs: any[]) => {
-              const users = userDocs.reduce((acc, doc) => {
-                const userData = doc.data();
-                acc[doc.id] = userData.name || ''; // Store name against user ID
-                return acc;
-              }, {});
-    
-              // Map tasks and replace IDs with names
-              const formattedTask = temp.map(t => ({
-                group: t.group || '',
-                client: t.client || '',
-                clientStatus: t.clientStatus || '',
-                description: t.description || '',
-                deadline: this.formatDate(t.deadline),
-                completedAt: this.formatDate(t.completedAt),
-                createdBy: users[t.createdBy] || '', // Get the name for createdBy
-                assignedTo: users[t.assignedTo] || '', // Get the name for assignedTo
-                status: t.status || '',
-                reportType: t.reportType || '',
-                QcApproval: t.QcApproval || '',
-                comment:t.comment,
-                sequence: t.Sequence !== undefined ? t.Sequence.toString() : '' // Ensure sequence is a string
-              }));
-              return formattedTask;
-            })
-          );
-        })
-      )
-      .subscribe((formattedTask: any[]) => {
-        console.log(formattedTask);
-        this.downloadExcel(formattedTask);
-      });
-    }
-  
-    // generateReport() {
-    //   const { fromDate, toDate } = this.reportForm.value;
-    //   const from = new Date(fromDate);
-    //   const to = new Date(toDate);
-    //   this.firestore.collection('tasks', ref =>
-    //     ref.where('deadline', '>=', from.toISOString())
-    //        .where('deadline', '<=', to.toISOString())
-    //   ).valueChanges()
-    //   .pipe(take(1))
-    //   .subscribe((tasks: any[]) => {
-    //     const formattedTasks = tasks.map(task => ({
-    //       group: task.group || '',
-    //       client: task.client || '',
-    //       clientStatus: task.clientStatus || '',
-    //       description: task.description || '',
-    //       deadline: this.formatDate(task.deadline),
-    //       completedAt: this.formatDate(task.CompletedAt),
-    //       createdBy: task.createdBy || '',
-    //       assignedTo: task.assignedTo || '',
-    //       status: task.status || '',
-    //       reportType: task.reportType || '',
-    //       QcApproval: task.QcApproval || '',
-    //         sequence: task.Sequence !== undefined ? task.Sequence.toString() : ''
-    //     }));
-    //       this.downloadExcel(formattedTasks);
-    //   });
-    // } 
-    downloadExcel(data: any[]) {
-      // First create an array with correct headings and data
-      const headings = [
-        'Group', 'Client', 'Description', 'Deadline', 
-        'Completed At', 'TL', 'Ops', 'Status', 
-        'Report Type', 'Qc Approval', 'Sequence','Comment'
-      ];
-      const formattedData = data.map(item => ({
-        Group: item.group,
-        Client: item.client,
-        Description: item.description,
-        Deadline: item.deadline,
-        'Completed At': item.completedAt,
-        'TL': item.createdBy,
-        Ops: item.assignedTo,
-        Status: item.status,
-        'Report Type': item.reportType,
-        'Qc Approval': item.QcApproval,
-        Sequence: item.sequence,
-        Comment: item.comment
-      }));
-      const ws = XLSX.utils.json_to_sheet(formattedData, { header: headings });
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Report');
-      const from = this.reportForm.value.fromDate;
-      const to = this.reportForm.value.toDate;
-      const fileName = `Tasks_report_${from}_to_${to}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-    }
-    formatDate(isoTimestamp: string): string {
-      if (!isoTimestamp) return '';
-      
-      const date = new Date(isoTimestamp);
-      
-      // Check if the date is invalid
-      if (isNaN(date.getTime())) return 'Invalid Date';
-      
-      const pad = (num: number) => num.toString().padStart(2, '0');
-      
-      const day = pad(date.getDate());
-      const month = pad(date.getMonth() + 1);
-      const year = date.getFullYear();
-      
-      let hours = date.getHours();
-      const minutes = pad(date.getMinutes());
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12;
-      hours = hours || 12; // Convert 0 to 12
-      
-      return `${day}-${month}-${year} ${hours}:${minutes} ${ampm}`;
-    }
 }
