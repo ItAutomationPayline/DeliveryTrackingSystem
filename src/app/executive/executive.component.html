@@ -72,8 +72,8 @@
                     <td>{{ task.status }}</td>
                     <td>
                       <!-- Button to mark task as complete -->
-                      <button (click)="updateTaskStatus(task.id)" class="btn btn-warning">Mark as Complete</button>
-                      <button (click)="openReportModal(task)" class="btn btn-info">Reschedule Task</button>
+                      <button (click)="updateTaskStatus(task.id)" class="btn btn-success">Mark as Complete</button>
+                      <button (click)="openReportModal(task)" class="btn btn-dark">Reschedule Task</button>
                     </td>
                     <td>{{ task.comment}}</td>
                   </ng-container>

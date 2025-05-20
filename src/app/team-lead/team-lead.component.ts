@@ -48,7 +48,8 @@ export class TeamLeadComponent {
   teamLeadId: any = localStorage.getItem('id');
   tasksWithNames: any[] = [];
   scheduledTasksAssignedWithNames: any[] = [];
-  tasksWithDeadlines: { description: string; deadlines: string[] }[] = [];
+  // tasksWithDeadlines: { description: string; deadlines: string[] }[] = [];
+  tasksWithDeadlines: any[] = [];
   userCache: { [key: string]: string } = {};
   memberNames:  any[] = [];
   rec: string[] = [];
@@ -141,6 +142,12 @@ export class TeamLeadComponent {
     this.filterStatus=[];
     this.filterStatus=Array.from(new Set(this.tasksWithNames.map(t => t.status))).sort();
   }
+  formatPeriod(isoDate: string): string {
+  const date = new Date(isoDate);
+  const month = date.toLocaleString('default', { month: 'long' }); // e.g., "May"
+  const year = date.getFullYear();
+  return `${month} ${year}`;
+}
   // get uniqueClients(): string[] {
   //   return [...new Set(this.data.map(item => item.client).filter(Boolean))];
   // }
@@ -184,44 +191,54 @@ export class TeamLeadComponent {
                         .filter(client => client) // remove empty values
                         .sort();
   }
-  onFileChange(event: any) {
-    const target: DataTransfer = <DataTransfer>event.target;
-    if (target.files.length !== 1) {
-      alert('Cannot upload multiple files');
-      return;
-    }
-  
-    const reader: FileReader = new FileReader();
-    reader.onload = (e: any) => {
-      const bstr: string = e.target.result;
-      const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
-  
-      // Get the first worksheet
-      const wsname: string = wb.SheetNames[0];
-      const ws: XLSX.WorkSheet = wb.Sheets[wsname];
-  
-      // Convert sheet data to JSON (header: 1 returns arrays)
-      const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
-  
-      if (data.length > 1) {
-        this.tasksWithDeadlines = [];
-        // Extract first row as task descriptions
-        const taskHeaders = data[0]; 
-        // Iterate over each column to get deadlines
-        for (let col = 0; col < taskHeaders.length; col++) {
-          const description = taskHeaders[col]; 
-          if (description) {
-            const deadlines = data.slice(1).map(row => row[col]).filter(deadline => deadline);
-            if ((deadlines.length > 0)&&(description.trim()!="Day")&&(description.trim()!="PayPeriod")) {
-              this.tasksWithDeadlines.push({ description, deadlines });
-            }
+onFileChange(event: any) {
+  const target: DataTransfer = <DataTransfer>event.target;
+  if (target.files.length !== 1) {
+    alert('Cannot upload multiple files');
+    return;
+  }
+
+  const reader: FileReader = new FileReader();
+  reader.onload = (e: any) => {
+    const bstr: string = e.target.result;
+    const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
+
+    const wsname: string = wb.SheetNames[0];
+    const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+
+    const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+    if (data.length > 1) {
+      const headerRow = data[0]; // First row: headers
+
+      for (let rowIndex = 1; rowIndex < data.length; rowIndex++) {
+        const row = data[rowIndex];
+        const payPeriod = row[0]; // Assuming 1st column is Pay Period
+
+        for (let colIndex = 1; colIndex < row.length; colIndex++) {
+          const description = headerRow[colIndex];
+          const deadline = row[colIndex];
+
+          if (
+            description &&
+            deadline &&
+            description.trim() !== "Day" &&
+            description.trim() !== "PayPeriod"
+          ) {
+            this.tasksWithDeadlines.push({
+              payPeriod: String(payPeriod),
+              description: String(description),
+              deadline: String(deadline),
+            });
           }
         }
       }
-    };
-  
-    reader.readAsBinaryString(target.files[0]);
-  }
+    }
+  };
+
+  reader.readAsBinaryString(target.files[0]);
+
+}
   
   isTaskDueTodayOrEarlier(dueDate: string | Date): boolean {
     const today = new Date();
@@ -521,12 +538,11 @@ export class TeamLeadComponent {
       return;
     }
     this.tasksWithDeadlines.forEach((taskData) => {
-      taskData.deadlines.forEach((deadline) => {
-        const formattedDeadline = this.formatExcelDate(deadline);
+        const formattedDeadline = this.formatExcelDate(taskData.deadline);
         console.log("taskDesc"+taskData.description+"Deadline"+formattedDeadline);
         let  task = {};
         if(formattedDeadline!=null){
-        if(taskData.description=="Payroll Reports to QC"){
+        if(taskData.description.includes("QC")||taskData.description.includes("qc")){
         task = {
           reportType:'Payroll Reports',
           assignedTo: this.selectedMemberId,
@@ -541,7 +557,9 @@ export class TeamLeadComponent {
           leadermail: this.profile,
           clientStatus:'Active',
           QcApproval:'Pending',
-          Sequence:0
+          Sequence:0,
+          comment:"",
+          period:taskData.payPeriod
         };
       }
       else{
@@ -556,7 +574,9 @@ export class TeamLeadComponent {
           status: 'Pending',
           createdBy: localStorage.getItem('id'),
           leadermail: this.profile,
-          clientStatus:'Active'
+          clientStatus:'Active',
+          comment:"",
+          period:taskData.payPeriod
         };
       }
         this.firestore
@@ -564,7 +584,7 @@ export class TeamLeadComponent {
           .add(task)
           .then(() => console.log('Task assigned:', task))
           .catch((error) => console.error('Error assigning task:', error));
-        }});
+        };
     });
     this.loadData(this.managerId);
     alert('All tasks assigned successfully!');
@@ -574,11 +594,12 @@ export class TeamLeadComponent {
   assignTask() {
     if (this.selectedTeamId||this.selectedMemberId && this.taskDescription && this.taskDeadline) {
      let  task = {};
-    if(this.taskDescription=="Payroll Reports to QC"){
+    if(this.taskDescription.includes("QC")||this.taskDescription.includes("qc")){
     task = {
       reportType:'Payroll Reports',
       assignedTo: this.selectedMemberId,
       teamId: this.selectedTeamId,
+      period:this.formatPeriod(this.taskDeadline),
       group:this.GroupName,
       client: this.ClientName,
       description: this.taskDescription,
@@ -589,13 +610,15 @@ export class TeamLeadComponent {
       leadermail: this.profile,
       clientStatus:'Active',
       QcApproval:'Pending',
-      Sequence:0
+      Sequence:0,
+      comment:""
     };
   }
   else{
     task = {
       assignedTo: this.selectedMemberId,
       teamId: this.selectedTeamId,
+      period:this.formatPeriod(this.taskDeadline),
       group:this.GroupName,
       client: this.ClientName,
       description: this.taskDescription,
@@ -604,7 +627,8 @@ export class TeamLeadComponent {
       status: 'Pending',
       createdBy: localStorage.getItem('id'),
       leadermail: this.profile,
-      clientStatus:'Active'
+      clientStatus:'Active',
+      comment:""
     };
   }
     this.firestore

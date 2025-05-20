@@ -265,6 +265,7 @@ export class QcLeadComponent {
    }
    sendQcApprovedMail(currentReport:any)
    {
+    const formattedPeriod = this.datePipe.transform(currentReport.Period, 'MMMM-yyyy') || currentReport.Period;
      this.firestoreService.getUserById(currentReport.ops).subscribe(userData => {
        if (userData.length > 0) {
          const user = userData[0];
@@ -274,8 +275,8 @@ export class QcLeadComponent {
          this.rec[0]=user.email
          let bodydata = {
          "recipients": this.rec,
-         "subject": `${currentReport.groupName}: No QC Findings - ${currentReport.reportType} ${currentReport.Period}`,
-         "body": `Hi ${user.name},<br><br>Hope you're doing well.<br>This is to inform you that the Quality Check (QC) for the ${currentReport.reportType} of client: ${currentReport.clientName} <br>for the period of ${currentReport.Period} has been completed.<br>✅ No findings were observed during the QC process.<br><br>Best regards,<br>${this.nm}`,
+         "subject": `${currentReport.groupName}: No QC Findings - ${currentReport.reportType} ${formattedPeriod}`,
+         "body": `Hi ${user.name},<br><br>Hope you're doing well.<br>This is to inform you that the Quality Check (QC) for the ${currentReport.reportType} of client: ${currentReport.clientName} <br>for the period of ${formattedPeriod} has been completed.<br>✅ No findings were observed during the QC process.<br><br>Best regards,<br>${this.nm}`,
        };
      this.firestoreService.sendMail(bodydata);
        }

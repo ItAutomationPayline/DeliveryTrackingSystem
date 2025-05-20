@@ -5,7 +5,13 @@ div {
   label {
     font-weight: bold;
   }
-  
+  .table th,
+  .table td {
+    width: auto;
+    table-layout: auto;
+    text-align: center;
+    vertical-align: middle;
+  }
   textarea,
   input,
   select {

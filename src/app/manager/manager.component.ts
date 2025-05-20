@@ -5,19 +5,30 @@ import { FirestoreService } from '../services/firestore.service';
 import { debounceTime, forkJoin, take } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-manager',
   standalone: false,
   templateUrl: './manager.component.html',
+  providers: [DatePipe],
   styleUrls: ['./manager.component.css'] // Corrected 'styleUrl' to 'styleUrls'
 })
 
 export class ManagerComponent {
+  // tasksWithDeadlines: { description: string; deadlines: string[] }[] = [];
+  tasksWithDeadlines: any[] = [];
   reportForm: FormGroup;
   AllActiveQcReports: any[] = [];
   selectedQC:any;
-   QcTeam:any[]=[];
+  QcTeam:any[]=[];
+  boss:any;
+  ops:any;
+  GroupName: string = '';
+  ClientName: string = '';
+  taskDescription: string = '';
+  minDeadline: string = '';
+  taskDeadline: string = '';
   AllClientsAndGroups:any[] = [];
   public tasksAssigned: any[] = [];
   public users: any[] = [];
@@ -51,6 +62,8 @@ export class ManagerComponent {
   taskToEdit: any = null;
   userCache: { [key: string]: string } = {};
   excelFile: File | null = null;
+  teamBeingEdited: any = null;
+  editedTeamMemberIds: string[] = [];
   
   public userMap: Map<string, string> = new Map(); // Map of user IDs to names
 
@@ -104,6 +117,246 @@ export class ManagerComponent {
     this.fetchClients();
     this.fetchQcTeam();
   }
+    assignTask() {
+    if ( this.taskDescription && this.taskDeadline) {
+    let  task = {};
+    const selectedManager = this.managers.find(m => m.id === this.boss);
+    const leaderEmail = selectedManager ? selectedManager.email : '';
+    if(this.taskDescription.includes("QC")||this.taskDescription.includes("qc")){
+    task = {
+      reportType:'Payroll Reports',
+      assignedTo: this.ops,
+      group:this.GroupName,
+      client: this.ClientName,
+      description: this.taskDescription,
+      period:this.formatPeriod(this.taskDeadline),
+      deadline: new Date(this.taskDeadline).toISOString(), // Convert deadline to ISO format
+      completedAt:'',
+      status: 'Pending',
+      createdBy: this.boss,
+      clientStatus:'Active',
+      QcApproval:'Pending',
+      Sequence:0,
+      comment:"",
+      leaderEmail:leaderEmail
+    };
+  }
+  else{
+    task = {
+      assignedTo: this.ops,
+      group:this.GroupName,
+      client: this.ClientName,
+      period:this.formatPeriod(this.taskDeadline),
+      description: this.taskDescription,
+      deadline: new Date(this.taskDeadline).toISOString(), // Convert deadline to ISO format
+      completedAt:'',
+      status: 'Pending',
+      createdBy: this.boss,
+      clientStatus:'Active',
+      comment:"",
+      leaderEmail:leaderEmail
+    };
+  }
+    this.firestore
+      .collection('tasks')
+      .add(task)
+      .then(() => {
+        alert('Task assigned successfully!');
+      })
+      .catch((error) => {
+        alert('Failed to assign task. Please try again.');
+      });
+    }
+  }
+onFileChange2(event: any) {
+  const target: DataTransfer = <DataTransfer>event.target;
+  if (target.files.length !== 1) {
+    alert('Cannot upload multiple files');
+    return;
+  }
+
+  const reader: FileReader = new FileReader();
+  reader.onload = (e: any) => {
+    const bstr: string = e.target.result;
+    const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
+
+    const wsname: string = wb.SheetNames[0];
+    const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+
+    const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+    if (data.length > 1) {
+      const headerRow = data[0]; // First row: headers
+
+      for (let rowIndex = 1; rowIndex < data.length; rowIndex++) {
+        const row = data[rowIndex];
+        const payPeriod = row[0]; // Assuming 1st column is Pay Period
+
+        for (let colIndex = 1; colIndex < row.length; colIndex++) {
+          const description = headerRow[colIndex];
+          const deadline = row[colIndex];
+
+          if (
+            description &&
+            deadline &&
+            description.trim() !== "Day" &&
+            description.trim() !== "PayPeriod"
+          ) {
+            this.tasksWithDeadlines.push({
+              payPeriod: String(payPeriod),
+              description: String(description),
+              deadline: String(deadline),
+            });
+          }
+        }
+      }
+    }
+  };
+
+  reader.readAsBinaryString(target.files[0]);
+
+}
+
+    formatExcelDate(value: any): string | null {
+    if (!value) return null;
+    // Handle Excel serial number
+    if (!isNaN(value)) {
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+      const date = new Date(excelEpoch.getTime() + value * 86400000);
+      return this.adjustTime(date).toISOString();
+    }
+    const strVal = value.toString().trim();
+    // Match dd/mm/yyyy hh:mm or dd-mm-yyyy hh:mm
+    const datetimeMatch = strVal.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})[ T](\d{2}):(\d{2})$/);
+    if (datetimeMatch) {
+      const [, dd, mm, yyyy, hh, min] = datetimeMatch;
+      const date = new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:00`);
+      if (hh === '00' && min === '00') {
+        date.setHours(23, 59, 0); // Replace 00:00 with 11:59 PM
+      }else {
+        date.setHours(date.getHours() + 3); // Add 4 hours to given time
+        date.setMinutes(date.getMinutes() + 30); // Add 4 hours to given time
+      }
+      return date.toISOString();
+    }
+  
+    // Match only date
+    const dateOnlyMatch = strVal.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
+    if (dateOnlyMatch) {
+      const [, dd, mm, yyyy] = dateOnlyMatch;
+      const date = new Date(`${yyyy}-${mm}-${dd}T14:00:00`); // Default to 2:00 PM
+      return date.toISOString();
+    }
+    return null;
+  }
+  adjustTime(date: Date): Date {
+    if (date.getHours() === 0 && date.getMinutes() === 0) {
+      date.setHours(23, 59, 0); // Adjust 00:00 to 11:59 PM
+    }
+    return date;
+  }
+  assignTasksFromExcel() {
+    if (!this.ops || this.tasksWithDeadlines.length === 0) {
+      alert('Please select an executive and upload a valid Excel file.');
+      return;
+    }
+      this.tasksWithDeadlines.forEach((task: any) => {
+  console.log(`Pay Period: ${task.payPeriod}, Description: ${task.description}, Deadline: ${task.deadline}`);
+});
+    const selectedManager = this.managers.find(m => m.id === this.boss);
+    const leaderEmail = selectedManager ? selectedManager.email : '';
+    this.tasksWithDeadlines.forEach((taskData) => {
+        const formattedDeadline = this.formatExcelDate(taskData.deadline);
+        console.log("taskDesc"+taskData.description+"Deadline"+formattedDeadline);
+        let  task = {};
+        if(formattedDeadline!=null){
+        if(taskData.description.includes("QC")||taskData.description.includes("qc")){
+        task = {
+          reportType:'Payroll Reports',
+          assignedTo: this.ops,
+          group:this.GroupName,
+          client: this.ClientName,
+          description: taskData.description,
+          deadline: formattedDeadline, // Convert deadline to ISO format
+          completedAt:'',
+          status: 'Pending',
+          createdBy: this.boss,
+          leaderEmail:leaderEmail,
+          clientStatus:'Active',
+          QcApproval:'Pending',
+          Sequence:0,
+          comment:"",
+          period:taskData.payPeriod
+        };
+      }
+      else{
+        task = {
+          assignedTo: this.ops,
+          group:this.GroupName,
+          client: this.ClientName,
+          description: taskData.description,
+          deadline: formattedDeadline, // Convert deadline to ISO format
+          completedAt:'',
+          status: 'Pending',
+          createdBy: this.boss,
+          leaderEmail:leaderEmail,
+          clientStatus:'Active',
+          comment:"",
+          period:taskData.payPeriod
+        };
+      }
+        this.firestore
+          .collection('tasks')
+          .add(task)
+          .then(() => console.log('Task assigned:', task))
+          .catch((error) => console.error('Error assigning task:', error));
+        }
+        else{
+          console.log("Wrong formatteddeadline");
+        }
+      });
+    alert('All tasks assigned successfully!');
+    setTimeout(() => {
+        window.location.reload();
+      }, 5000);
+  }
+editTeam(team: any): void {
+  this.teamBeingEdited = team;
+  this.editedTeamMemberIds = [...team.employees]; // assuming `employees` is an array of user IDs
+}
+
+toggleEditedMember(userId: string): void {
+  const index = this.editedTeamMemberIds.indexOf(userId);
+  if (index > -1) {
+    this.editedTeamMemberIds.splice(index, 1);
+  } else {
+    this.editedTeamMemberIds.push(userId);
+  }
+}
+updateTeamMembers(teamId: string, newMembers: string[]): Promise<void> {
+  return this.firestore.collection('teams').doc(teamId).update({
+    employees: newMembers
+  });
+}
+updateTeam(): void {
+  if (!this.teamBeingEdited) return;
+
+  this.updateTeamMembers(this.teamBeingEdited.id, this.editedTeamMemberIds)
+    .then(() => {
+      alert('Team updated successfully!');
+      this.teamBeingEdited = null;
+      this.editedTeamMemberIds = [];
+      this.fetchTeams();
+    })
+    .catch((err: { message: string; }) => {
+      alert('Error updating team: ' + err.message);
+    });
+}
+
+cancelEdit(): void {
+  this.teamBeingEdited = null;
+  this.editedTeamMemberIds = [];
+}
   assignQc(id:any,selectedQC:any)
   {
     const selectedQcUser = this.QcTeam.find(qc => qc.id === selectedQC);
@@ -129,7 +382,6 @@ export class ManagerComponent {
       console.error("Error updating QC report: ", error);
     });
   }
-
   fetchQcTeam() {
     this.firestore.collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC']))
       .valueChanges({ idField: 'id' })
@@ -147,6 +399,70 @@ export class ManagerComponent {
       this.AllClientsAndGroups = tasks;
     });
   }
+
+ markTaskasComplete(taskToUpdate: any) {
+    if (taskToUpdate) {
+      const isConfirmed = window.confirm(
+        `Are you sure you want to mark "${taskToUpdate.description}" as Completed?`
+      );
+      
+      if (isConfirmed) {
+        if(taskToUpdate.description=="Customer Provides Payroll Inputs"||taskToUpdate.description=="Payroll Input Received"||taskToUpdate.description=="Payroll Inputs to Partner")
+        {
+          const bodydata = {
+          recipients: [taskToUpdate.leadermail],
+          subject: [taskToUpdate.group] + `: Payroll Input Received`,
+          body: `This is to inform you that the payroll input of client ${taskToUpdate.client} has been received.<br>I will proceed with the necessary processing as per the defined timelines.<br><br>Best regards,<br>${taskToUpdate.assignedToName}`,
+          };
+          this.firestoreService.sendMail(bodydata);
+        }
+        if(taskToUpdate.QcApproval=="Pending")
+        {
+            let userNote = prompt("Enter a note/special instruction for qc if any:");
+            let finalData = {
+              taskId:taskToUpdate.id,
+              reportType:taskToUpdate.reportType,
+              groupName:taskToUpdate.group,
+              clientName: taskToUpdate.client,
+              Period:taskToUpdate.deadline,
+              ops:taskToUpdate.assignedTo,
+              AssignedTo:"Pending",
+              opsName:taskToUpdate.assignedToName,
+              status:"Pending",
+              note:userNote
+            };
+            try {
+              this.firestore.collection('QcReports').add(finalData);
+              alert('Request Sent To QC Successfully!');
+              //this.clientForm.reset();
+            } catch (error) {
+              console.error('Error saving to Firebase:', error);
+            }
+        }
+        this.firestore
+          .collection('tasks')
+          .doc(taskToUpdate.id)
+          .update({
+            status: 'Completed',
+            completedAt:new Date().toISOString()
+          })
+          .then(() => {
+            this.fetchAssignedTasks();
+          })
+          .catch((error) => {
+            console.error('Error updating task status: ', error);
+          });
+      } else {
+        console.log('Task completion canceled by user');
+      }
+    }
+  }
+formatPeriod(isoDate: string): string {
+  const date = new Date(isoDate);
+  const month = date.toLocaleString('default', { month: 'long' }); // e.g., "May"
+  const year = date.getFullYear();
+  return `${month} ${year}`;
+}
   generateReport() {
     const { fromDat, toDat ,opsNames} = this.reportForm.value;
     let fr = new Date(fromDat);
@@ -180,6 +496,7 @@ export class ManagerComponent {
         let formattedTask = temp.map(t => ({
           group: t.group || '',
           client: t.client || '',
+          period:t.period,
           clientStatus: t.clientStatus || '',
           description: t.description || '',
           deadline: this.formatDate(t.deadline),
@@ -225,6 +542,7 @@ export class ManagerComponent {
         let formattedTask = temp.map(t => ({
           group: t.group || '',
           client: t.client || '',
+          period:t.period,
           clientStatus: t.clientStatus || '',
           description: t.description || '',
           deadline: this.formatDate(t.deadline),
@@ -247,13 +565,14 @@ export class ManagerComponent {
   downloadExcel(data: any[]) {
     // First create an array with correct headings and data
     const headings = [
-      'Group', 'Client', 'Description', 'Deadline', 
+      'Group', 'Client','Period', 'Description', 'Deadline', 
       'Completed At', 'TL', 'Ops', 'Status', 
       'Report Type', 'Qc Approval', 'Sequence','Comment'
     ];
     const formattedData = data.map(item => ({
       Group: item.group,
       Client: item.client,
+      Period:item.period,
       Description: item.description,
       Deadline: item.deadline,
       'Completed At': item.completedAt,
@@ -817,4 +1136,5 @@ fetchAssignedTasks() {
         alert('Failed to update the role. Please try again later.');
       });
   }
+  
 }

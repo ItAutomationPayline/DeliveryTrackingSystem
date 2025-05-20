@@ -161,38 +161,6 @@ export class ExecutiveComponent {
       }
     }
   }
-  // reportTask(task:any){
-  //   const reason = window.prompt(`Enter a reason for reporting Task: ${task.description}:`);
-  //   let  mail: string[] = [];
-  //   if (reason) {
-  //     this.firestore
-  //     .collection('tasks')
-  //     .doc(task.id)
-  //     .update({
-  //       comment: reason
-  //     })
-  //     .then(() => {
-  //       const formattedDeadline = this.datePipe.transform(task.deadline, 'MMMM dd, y, h:mm:ss a');
-  //       let bodydata = {
-  //         "recipients": [task.leadermail],
-  //         "subject": [task.client]+`:Request for Deadline Extension for: ${task.description}`,
-  //         "body": `${this.nm} requested an extension for the deadline of Task: ${task.description}<br> originally due on <br>Deadline:${ formattedDeadline} <br>Due to reason:${reason}.<br>Please take necessary actions.<br><br>Reagrds,<br>DTS`,
-  //       };
-  //       this.firestoreService.sendMail(bodydata)
-  //       // Refresh the tasks list after the update
-  //       this.fetchTasks();
-  //     })
-  //     .catch((error) => {
-  //       console.error('Error updating task status: ', error);
-  //     });
-  //     console.log(`Task ${task.id} reported for reason:`, reason);
-  //     alert(`reported successfully!`);
-  //   } else {
-  //     alert("Report cancelled.");
-  //   }
-  // }
-
-
 openReportModal(task: any) {
   this.selectedTask = task;
   this.reasonInput = '';
@@ -272,30 +240,21 @@ submitReport() {
         setTimeout(() => {
           this.sortTasks(this.tasks);
         }, 500);
-        
       });
-  }
-   bodydata={
-    "recipients": ["dayaghan.limaye@paylineindia.com", "dayaghanlimaye@gmail.com"],
-    "subject": "Test Email",
-    "body": "Hello, this is a test email sent to multiple recipients!"
   }
   startSessionTimer() {
     // Clear any existing timer to avoid multiple timers
     if (this.sessionTimeout) {
       clearTimeout(this.sessionTimeout);
     }
-
     // Set a new inactivity timer
     this.sessionTimeout = setTimeout(() => {
       this.router.navigateByUrl('/login');
     }, this.inactivityDuration);
   }
-
   resetSessionTimer() {
     this.startSessionTimer();
   }
-
   // Listen for user interaction events and reset the timer
   @HostListener('document:mousemove')
   @HostListener('document:click')
@@ -303,5 +262,4 @@ submitReport() {
   handleUserActivity() {
     this.resetSessionTimer(); // Reset timer on activity
   }
-  //this.firestoreService.sendMail(bodydata);
 }

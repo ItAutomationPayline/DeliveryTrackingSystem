@@ -149,7 +149,7 @@
             <td>{{ task.qcName }}</td>
             <td>{{ task.Period | date: 'MMMM-yyyy' }}</td>
             <td>{{ task.status }}</td>
-            <td>
+            <td class="d-flex align-items-center gap-2">
             <select class="form-select" id="role" [(ngModel)]="selectedQC" required>
               <option value="" disabled selected>Select QC</option>
               <option *ngFor="let qc of QcTeam" [value]="qc.id">

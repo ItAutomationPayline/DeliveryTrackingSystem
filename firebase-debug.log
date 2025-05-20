@@ -1,0 +1,34 @@
+[debug] [2025-05-16T04:42:21.738Z] ----------------------------------------------------------------------
+[debug] [2025-05-16T04:42:21.743Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2025-05-16T04:42:21.744Z] CLI Version:   14.0.1
+[debug] [2025-05-16T04:42:21.744Z] Platform:      win32
+[debug] [2025-05-16T04:42:21.744Z] Node Version:  v22.15.0
+[debug] [2025-05-16T04:42:21.745Z] Time:          Fri May 16 2025 10:12:21 GMT+0530 (India Standard Time)
+[debug] [2025-05-16T04:42:21.745Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-05-16T04:42:22.079Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-05-16T04:42:22.080Z] > authorizing via signed-in user (it.automation@paylineindia.com)
+[debug] [2025-05-16T04:42:22.080Z] [iam] checking project delivery-tracking-system-3d451 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2025-05-16T04:42:22.081Z] Checked if tokens are valid: true, expires at: 1747374007118
+[debug] [2025-05-16T04:42:22.082Z] Checked if tokens are valid: true, expires at: 1747374007118
+[debug] [2025-05-16T04:42:22.083Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/delivery-tracking-system-3d451:testIamPermissions [none]
+[debug] [2025-05-16T04:42:22.083Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/delivery-tracking-system-3d451:testIamPermissions x-goog-quota-user=projects/delivery-tracking-system-3d451
+[debug] [2025-05-16T04:42:22.083Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delivery-tracking-system-3d451:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-05-16T04:42:22.689Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/delivery-tracking-system-3d451:testIamPermissions 200
+[debug] [2025-05-16T04:42:22.689Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/delivery-tracking-system-3d451:testIamPermissions {}
+[debug] [2025-05-16T04:42:22.689Z] [iam] error while checking permissions, command may fail: Authorization failed. This account is missing the following required permissions on project delivery-tracking-system-3d451:
+
+  firebase.projects.get
+  firebasehosting.sites.update
+[debug] [2025-05-16T04:42:22.691Z] Checked if tokens are valid: true, expires at: 1747374007118
+[debug] [2025-05-16T04:42:22.691Z] Checked if tokens are valid: true, expires at: 1747374007118
+[debug] [2025-05-16T04:42:22.692Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/delivery-tracking-system-3d451 [none]
+[debug] [2025-05-16T04:42:24.305Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/delivery-tracking-system-3d451 403
+[debug] [2025-05-16T04:42:24.306Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/delivery-tracking-system-3d451 {"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}}
+[debug] [2025-05-16T04:42:24.309Z] Request to https://firebase.googleapis.com/v1beta1/projects/delivery-tracking-system-3d451 had HTTP Error: 403, The caller does not have permission
+[debug] [2025-05-16T04:42:24.609Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects/delivery-tracking-system-3d451 had HTTP Error: 403, The caller does not have permission
+    at responseToError (C:\Users\admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:52:12)
+    at RetryOperation._fn (C:\Users\admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:312:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[error] 
+[error] Error: Failed to get Firebase project delivery-tracking-system-3d451. Please make sure the project exists and your account has permission to access it.
