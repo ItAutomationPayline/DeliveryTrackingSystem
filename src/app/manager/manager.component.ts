@@ -212,9 +212,7 @@ onFileChange2(event: any) {
       }
     }
   };
-
   reader.readAsBinaryString(target.files[0]);
-
 }
 
     formatExcelDate(value: any): string | null {
@@ -429,7 +427,8 @@ cancelEdit(): void {
               AssignedTo:"Pending",
               opsName:taskToUpdate.assignedToName,
               status:"Pending",
-              note:userNote
+              note:userNote,
+              leadermail:taskToUpdate.leadermail
             };
             try {
               this.firestore.collection('QcReports').add(finalData);

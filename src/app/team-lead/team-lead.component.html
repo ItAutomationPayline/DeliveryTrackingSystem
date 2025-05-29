@@ -112,6 +112,7 @@
               <option *ngFor="let value of filterClients" [value]="value"></option>
             </datalist>
           </th>
+          <th>Period</th>
           <th>
             Description
             <datalist id="descriptionlist">
@@ -147,6 +148,7 @@
           <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&& task.status != 'Completed'">
             <td>{{ task.group }}</td>
             <td>{{ task.client }}</td>
+            <td>{{ task.period }}</td>
             <td>{{ task.description }}</td>
             <td>{{ task.assignedToName }}</td>
             <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a' }}</td>
@@ -254,6 +256,7 @@
               <tr>
                 <th>Group</th>
                 <th>Client</th>
+                <th>Period</th>
                 <th>Description</th>
                 <th>Assigned To</th>
                 <th>Deadline</th>
@@ -267,6 +270,7 @@
                <ng-container *ngIf="isTaskDueTomorrowOrEarlier(task.deadline)&& task.status != 'Completed'">
                 <td>{{ task.group }}</td>
                 <td>{{ task.client }}</td>
+                <td>{{ task.period }}</td>
                 <td>{{ task.description }}</td>
                 <td>{{ task.assignedToName }}</td>
                 <td>{{ task.deadline | date: ' dd-MM-yyyy h:mm:ss a, EEE' }}</td>

@@ -1,9 +1,45 @@
 <app-navbar></app-navbar>
 <ul class="nav nav-tabs" id="myTab" role="tablist">
-  <li class="nav-item" role="presentation">
+  <!-- <li class="nav-item" role="presentation">
     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home">Add/Manage Employees</button>
-  </li>
+  </li> -->
   <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile17">Profile</button>
+  </li>
+  <!-- dropdown we have to work -->
+   <li class="nav-item" role="presentation">
+    <div class="dropdown">
+      <button class="nav-link dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+        View
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+        <!-- <li><a class="dropdown-item" href="#">Dashboard</a></li> -->
+         <li class="nav-item" role="presentation">
+          <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile1">Add/Manage Clients</button>
+          </li>
+           <li class="nav-item" role="presentation">
+            <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile6">Transfer Clients</button>
+          </li>
+            <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile2">Download Reports</button>
+            </li>
+             <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile3">Team Generation & Details</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile8">Assign Tasks</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile5">View Today's Status</button>
+            </li>
+             <li class="nav-item" role="presentation">
+                <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile7">View Tomorrow's Tasks</button>
+              </li>
+          </ul>
+        </div>
+      </li>
+  <!-- dropdown ends -->
+  <!-- <li class="nav-item" role="presentation">
     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile1">Add/Manage Clients</button>
   </li>
   <li class="nav-item" role="presentation">
@@ -17,13 +53,13 @@
   </li>
   <li class="nav-item" role="presentation">
     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile8">Assign Tasks</button>
-  </li>
+  </li> -->
   <li class="nav-item" role="presentation">
-    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile5">View Today's Status</button>
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile5">Today's Status</button>
   </li>
-  <li class="nav-item" role="presentation">
+  <!-- <li class="nav-item" role="presentation">
     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile7">View Tomorrow's Tasks</button>
-  </li>
+  </li> -->
 </ul>
 <div class="tab-content mt-3">
   <div class="tab-pane fade" id="home">
@@ -454,6 +490,7 @@
                     <option *ngFor="let value of filterClients" value={{value}} placeholder="">
                   </datalist>
                 </th>
+                <th>Period</th>
                 <th>
                   Description<br />
                   <datalist id="descriptionList">
@@ -490,6 +527,7 @@
                 <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&& task.status != 'Completed'">
                 <td>{{ task.group }}</td>
                 <td>{{ task.client }}</td>
+                <td>{{ task.period }}</td>
                 <td>{{ task.description }}</td>
                 <td>{{ task.assignedToName }}</td>
                 <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a' }}</td>
@@ -591,6 +629,7 @@
                     <option *ngFor="let value of filterClients" value={{value}} placeholder="">
                   </datalist>
                 </th>
+                <th>Period</th>
                 <th>
                   Description<br />
                   <datalist id="descriptionList">
@@ -627,6 +666,7 @@
                 <ng-container *ngIf="isTaskDueTomorrowOrEarlier(task.deadline)&& task.status != 'Completed'">
                 <td>{{ task.group }}</td>
                 <td>{{ task.client }}</td>
+                <td>{{ task.period }}</td>
                 <td>{{ task.description }}</td>
                 <td>{{ task.assignedToName }}</td>
                 <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a' }}</td>

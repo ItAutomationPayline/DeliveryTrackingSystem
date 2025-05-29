@@ -167,10 +167,23 @@ export class QCComponent{
           </div>`;
       })
       .join('');
+       this.firestore
+      .collection('users', ref => ref.where('role', '==', 'Manager'))
+      .get()
+      .subscribe((querySnapshot: any) => {
+        const recipients: string[] = [];
+        querySnapshot.forEach((doc: any) => {
+          const userData = doc.data();
+          if (userData.email) {
+            recipients.push(userData.email);
+            this.rec.push(userData.email);
+          }
+        })});
     this.firestoreService.getUserById(currentReport.ops).subscribe(userData => {
       if (userData.length > 0) {
         const user = userData[0];
-        this.rec[0] = user.email;
+        this.rec.push(user.email);
+         this.rec.push(currentReport.leadermail);
         let bodydata = {
           "recipients": this.rec,
           "subject": `${currentReport.groupName}:QC Findings - ${currentReport.reportType}- ${formattedPeriod}`,

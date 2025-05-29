@@ -33,9 +33,9 @@ export class TasksCheckerComponent{
   ngOnInit() {
     console.log("StoredTasks:"+this.storedTasks);
     // Run checkPendingTasks every 1 minutes (300,000 milliseconds)
-    this.intervalId = setInterval(() => {
-      this.checkPendingTasks();
-    }, 60000);
+    // this.intervalId = setInterval(() => {
+    //   this.checkPendingTasks();
+    // }, 60000);
     this.intervalId = setInterval(() => {
       this.checkForReminder();
     }, 3600000);

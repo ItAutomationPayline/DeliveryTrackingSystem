@@ -1,4 +1,5 @@
 <app-navbar></app-navbar>
+ <h6>Welcome {{nm}},</h6>
 <div *ngIf="tasks.length > 0; else noTasks">
     <h3>Your Pending Tasks</h3>
     <table class="table table-striped table-bordered">
@@ -6,6 +7,7 @@
         <tr>
           <th>Group</th>
           <th>Client</th>
+          <th>Period</th>
           <th>Description</th>
           <th>Deadline</th>
           <th>Status</th>
@@ -20,13 +22,30 @@
             <ng-container *ngIf="task.status !== 'Completed' && isTaskDueTodayOrEarlier(task.deadline); else noTasks">
             <td>{{ task.group }}</td>
             <td>{{ task.client }}</td>
+            <td>{{ task.period }}</td>
             <td>{{ task.description }}</td>
             <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a,EEE' }}</td> <!-- Formatting deadline as date with time -->
             <td>{{ task.status }}</td>
             <td>
-              <!-- Button to mark task as complete -->
-              <button (click)="updateTaskStatus(task.id)" class="btn btn-success">Mark as Complete</button>
-              <button (click)="openReportModal(task)" class="btn btn-dark">Reschedule Task</button>
+              <!-- <button (click)="updateTaskStatus(task.id)" class="btn btn-success">Mark as Complete</button>
+              <button (click)="openReportModal(task)" class="btn btn-dark">Reschedule Task</button> -->
+              <div class="dropdown">
+                  <button  class="btn-select-lookalike" type="button"id="taskActionsDropdown"
+                    data-bs-toggle="dropdown"aria-expanded="false" style="width: 70px; height: 30px;">
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                    <li>
+                      <a class="dropdown-item"(click)="openReportModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
+                        Reschedule Task
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item"(click)="updateTaskStatus(task.id)">
+                        Mark as Complete
+                      </a>
+                    </li>
+                  </ul>
+                </div>
             </td>
             <td>{{ task.comment}}</td>
           </ng-container>
@@ -55,6 +74,7 @@
                 <tr>
                   <th>Client</th>
                   <th>Description</th>
+                  <th>Period</th>
                   <th>Deadline</th>
                   <th>Status</th>
                   <th>Action</th>
@@ -68,12 +88,30 @@
                     <ng-container *ngIf="task.status !== 'Completed' && isTaskDueTomorrowOrEarlier(task.deadline); else noTasks">
                     <td>{{ task.client }}</td>
                     <td>{{ task.description }}</td>
+                    <td>{{ task.period }}</td>
                     <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a,EEE' }}</td> <!-- Formatting deadline as date with time -->
                     <td>{{ task.status }}</td>
                     <td>
                       <!-- Button to mark task as complete -->
-                      <button (click)="updateTaskStatus(task.id)" class="btn btn-success">Mark as Complete</button>
-                      <button (click)="openReportModal(task)" class="btn btn-dark">Reschedule Task</button>
+                      <!-- <button (click)="updateTaskStatus(task.id)" class="btn btn-success">Mark as Complete</button>
+                      <button (click)="openReportModal(task)" class="btn btn-dark">Reschedule Task</button> -->
+                      <div class="dropdown">
+                  <button  class="btn-select-lookalike" type="button"id="taskActionsDropdown"
+                    data-bs-toggle="dropdown"aria-expanded="false" style="width: 70px; height: 30px;">
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                    <li>
+                      <a class="dropdown-item"(click)="openReportModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
+                        Reschedule Task
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item"(click)="updateTaskStatus(task.id)">
+                        Mark as Complete
+                      </a>
+                    </li>
+                  </ul>
+                </div>
                     </td>
                     <td>{{ task.comment}}</td>
                   </ng-container>

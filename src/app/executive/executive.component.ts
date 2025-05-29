@@ -131,7 +131,8 @@ export class ExecutiveComponent {
               AssignedTo:"Pending",
               opsName:this.nm,
               status:"Pending",
-              note:userNote
+              note:userNote,
+              leadermail:taskToUpdate.leadermail
             };
             try {
               this.firestore.collection('QcReports').add(finalData);
@@ -150,8 +151,8 @@ export class ExecutiveComponent {
           })
           .then(() => {
             // console.log(`Task ${taskId} marked as complete`);
-            // Refresh the tasks list after the update
-            this.fetchTasks();
+            this.tasks = this.tasks.filter(task => task.id !== taskId);
+            // this.fetchTasks();
           })
           .catch((error) => {
             console.error('Error updating task status: ', error);
