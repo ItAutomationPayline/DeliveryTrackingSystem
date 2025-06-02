@@ -26,6 +26,7 @@ export class ExecutiveComponent {
   });
  }
  tasks: any[] = [];
+ rec: string[] = [];
  scheduledTasks: any[] = [];
  showModal = false;
  selectedTask: any = null;
@@ -118,8 +119,19 @@ export class ExecutiveComponent {
           };
           this.firestoreService.sendMail(bodydata);
         }
-        if(taskToUpdate.QcApproval=="Pending")
+        if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
+          let headcount = prompt("Kindly provide the headcount");
+          this.firestore
+          .collection('tasks')
+          .doc(taskId)
+          .update({
+            headcount: headcount,
+          })
+        }
+        if(taskToUpdate.QcApproval=="Pending")
+        { 
+            let link = prompt("Paste the link of reports if any:");
             let userNote = prompt("Enter a note/special instruction for qc if any:");
             let finalData = {
               taskId:taskId,
@@ -132,12 +144,53 @@ export class ExecutiveComponent {
               opsName:this.nm,
               status:"Pending",
               note:userNote,
+              link:link,
               leadermail:taskToUpdate.leadermail
             };
+             this.firestore
+              .collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC']))
+              .get()
+              .subscribe((querySnapshot: any) => {
+                let recipients: string[] = [];
+                querySnapshot.forEach((doc: any) => {
+                  const userData = doc.data();
+                  if (userData.email) {
+                    recipients.push(userData.email);
+                  }
+                  
+                });
+            recipients.push(taskToUpdate.leadermail);
+              if (recipients.length > 0) {
+                const subject = `${taskToUpdate.group}: QC Request: ${taskToUpdate.reportType}`;
+                const body = `
+                  <p>Dear QC Team,</p>
+                  Please check Payroll Reports of client<br> ${taskToUpdate.client}<br>
+                  of period:${taskToUpdate.period}.<br>
+                  link:${link}<br>
+                  note:${userNote}<br>
+                  For any issues or queries or if link is not given, feel free to reach out.<br>
+                  <p>Best regards,
+                  <br>${localStorage.getItem('nm')}</p>
+                `;
+        
+                const bodydata = {
+                  recipients: recipients,
+                  subject: subject,
+                  body: body
+                };
+                this.firestoreService.sendMail(bodydata);
+              } 
+              else {
+                console.warn('No manager emails found to send notification.');
+              }
+              }, (error: any) => {
+                console.error('Error fetching managers:', error);
+              });
             try {
               this.firestore.collection('QcReports').add(finalData);
               alert('Request Sent To QC Successfully!');
               //this.clientForm.reset();
+              
             } catch (error) {
               console.error('Error saving to Firebase:', error);
             }

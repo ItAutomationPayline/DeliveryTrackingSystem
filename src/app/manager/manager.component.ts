@@ -138,7 +138,7 @@ export class ManagerComponent {
       QcApproval:'Pending',
       Sequence:0,
       comment:"",
-      leaderEmail:leaderEmail
+      leadermail:leaderEmail
     };
   }
   else{
@@ -154,7 +154,7 @@ export class ManagerComponent {
       createdBy: this.boss,
       clientStatus:'Active',
       comment:"",
-      leaderEmail:leaderEmail
+      leadermail:leaderEmail
     };
   }
     this.firestore
@@ -279,7 +279,7 @@ onFileChange2(event: any) {
           completedAt:'',
           status: 'Pending',
           createdBy: this.boss,
-          leaderEmail:leaderEmail,
+          leadermail:leaderEmail,
           clientStatus:'Active',
           QcApproval:'Pending',
           Sequence:0,
@@ -297,7 +297,7 @@ onFileChange2(event: any) {
           completedAt:'',
           status: 'Pending',
           createdBy: this.boss,
-          leaderEmail:leaderEmail,
+          leadermail:leaderEmail,
           clientStatus:'Active',
           comment:"",
           period:taskData.payPeriod
@@ -414,8 +414,19 @@ cancelEdit(): void {
           };
           this.firestoreService.sendMail(bodydata);
         }
+        if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
+        {
+          let headcount = prompt("Kindly provide the headcount");
+          this.firestore
+          .collection('tasks')
+          .doc(taskToUpdate.id)
+          .update({
+            headcount: headcount,
+          })
+        }
         if(taskToUpdate.QcApproval=="Pending")
         {
+            let link = prompt("Paste the link of reports if any:");
             let userNote = prompt("Enter a note/special instruction for qc if any:");
             let finalData = {
               taskId:taskToUpdate.id,
@@ -427,9 +438,48 @@ cancelEdit(): void {
               AssignedTo:"Pending",
               opsName:taskToUpdate.assignedToName,
               status:"Pending",
+              link:link,
               note:userNote,
               leadermail:taskToUpdate.leadermail
             };
+             this.firestore
+              .collection('users', ref => ref.where('role', '==', 'QC').where('role', '==', 'QCLead'))
+              .get()
+              .subscribe((querySnapshot: any) => {
+                let recipients: string[] = [];
+                querySnapshot.forEach((doc: any) => {
+                  const userData = doc.data();
+                  if (userData.email) {
+                    recipients.push(userData.email);
+                  }
+                });
+            recipients.push(taskToUpdate.leadermail);
+              if (recipients.length > 0) {
+                const subject = `${taskToUpdate.group}: QC Request: ${taskToUpdate.reportType}`;
+                const body = `
+                  <p>Dear QC Team,</p>
+                  Please check Payroll Reports of client<br> ${taskToUpdate.client}<br>
+                  of period:${taskToUpdate.period}.<br>
+                  link:${link}<br>
+                  note:${userNote}<br>
+                  For any issues or queries or if link is not given, feel free to reach out.<br>
+                  <p>Best regards,
+                  <br>${taskToUpdate.assignedToName}</p>
+                `;
+        
+                const bodydata = {
+                  recipients: recipients,
+                  subject: subject,
+                  body: body
+                };
+                this.firestoreService.sendMail(bodydata);
+              } 
+              else {
+                console.warn('No manager emails found to send notification.');
+              }
+              }, (error: any) => {
+                console.error('Error fetching managers:', error);
+              });
             try {
               this.firestore.collection('QcReports').add(finalData);
               alert('Request Sent To QC Successfully!');
@@ -506,6 +556,7 @@ formatPeriod(isoDate: string): string {
           reportType: t.reportType || '',
           QcApproval: t.QcApproval || '',
           comment: t.comment,
+          headcount: t.headcount || '',
           sequence: t.Sequence !== undefined ? t.Sequence.toString() : '' // Ensure sequence is a string
         }));
         console.log("ShortListedTasks:",formattedTask);
@@ -552,6 +603,7 @@ formatPeriod(isoDate: string): string {
           reportType: t.reportType || '',
           QcApproval: t.QcApproval || '',
           comment: t.comment,
+          headcount: t.headcount || '',
           sequence: t.Sequence !== undefined ? t.Sequence.toString() : '' // Ensure sequence is a string
         }));
         console.log("ShortListedTasks:",formattedTask);
@@ -566,7 +618,7 @@ formatPeriod(isoDate: string): string {
     const headings = [
       'Group', 'Client','Period', 'Description', 'Deadline', 
       'Completed At', 'TL', 'Ops', 'Status', 
-      'Report Type', 'Qc Approval', 'Sequence','Comment'
+      'Report Type', 'Qc Approval', 'Sequence','Headcount','Comment'
     ];
     const formattedData = data.map(item => ({
       Group: item.group,
@@ -581,6 +633,7 @@ formatPeriod(isoDate: string): string {
       'Report Type': item.reportType,
       'Qc Approval': item.QcApproval,
       Sequence: item.sequence,
+      Headcount:item.headcount,
       Comment: item.comment
     }));
     const ws = XLSX.utils.json_to_sheet(formattedData, { header: headings });

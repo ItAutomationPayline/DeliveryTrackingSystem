@@ -21,6 +21,7 @@
           Type: {{ request.reportType}}<br>
           Period: {{ request.Period| date: 'MMMM-yyyy'}}<br>
           Ops: {{ request.opsName}}<br>
+          link:{{request.link}}<br>
           note:{{request.note}}<br>
           <button (click)="startQcReport(request.id)">Start QC</button>
         </ng-container>
@@ -38,6 +39,7 @@
           Type: {{ report.reportType}}<br>
           Ops: {{ report.opsName}}<br>
           <p>Period: {{ report.Period| date: 'MMMM-yyyy' }}</p>
+          link:{{report.link}}<br>
           note:{{report.note}}<br>
           <p>Status: {{ report.status }}</p>
           <p>Findings: {{ report.findings?.length || 0 }}</p>

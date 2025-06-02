@@ -72,12 +72,12 @@ export class TeamLeadComponent {
     const role = localStorage.getItem('role');
     const token = localStorage.getItem('authToken');
      this.managerId = localStorage.getItem('id'); // Retrieve logged-in Team Lead's ID from localStorage
-    if (!token || role !== 'Manager') {
-      if (!token || role !== 'Team Lead') {
-        this.router.navigateByUrl('/login');
-        return;
+      if (!token || role !== 'Manager') {
+        if (!token || role !== 'Team Lead') {
+          this.router.navigateByUrl('/login');
+          return;
+        }
       }
-    }
       this.teams=[];
       this.opsName='';
       this.tasksAssigned=[];
@@ -103,6 +103,114 @@ export class TeamLeadComponent {
     this.getFilteredDescription();
     this.loadDescriptionSuggestions();
     this.fetchClients();
+  }
+   markTaskasComplete(taskToUpdate: any) {
+    if (taskToUpdate) {
+      const isConfirmed = window.confirm(
+        `Are you sure you want to mark "${taskToUpdate.description}" as Completed?`
+      );
+      
+      if (isConfirmed) {
+        if(taskToUpdate.description=="Customer Provides Payroll Inputs"||taskToUpdate.description=="Payroll Input Received"||taskToUpdate.description=="Payroll Inputs to Partner")
+        {
+          const bodydata = {
+          recipients: [taskToUpdate.leadermail],
+          subject: [taskToUpdate.group] + `: Payroll Input Received`,
+          body: `This is to inform you that the payroll input of client ${taskToUpdate.client} has been received.<br>I will proceed with the necessary processing as per the defined timelines.<br><br>Best regards,<br>${taskToUpdate.assignedToName}`,
+          };
+          this.firestoreService.sendMail(bodydata);
+        }
+        if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
+        {
+          let headcount = prompt("Kindly provide the headcount");
+          this.firestore
+          .collection('tasks')
+          .doc(taskToUpdate.id)
+          .update({
+            headcount: headcount,
+          })
+        }
+        if(taskToUpdate.QcApproval=="Pending")
+        {
+            let link = prompt("Paste the link of reports if any:");
+            let userNote = prompt("Enter a note/special instruction for qc if any:");
+            let finalData = {
+              taskId:taskToUpdate.id,
+              reportType:taskToUpdate.reportType,
+              groupName:taskToUpdate.group,
+              clientName: taskToUpdate.client,
+              Period:taskToUpdate.deadline,
+              ops:taskToUpdate.assignedTo,
+              AssignedTo:"Pending",
+              opsName:taskToUpdate.assignedToName,
+              status:"Pending",
+              note:userNote,
+              link:link,
+              leadermail:taskToUpdate.leadermail
+            };
+            this.firestore
+              .collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC']))
+              .get()
+              .subscribe((querySnapshot: any) => {
+                let recipients: string[] = [];
+                querySnapshot.forEach((doc: any) => {
+                  const userData = doc.data();
+                  if (userData.email) {
+                    recipients.push(userData.email);
+                  }
+                  
+                });
+            // recipients.push(taskToUpdate.leadermail);
+              if (recipients.length > 0) {
+                const subject = `${taskToUpdate.group}: QC Request: ${taskToUpdate.reportType}`;
+                const body = `
+                  <p>Dear QC Team,</p>
+                  Please check Payroll Reports of client<br> ${taskToUpdate.client}<br>
+                  of period:${taskToUpdate.period}.<br>
+                  link:${link}<br>
+                  note:${userNote}<br>
+                  For any issues or queries or if link is not given, feel free to reach out.<br>
+                  <p>Best regards,
+                  <br>${localStorage.getItem('nm')}</p>
+                `;
+                const bodydata = {
+                  recipients: recipients,
+                  subject: subject,
+                  body: body
+                };
+                this.firestoreService.sendMail(bodydata);
+              } 
+              else {
+                console.warn('No manager emails found to send notification.');
+              }
+              }, (error: any) => {
+                console.error('Error fetching managers:', error);
+              });
+            try {
+              this.firestore.collection('QcReports').add(finalData);
+              alert('Request Sent To QC Successfully!');
+              //this.clientForm.reset();
+            } catch (error) {
+              console.error('Error saving to Firebase:', error);
+            }
+        }
+        this.firestore
+          .collection('tasks')
+          .doc(taskToUpdate.id)
+          .update({
+            status: 'Completed',
+            completedAt:new Date().toISOString()
+          })
+          .then(() => {
+            this.fetchAssignedTasks();
+          })
+          .catch((error) => {
+            console.error('Error updating task status: ', error);
+          });
+      } else {
+        console.log('Task completion canceled by user');
+      }
+    }
   }
   fetchClients()
   {
@@ -142,12 +250,13 @@ export class TeamLeadComponent {
     this.filterStatus=[];
     this.filterStatus=Array.from(new Set(this.tasksWithNames.map(t => t.status))).sort();
   }
-  formatPeriod(isoDate: string): string {
+  formatPeriod(isoDate: string): string 
+  {
   const date = new Date(isoDate);
   const month = date.toLocaleString('default', { month: 'long' }); // e.g., "May"
   const year = date.getFullYear();
   return `${month} ${year}`;
-}
+  }
   // get uniqueClients(): string[] {
   //   return [...new Set(this.data.map(item => item.client).filter(Boolean))];
   // }
@@ -219,12 +328,8 @@ onFileChange(event: any) {
           const description = headerRow[colIndex];
           const deadline = row[colIndex];
 
-          if (
-            description &&
-            deadline &&
-            description.trim() !== "Day" &&
-            description.trim() !== "PayPeriod"
-          ) {
+          if (description &&deadline &&description.trim() !== "Day" &&description.trim() !== "PayPeriod") 
+          {
             this.tasksWithDeadlines.push({
               payPeriod: String(payPeriod),
               description: String(description),

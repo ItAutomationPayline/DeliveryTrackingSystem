@@ -34,16 +34,17 @@
                     data-bs-toggle="dropdown"aria-expanded="false" style="width: 70px; height: 30px;">
                   </button>
                   <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                     <li>
+                      <a class="dropdown-item"(click)="updateTaskStatus(task.id)">
+                        Mark as Complete
+                      </a>
+                    </li>
                     <li>
                       <a class="dropdown-item"(click)="openReportModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
                         Reschedule Task
                       </a>
                     </li>
-                    <li>
-                      <a class="dropdown-item"(click)="updateTaskStatus(task.id)">
-                        Mark as Complete
-                      </a>
-                    </li>
+                   
                   </ul>
                 </div>
             </td>
@@ -68,7 +69,7 @@
       <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
         <div class="accordion-body">
           <div *ngIf="tasks.length > 0; else noTasks">
-            <h3>Your Pending Tasks</h3>
+            <h3>Your Tommorow's Tasks</h3>
             <table class="table table-striped table-bordered">
               <thead>
                 <tr>
@@ -100,16 +101,17 @@
                     data-bs-toggle="dropdown"aria-expanded="false" style="width: 70px; height: 30px;">
                   </button>
                   <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                     <li>
+                      <a class="dropdown-item"(click)="updateTaskStatus(task.id)">
+                        Mark as Complete
+                      </a>
+                    </li>
                     <li>
                       <a class="dropdown-item"(click)="openReportModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
                         Reschedule Task
                       </a>
                     </li>
-                    <li>
-                      <a class="dropdown-item"(click)="updateTaskStatus(task.id)">
-                        Mark as Complete
-                      </a>
-                    </li>
+                   
                   </ul>
                 </div>
                     </td>

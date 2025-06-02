@@ -49,6 +49,7 @@
                 <option value="Payroll Processing">
                 <option value="Payroll Reports to QC">
                 <option value="Payroll reports sent to client">
+                <option value="Customer Approves the Payroll Reports">
                 <option value="Bank file">
                 <option value="Upload individual IT report on UKG portal">
                 <option value="Statutory reports sent to QC">
@@ -195,6 +196,97 @@
       </tbody>
     </table>
   </div> -->
+    <div *ngIf="tasksWithNames.length > 0; else noTasks">
+    <h3>Your Today's Tasks</h3>
+    <div  style="display: flex;justify-content: center; vertical-align: middle; gap: 10px; padding: 15px; border: 2px solid #ffffff; border-radius: 10px; background-color: #ffffff;">
+            <input type="text"style="width: 120px;" class="form-control" [(ngModel)]="filters.group" list="groupList" (focus)="getFilteredGroups()"placeholder="Filter Groups">
+            <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.client" list="clientList" (focus)="getFilteredClients()"placeholder="Filter Clients">
+            <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.description"list="descriptionlist"  placeholder="Filter Description" (focus)="getFilteredDescription()" />
+            <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.assignedToName"list="AssignedToList"  placeholder="Filter Ops"(focus)="getFilteredAssignedTo()" />
+            <input type="text" class="form-control"style="width: 120px;" [(ngModel)]="filters.status"  list="StatusList" placeholder="Filter Status" (focus)="getFilteredStatus()"/> 
+        </div>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>
+            Group
+            <datalist id="groupList">
+              <option *ngFor="let value of filterGroups" [value]="value"></option>
+            </datalist>
+          </th>
+          <th>
+            Client
+            <datalist id="clientList">
+              <option *ngFor="let value of filterClients" [value]="value"></option>
+            </datalist>
+          </th>
+          <th>Period</th>
+          <th>
+            Description
+            <datalist id="descriptionlist">
+              <option *ngFor="let value of filterDescription" [value]="value"></option>
+            </datalist>
+          </th>
+          <th>
+            Assigned To
+            <datalist id="AssignedToList">
+              <option *ngFor="let value of filterAssignedTo" [value]="value"></option>
+            </datalist>
+          </th>
+          <th>
+            Deadline
+          </th>
+          <th>
+            Status
+            <datalist id="StatusList">
+              <option *ngFor="let value of filterStatus" [value]="value"></option>
+            </datalist>
+          </th>
+          <th>Actions</th>
+          <th>
+            Comments
+            <datalist id="StatusList">
+              <option *ngFor="let value of filterStatus" [value]="value"></option>
+            </datalist>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let task of filteredTasks()">
+          <ng-container *ngIf="isTaskDueTodayOrEarlier(task.deadline)&& task.assignedTo == managerId"else noTasks>
+            <td>{{ task.group }}</td>
+            <td>{{ task.client }}</td>
+            <td>{{ task.period }}</td>
+            <td>{{ task.description }}</td>
+            <td>{{ task.assignedToName }}</td>
+            <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a' }}</td>
+            <td>{{ task.status }}</td>
+            <td>
+                <div class="dropdown">
+                  <button  class="btn-select-lookalike" type="button"id="taskActionsDropdown"
+                    data-bs-toggle="dropdown"aria-expanded="false" style="width: 70px; height: 30px;">
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                    <li>
+                      <a class="dropdown-item"(click)="openEditModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
+                        Update
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item"(click)="markTaskasComplete(task)">
+                        Mark as Complete
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              <!-- <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button> -->
+            </td>
+            <td>{{ task.comment }}</td>
+          </ng-container>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <ng-template #noTasks>
     <p>No tasks assigned yet.</p>
   </ng-template>
