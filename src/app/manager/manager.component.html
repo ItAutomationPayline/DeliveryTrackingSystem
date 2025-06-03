@@ -605,6 +605,93 @@
                 </tbody>
               </table>
           </div>
+          <br>
+           <div class="accordion" id="accordion4">
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    View/Re-assign completed tasks
+                  </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                  <div class="accordion-body">
+                    <h3>All Today's completed Tasks</h3><br>
+                    <div  style="display: flex;justify-content: center; vertical-align: middle; gap: 10px; padding: 15px; border: 2px solid #ffffff; border-radius: 10px; background-color: #ffffff;">
+                        <input type="text"style="width: 120px;" class="form-control" [(ngModel)]="filters.group" list="groupList" (focus)="getFilteredGroups()"placeholder="Filter Groups">
+                        <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.client" list="clientList" (focus)="getFilteredClients()"placeholder="Filter Clients">
+                        <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.description"list="descriptionList"  placeholder="Filter Description" (focus)="getFilteredDescription()" />
+                        <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.assignedToName"list="AssignedToList"  placeholder="Filter Ops"(focus)="getFilteredAssignedTo()" />
+                        <input type="text" class="form-control"style="width: 120px;" [(ngModel)]="filters.status"  list="statusList" placeholder="Filter Status" (focus)="getFilteredStatus()"/> 
+                    </div>
+                    <br>
+                    <table id="myTable" class="table  table-bordered">
+                        <thead>
+                          <tr>
+                            <th>
+                              Group<br/>
+                              <datalist id="groupList">
+                                <option *ngFor="let value of filterGroup" value={{value}} placeholder="">
+                              </datalist>
+                            </th>
+                            <th>
+                              Client<br/>
+                              <datalist id="clientList">
+                                <option *ngFor="let value of filterClients" value={{value}} placeholder="">
+                              </datalist>
+                            </th>
+                            <th>Period</th>
+                            <th>
+                              Description<br />
+                              <datalist id="descriptionList">
+                                <option *ngFor="let value of filterDescription" value={{value}}>
+                              </datalist>
+                            </th>
+                            <th>
+                              Assigned To<br />
+                              <datalist id="AssignedToList">
+                                <option *ngFor="let value of filterAssignedTo" value={{value}}>
+                              </datalist>
+                            </th>
+                            <th>
+                              Deadline<br/>
+                            </th>
+                            <th>
+                              Status<br/>
+                              <datalist id="statusList">
+                                <option *ngFor="let value of filterStatus" value={{value}}>
+                              </datalist>
+                            </th>
+                            <th>Actions<br>
+                            </th>
+                            <th>
+                              Comments<br />
+                              <datalist id="commentList">
+                                <option *ngFor="let value of filterComments" value={{value}}>
+                              </datalist>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let task of filteredCompletedTasks()">
+                            <td>{{ task.group }}</td>
+                            <td>{{ task.client }}</td>
+                            <td>{{ task.period }}</td>
+                            <td>{{ task.description }}</td>
+                            <td>{{ task.assignedToName }}</td>
+                            <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a' }}</td>
+                            <td>{{ task.status }}</td>
+                            <td>
+                              <button (click)="RevertTask(task)" class="btn btn-dark">Re-Assign</button>
+                            </td>
+                            <td>{{ task.comment }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <br>
         </div>
 
         <div class="tab-pane fade" id="profile7">

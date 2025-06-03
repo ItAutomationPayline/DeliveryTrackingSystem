@@ -19,6 +19,7 @@ export class ManagerComponent {
   // tasksWithDeadlines: { description: string; deadlines: string[] }[] = [];
   tasksWithDeadlines: any[] = [];
   reportForm: FormGroup;
+  todayscompletedTasks:any[] = [];
   AllActiveQcReports: any[] = [];
   selectedQC:any;
   QcTeam:any[]=[];
@@ -110,12 +111,65 @@ export class ManagerComponent {
     this.editTaskDeadline='';
     this.tasksWithNames=[];
     this.fetchAssignedTasks();
+    this.fetchCompletedTasks();
     this.getAllEmployees();
     this.fetchAllClientList();
     this.sortClientsByGroupAndName();
     this.fetchAllQcReports();
     this.fetchClients();
     this.fetchQcTeam();
+  }
+  fetchCompletedTasks(){
+  const today = new Date();
+  let tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  today.setHours(0, 0, 0, 0); // Normalize time for comparison
+  tomorrow.setHours(23, 59, 0, 0);
+  this.firestore
+    .collection('tasks', ref =>
+      ref.where('status', '==','Completed').where('deadline', '<=', tomorrow.toISOString()).where('deadline', '>=', today.toISOString())
+    )
+    .valueChanges({ idField: 'id' })
+    .subscribe((tasks: any[]) => {
+      this.todayscompletedTasks = tasks;
+      console.log('Filtered tasks (pending/delayed due today or earlier):', this.tasksAssigned);
+      this.populateTodaysTaskstoname(tasks);
+      setTimeout(() => {
+        this.sortTasks(this.todayscompletedTasks);
+      }, 500);
+    });
+  }
+  populateTodaysTaskstoname(tasks:any[])
+  {
+    this.todayscompletedTasks = [];
+    tasks.forEach((task) => {
+      const assignedToId = task.assignedTo;
+  
+      if (this.userCache[assignedToId]) {
+        this.tasksWithNames.push({
+          ...task,
+          assignedToName: this.userCache[assignedToId],
+        });
+      } else {
+        // Firestore call to get user's name
+        this.firestore
+          .collection('users', (ref) => ref.where('id', '==', assignedToId))
+          .valueChanges()
+          .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
+          .subscribe((users: any[]) => {
+            if (users.length > 0) {
+              const userName = users[0].name;
+              this.userCache[assignedToId] = userName;
+              this.todayscompletedTasks.push({
+                ...task,
+                assignedToName: userName,
+              });
+              // Optionally sort after pushing last item — or debounce this in future
+              this.sortTasks(this.todayscompletedTasks);
+            }
+          });
+      }
+    });
   }
     assignTask() {
     if ( this.taskDescription && this.taskDeadline) {
@@ -1064,9 +1118,35 @@ fetchAssignedTasks() {
     status: '',
     comment: ''
   };
-  
+  RevertTask(task:any)
+  {
+    const isConfirmed = window.confirm(
+        `Are you sure you want to mark "${task.description}" as Completed?`
+      );
+      
+      if (isConfirmed) {
+        this.firestore.collection('tasks').doc(task.id)
+                .update({
+                status: 'Pending',
+                completedAt:''
+              })
+        this.todayscompletedTasks = this.todayscompletedTasks.filter(task => task.id !== task.id);
+      }
+  }
+
   filteredTasks() {
     return this.tasksWithNames.filter(task =>
+      (!this.filters.group || task.group?.toLowerCase().includes(this.filters.group.toLowerCase())) &&
+      (!this.filters.client || task.client?.toLowerCase().includes(this.filters.client.toLowerCase())) &&
+      (!this.filters.description || task.description?.toLowerCase().includes(this.filters.description.toLowerCase())) &&
+      (!this.filters.assignedToName || task.assignedToName?.toLowerCase().includes(this.filters.assignedToName.toLowerCase())) &&
+      (!this.filters.deadline || new Date(task.deadline).toLocaleString().toLowerCase().includes(this.filters.deadline.toLowerCase())) &&
+      (!this.filters.status || task.status?.toLowerCase().includes(this.filters.status.toLowerCase())) &&
+      (!this.filters.comment || task.comment?.toLowerCase().includes(this.filters.comment.toLowerCase()))
+    );
+  }
+  filteredCompletedTasks() {
+    return this.todayscompletedTasks.filter(task =>
       (!this.filters.group || task.group?.toLowerCase().includes(this.filters.group.toLowerCase())) &&
       (!this.filters.client || task.client?.toLowerCase().includes(this.filters.client.toLowerCase())) &&
       (!this.filters.description || task.description?.toLowerCase().includes(this.filters.description.toLowerCase())) &&
