@@ -48,12 +48,21 @@ export class LoginComponent {
               const collectionId = user.id; // Assuming `id` is the Firestore document ID
               localStorage.setItem('id', collectionId);
               console.log(collectionId);
+              localStorage.setItem('profile', user);
               // Navigate based on the user's role
               if (role === "Executive") {
                 this.router.navigateByUrl('/executive');
                 localStorage.setItem('role', role);
               }
                else if (role === "Manager") {
+                this.router.navigateByUrl('/manager');
+                localStorage.setItem('role', role);
+              }
+              else if (role === "General Manager") {
+                this.router.navigateByUrl('/manager');
+                localStorage.setItem('role', role);
+              }
+              else if (role === "Director") {
                 this.router.navigateByUrl('/manager');
                 localStorage.setItem('role', role);
               }

@@ -5,6 +5,7 @@ import { FirestoreService } from '../services/firestore.service';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { HttpClient } from '@angular/common/http';
 import { increment } from '@angular/fire/firestore';
+import { take } from 'rxjs';
 
 @Component({
   selector: 'app-qc-lead',
@@ -26,12 +27,24 @@ export class QcLeadComponent {
      category: ''
    };
    employeeId: any = localStorage.getItem('id');
-   profile: any = localStorage.getItem('profile');
+   profile: any[] = [];
    public user: any[] = [];
    rec: string[] = [];
    nm: any = localStorage.getItem('nm');
+   profilemail:any=localStorage.getItem('profilemail');
    public sessionTimeout: any;
    public inactivityDuration = 30 * 60 * 1000; // 30 minutes in milliseconds
+     firstname:string='';
+  middlename:string='';
+  lastname:string='';
+  dob:string='';
+  doj:string='';
+  pan:string='';
+  uan:string='';
+  address:string='';
+  emergency:string='';
+  relation:string='';
+  bloodgroup:string='';
  
    constructor(
      private router: Router,
@@ -49,18 +62,49 @@ export class QcLeadComponent {
        this.router.navigateByUrl('/login');
        return;
      }
-     
-     if (!sessionStorage.getItem('hasReloaded')) {
-       sessionStorage.setItem('hasReloaded', 'true');
-       window.location.reload();
-     } else {
-       sessionStorage.removeItem('hasReloaded');
-     }
+     this.profile[0]="";
+     this.rec=[];
+     this.fetchprofile();
      this.fetchAssignedRequests();
      this.fetchQcReports();
      this.fetchAllQcReports();
      this.fetchQcTeam();
    }
+        UpdateProfile()
+        {
+         console.log(this.firstname);
+         console.log(this.lastname);
+         console.log(this.address);
+          this.firestore
+               .collection('users')
+               .doc(this.employeeId)
+               .update({
+                 firstname:this.firstname,
+                 middlename:this.middlename,
+                 lastname:this.lastname,
+                 dob:this.dob,
+                 pan:this.pan,
+                 uan:this.uan,
+                 doj:this.doj,
+                 address:this.address,
+                 emergency:this.emergency,
+                 relation:this.relation,
+                 bloodgroup:this.bloodgroup
+               }) .then(() => {
+                 alert('Profile details updated successfully!');
+                 // this.fetchTasks();
+               })
+        }
+        fetchprofile()
+        {
+          this.firestore
+               .collection('users', (ref) => ref.where('id', '==', this.employeeId))
+               .valueChanges()
+               .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
+               .subscribe((users: any[]) => {
+                 this.profile[0]=users[0];
+               })
+        }
    fetchQcTeam() {
     this.firestore
       .collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC']))
@@ -123,10 +167,6 @@ export class QcLeadComponent {
     .then(() => {
       console.log("QC Report updated with ID: ", id);
       
-      // Update request status to indicate QC has started
-      this.firestore.collection('requests').doc(id).update({
-        status: 'under-review'
-      });
     })
     .catch(error => {
       console.error("Error updating QC report: ", error);
@@ -147,11 +187,6 @@ export class QcLeadComponent {
      this.firestore.collection('QcReports').doc(requestId).update(report)
        .then(() => {
          console.log("QC Report updated with ID: ", requestId);
-         
-         // Update request status to indicate QC has started
-         this.firestore.collection('requests').doc(requestId).update({
-           status: 'under-review'
-         });
        })
        .catch(error => {
          console.error("Error updating QC report: ", error);
@@ -239,24 +274,35 @@ export class QcLeadComponent {
        })
        .join('');
        this.firestore
-      .collection('users', ref => ref.where('role', '==', 'Manager'))
+      .collection('users', ref => ref.where('role', 'in', ['Manager', 'Director']))
       .get()
       .subscribe((querySnapshot: any) => {
-        const recipients: string[] = [];
-        querySnapshot.forEach((doc: any) => {
+         querySnapshot.forEach((doc: any) => {
           const userData = doc.data();
           if (userData.email) {
-            recipients.push(userData.email);
             this.rec.push(userData.email);
           }
-        })});
+      })});
+      //  this.firestore
+      // .collection('users', ref => ref.where('role', '==', 'Manager').where('role', '==', 'Director'))
+      // .get().pipe()
+      // .subscribe((querySnapshot: any) => {
+      //   querySnapshot.forEach((doc: any) => {
+      //     const userData = doc.data();
+      //     if (userData.email) {
+      //       this.rec.push(userData.email);
+      //     }
+      //   })});
      this.firestoreService.getUserById(currentReport.ops).subscribe(userData => {
        if (userData.length > 0) {
          const user = userData[0];
          this.rec.push(user.email);
          this.rec.push(currentReport.leadermail);
+         this.rec.push(this.profilemail);
+         let recipients= [...new Set(this.rec)];
+         console.log("Unique Recipients:",recipients);
          let bodydata = {
-           "recipients": this.rec,
+           "recipients": recipients,
            "subject": `${currentReport.groupName}:QC Findings - ${currentReport.reportType}- ${formattedPeriod}`,
            "body": `
              <html>
@@ -283,12 +329,14 @@ export class QcLeadComponent {
      this.firestoreService.getUserById(currentReport.ops).subscribe(userData => {
        if (userData.length > 0) {
          const user = userData[0];
+         let recipients: string[] = [];
+        recipients.push(user.email);
          //console.log("Sending gentle reminder to:", user.email);
-         const recipients: string[] = [];
-         recipients.push(user.email);
+         recipients=[...new Set(recipients)];
+         console.log("Sending QC Approval to:", recipients);
          this.rec[0]=user.email
          let bodydata = {
-         "recipients": this.rec,
+         "recipients": recipients,
          "subject": `${currentReport.groupName}: No QC Findings - ${currentReport.reportType} ${formattedPeriod}`,
          "body": `Hi ${user.name},<br><br>Hope you're doing well.<br>This is to inform you that the Quality Check (QC) for the ${currentReport.reportType} of client: ${currentReport.clientName} <br>for the period of ${formattedPeriod} has been completed.<br>✅ No findings were observed during the QC process.<br><br>Best regards,<br>${this.nm}`,
        };
@@ -309,11 +357,6 @@ export class QcLeadComponent {
          updatedAt: new Date()
        })
        .then(() => {
-         // Update the request status
-         this.firestore.collection('requests').doc(this.currentReport.requestId)
-           .update({
-             status: 'qc-completed'
-           });
            if(this.currentReport.findings.length==0)
              {
                this.sendQcApprovedMail(this.currentReport);
@@ -337,9 +380,16 @@ export class QcLeadComponent {
                  console.error('Error updating task status: ', error);
                });
              }
-             this.intervalId = setInterval(() => {
-               this.currentReport = null;
-             }, 1000);
+             setTimeout(() => {
+                this.currentReport = null;
+               console.log(this.rec);
+               this.rec=[];
+              }, 500);
+            //  this.intervalId = setInterval(() => {
+            //    this.currentReport = null;
+            //    console.log(this.rec);
+            //    this.rec=[];
+            //  }, 1000);
        })
        .catch(error => {
          console.error("Error completing QC report: ", error);

@@ -50,8 +50,8 @@ export class FirestoreService {
     return this.firestore.collection('users', ref => ref.where('id', '==', userId)).valueChanges();
   }
   sendMail(bodydata:{recipients:string[],subject:string,body:string}){
-    return this.httpClient.post(this.SERVER_URL,bodydata).subscribe( (resultdata: any) => {
-      console.log("ResultData"+resultdata)});
+    // return this.httpClient.post(this.SERVER_URL,bodydata).subscribe( (resultdata: any) => {
+    //   console.log("ResultData"+resultdata)});
    }
    getUserNameById(id: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -63,7 +63,8 @@ export class FirestoreService {
           if (docSnapshot.exists) {
             const userData = docSnapshot.data();
             resolve(userData.name); // assuming 'name' field exists in user doc
-          } else {
+          } 
+          else {
             reject(`No user found with ID: ${id}`);
           }
         }, (error: any) => {

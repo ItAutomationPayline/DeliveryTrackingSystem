@@ -9,11 +9,13 @@ import { TeamLeadComponent } from './team-lead/team-lead.component';
 import { ManagerComponent } from './manager/manager.component';
 import { QCComponent } from './qc/qc.component';
 import { QcLeadComponent } from './qc-lead/qc-lead.component';
+import { ProfileComponent } from './profile/profile.component';
 
 export const routes: Routes = [
   { path: '', component: LoginComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'profile', component: ProfileComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'executive', component: ExecutiveComponent },
   { path: 'teamlead', component: TeamLeadComponent },

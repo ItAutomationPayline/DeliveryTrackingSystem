@@ -187,13 +187,13 @@ this.firestoreService.sendMail(bodydata);
   }
   sendEmail2(recipient: string, task: any,name:string) {
     const formattedDeadline = this.datePipe.transform(task.deadline, 'yyyy-MM-dd HH:mm:ss'); // Formatting the deadline
-   this.rec[0]=recipient;
+    this.rec[0]=recipient;
     let bodydata = {
       "recipients": this.rec,
       "subject": `${task.client}:Task Deadline Missed: ${task.description}`,
       "body": `Hello,<br><br>The task "${task.description}" assigned to "${name}"  has crossed the deadline.<br><br>Deadline: ${formattedDeadline}<br><br>Please take immediate action.`,
     };
-this.firestoreService.sendMail(bodydata);
+    this.firestoreService.sendMail(bodydata);
   }
   // Function to send an email using Firebase Functions
   sendEmail(recipient: string, task: any) {

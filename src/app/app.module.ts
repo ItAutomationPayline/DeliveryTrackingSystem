@@ -23,6 +23,7 @@ import { QCComponent } from './qc/qc.component';
 import { QcLeadComponent } from './qc-lead/qc-lead.component';
 import { ReportsDownloaderComponent } from './reports-downloader/reports-downloader.component';
 import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
+import { ProfileComponent } from './profile/profile.component';
 
 @NgModule({
   declarations: [
@@ -40,7 +41,8 @@ import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
     UploadComponent,
     QCComponent,
     QcLeadComponent,
-    ReportsDownloaderComponent
+    ReportsDownloaderComponent,
+    ProfileComponent
   ],
   imports: [
     BrowserModule,

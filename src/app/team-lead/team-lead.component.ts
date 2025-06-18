@@ -19,8 +19,8 @@ export class TeamLeadComponent {
   teams: any[] = [];
   managerId: any = '';
   // List of teams led by the team lead
-  profile:any=localStorage.getItem('profilemail');
-  leadmail:string=this.profile.email;
+  profile: any[] = [];
+  leadmail:any=localStorage.getItem('profilemail');
   selectedTeamId: string | null = null;
   AllClientsAndGroups:any[] = [];
   AllClients:string[] = [];
@@ -65,7 +65,18 @@ export class TeamLeadComponent {
   editTaskComment: string = '';
   editSelectedMemberId: string | null = null;
   editTaskDeadline: string = '';
-
+  firstname:string='';
+  middlename:string='';
+  lastname:string='';
+  dob:string='';
+  doj:string='';
+  pan:string='';
+  uan:string='';
+  address:string='';
+  emergency:string='';
+  relation:string='';
+  bloodgroup:string='';
+  
   constructor(private cdRef: ChangeDetectorRef,private router: Router, private firestore: AngularFirestore,private firestoreService: FirestoreService,private datePipe: DatePipe) {}
 
   ngOnInit() {
@@ -95,6 +106,10 @@ export class TeamLeadComponent {
       this.filterDescription=[];
       this.filterStatus=[];
       this.scheduledTasksAssignedWithNames=[];
+      console.log("profile",this.profile);
+      console.log("leadmail",this.leadmail);
+      this.profile[0]="";
+      this.fetchselfprofile();
       setTimeout(() => {
         this.loadData(this.managerId); // Your logic here
       }, 1500);
@@ -104,6 +119,41 @@ export class TeamLeadComponent {
     this.loadDescriptionSuggestions();
     this.fetchClients();
   }
+     fetchselfprofile()
+   {
+     this.firestore
+          .collection('users', (ref) => ref.where('id', '==', this.managerId))
+          .valueChanges()
+          .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
+          .subscribe((users: any[]) => {
+            this.profile[0]=users[0];
+          })
+    }
+     UpdateProfile()
+   {
+    console.log(this.firstname);
+    console.log(this.lastname);
+    console.log(this.address);
+     this.firestore
+          .collection('users')
+          .doc(this.managerId)
+          .update({
+            firstname:this.firstname,
+            middlename:this.middlename,
+            lastname:this.lastname,
+            dob:this.dob,
+            pan:this.pan,
+            uan:this.uan,
+            doj:this.doj,
+            address:this.address,
+            emergency:this.emergency,
+            relation:this.relation,
+            bloodgroup:this.bloodgroup
+          }) .then(() => {
+            alert('Profile details updated successfully!');
+            // this.fetchTasks();
+          })
+   }
    markTaskasComplete(taskToUpdate: any) {
     if (taskToUpdate) {
       const isConfirmed = window.confirm(
@@ -120,6 +170,24 @@ export class TeamLeadComponent {
           };
           this.firestoreService.sendMail(bodydata);
         }
+          if(taskToUpdate.description=="Compliance Reports to Customer")
+          {
+            this.firestore.collection('compliance', ref =>
+                              ref.where('group', '==', taskToUpdate.group)
+                                  .where('client', '==', taskToUpdate.client)
+                                  .where('period', '==', taskToUpdate.period)
+                            ).get().subscribe(querySnapshot => {
+                              querySnapshot.forEach(doc => {
+                                this.firestore.collection('compliance').doc(doc.id).delete()
+                                  .then(() => {
+                                    console.log(`Deleted document: ${doc.id}`);
+                                  })
+                                  .catch(error => {
+                                    console.error(`Error deleting document: ${doc.id}`, error);
+                                  });
+                              });
+                            });
+          }
         if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
@@ -128,7 +196,75 @@ export class TeamLeadComponent {
           .doc(taskToUpdate.id)
           .update({
             headcount: headcount,
+          });
+          let originalDate = new Date(taskToUpdate.deadline);
+          originalDate.setDate(originalDate.getDate() + 2);
+          let task = {
+            reportType:'Compliance Reports',
+            assignedTo: taskToUpdate.assignedTo,
+            teamId: taskToUpdate.teamId,
+            period:taskToUpdate.period,
+            group:taskToUpdate.group,
+            client: taskToUpdate.client,
+            description: "Compliance Reports to QC",
+            deadline: originalDate.toISOString(), // Convert deadline to ISO format
+            completedAt:'',
+            status: 'Pending',
+            createdBy:taskToUpdate.createdBy,
+            leadermail: taskToUpdate.leadermail,
+            clientStatus:'Active',
+            QcApproval:'Pending',
+            Sequence:0,
+            comment:""
+          };
+          this.firestore
+          .collection('tasks')
+          .add(task)
+          .then(() => {
           })
+          .catch((error) => {
+            alert('Failed to assign task. Please try again.');
+          });
+          originalDate.setDate(originalDate.getDate() + 1);
+          let task2 = {
+            assignedTo: taskToUpdate.assignedTo,
+            teamId: taskToUpdate.teamId,
+            period:taskToUpdate.period,
+            group:taskToUpdate.group,
+            client: taskToUpdate.client,
+            description: "Compliance Reports to Customer",
+            deadline: originalDate.toISOString(), // Convert deadline to ISO format
+            completedAt:'',
+            status: 'Pending',
+            createdBy:taskToUpdate.createdBy,
+            leadermail: taskToUpdate.leadermail,
+            clientStatus:'Active',
+            comment:""
+          };
+          this.firestore
+          .collection('tasks')
+          .add(task2)
+          .then(() => {
+          })
+          .catch((error) => {
+            alert('Failed to assign task. Please try again.');
+          });
+          let task3 = {
+            period:taskToUpdate.period,
+            group:taskToUpdate.group,
+            client: taskToUpdate.client,
+            status: 'In-Progress',
+            clientStatus:'Active',
+            comment:""
+          };
+          this.firestore
+          .collection('compliance')
+          .add(task3)
+          .then(() => {
+          })
+          .catch((error) => {
+            alert('Failed to assign task. Please try again.');
+          });
         }
         if(taskToUpdate.QcApproval=="Pending")
         {
@@ -165,7 +301,7 @@ export class TeamLeadComponent {
                 const subject = `${taskToUpdate.group}: QC Request: ${taskToUpdate.reportType}`;
                 const body = `
                   <p>Dear QC Team,</p>
-                  Please check Payroll Reports of client<br> ${taskToUpdate.client}<br>
+                  Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
                   of period:${taskToUpdate.period}.<br>
                   link:${link}<br>
                   note:${userNote}<br>
@@ -659,7 +795,7 @@ onFileChange(event: any) {
           completedAt:'',
           status: 'Pending',
           createdBy: localStorage.getItem('id'),
-          leadermail: this.profile,
+          leadermail: this.leadmail,
           clientStatus:'Active',
           QcApproval:'Pending',
           Sequence:0,
@@ -678,7 +814,7 @@ onFileChange(event: any) {
           completedAt:'',
           status: 'Pending',
           createdBy: localStorage.getItem('id'),
-          leadermail: this.profile,
+          leadermail: this.leadmail,
           clientStatus:'Active',
           comment:"",
           period:taskData.payPeriod
@@ -712,7 +848,7 @@ onFileChange(event: any) {
       completedAt:'',
       status: 'Pending',
       createdBy: localStorage.getItem('id'),
-      leadermail: this.profile,
+      leadermail: this.leadmail,
       clientStatus:'Active',
       QcApproval:'Pending',
       Sequence:0,
@@ -731,7 +867,7 @@ onFileChange(event: any) {
       completedAt:'',
       status: 'Pending',
       createdBy: localStorage.getItem('id'),
-      leadermail: this.profile,
+      leadermail: this.leadmail,
       clientStatus:'Active',
       comment:""
     };

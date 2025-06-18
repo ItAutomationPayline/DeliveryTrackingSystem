@@ -6,6 +6,7 @@ import { debounceTime, forkJoin, take } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { collection, doc, getDocs, query, where, writeBatch } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-manager',
@@ -17,16 +18,23 @@ import { DatePipe } from '@angular/common';
 
 export class ManagerComponent {
   // tasksWithDeadlines: { description: string; deadlines: string[] }[] = [];
+  employeeId: any= localStorage.getItem('id');
+  nm:any=localStorage.getItem('nm');
   tasksWithDeadlines: any[] = [];
   reportForm: FormGroup;
   todayscompletedTasks:any[] = [];
   AllActiveQcReports: any[] = [];
+  ComplianceTasks: any[] = [];
   selectedQC:any;
   QcTeam:any[]=[];
   boss:any;
   ops:any;
   GroupName: string = '';
+  searchedUser: any[] = [];
+  searchprofile:string=''
   ClientName: string = '';
+  deleteGroupName: string = '';
+  deleteClientName: string = '';
   taskDescription: string = '';
   minDeadline: string = '';
   taskDeadline: string = '';
@@ -65,7 +73,18 @@ export class ManagerComponent {
   excelFile: File | null = null;
   teamBeingEdited: any = null;
   editedTeamMemberIds: string[] = [];
-  
+  profile: any[] = [];
+  firstname:string='';
+  middlename:string='';
+  lastname:string='';
+  dob:string='';
+  doj:string='';
+  pan:string='';
+  uan:string='';
+  address:string='';
+  emergency:string='';
+  relation:string='';
+  bloodgroup:string='';
   public userMap: Map<string, string> = new Map(); // Map of user IDs to names
 
   constructor(private fb: FormBuilder,private router: Router,private firestoreService: FirestoreService,private firestore: AngularFirestore) 
@@ -75,13 +94,21 @@ export class ManagerComponent {
       toDat: ['', Validators.required],
       opsNames:['', Validators.required]
     });
+    
   }
 
   ngOnInit() {
     const role = localStorage.getItem('role');
     const token = localStorage.getItem('authToken');
     const id = localStorage.getItem('id');
-    if ((!token) || (role !== 'Manager')) {
+    // if ((!token) || (role !== 'Manager')) {
+    //   this.router.navigateByUrl('/login');
+    //   return;
+    // }
+    if ((role === 'Manager')||(role === 'Director')||(role === 'General Manager')) {
+    }
+    else
+    {
       this.router.navigateByUrl('/login');
       return;
     }
@@ -96,13 +123,8 @@ export class ManagerComponent {
       this.userMap = new Map(users.map((user) => [user.id, user.name]));
       this.fetchTeams();
     });
-    if (!sessionStorage.getItem('hasReloaded')) {
-      sessionStorage.setItem('hasReloaded', 'true'); // Mark reload in session storage
-      window.location.reload(); // Force reload of the entire page
-    } else {
-      sessionStorage.removeItem('hasReloaded'); // Clear the reload marker after the first load
-      console.log('Component initialized after reload');
-    }
+    this.profile[0]="";
+    this.searchedUser[0]="";
     this.teams=[];
     this.tasksAssigned=[];
     this.userCache = {};
@@ -110,15 +132,107 @@ export class ManagerComponent {
     this.editSelectedMemberId='';
     this.editTaskDeadline='';
     this.tasksWithNames=[];
-    this.fetchAssignedTasks();
-    this.fetchCompletedTasks();
-    this.getAllEmployees();
-    this.fetchAllClientList();
-    this.sortClientsByGroupAndName();
-    this.fetchAllQcReports();
-    this.fetchClients();
-    this.fetchQcTeam();
+    
+    setTimeout(() => {
+      this.getAllEmployees();
+      this.fetchprofile();
+      this.fetchAssignedTasks();
+      this.fetchCompletedTasks();
+      this.fetchAllClientList();
+      this.sortClientsByGroupAndName();
+      this.fetchAllQcReports();
+      this.fetchClients();
+      this.fetchQcTeam();
+      this.fetchComplianceTasks();
+     }, 500);
   }
+  fetchComplianceTasks()
+  {
+    this.firestore.collection('compliance', ref => ref.where('status', '==', 'In-Progress'))
+      .valueChanges({ idField: 'id' })
+      .subscribe((requests: any[]) => {
+        this.ComplianceTasks= requests;
+      });
+  }
+  searchUserByEmail()
+  {
+     this.firestore
+          .collection('users', (ref) => ref.where('email', '==', this.searchprofile))
+          .valueChanges()
+          .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
+          .subscribe((users: any[]) => {
+            this.searchedUser[0]=users[0];
+          })
+  }
+  fetchprofile()
+   {
+     this.firestore
+          .collection('users', (ref) => ref.where('id', '==', this.employeeId))
+          .valueChanges()
+          .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
+          .subscribe((users: any[]) => {
+            this.profile[0]=users[0];
+          })
+    }
+   UpdateProfile()
+   {
+    console.log(this.firstname);
+    console.log(this.lastname);
+    console.log(this.address);
+     this.firestore
+          .collection('users')
+          .doc(this.employeeId)
+          .update({
+            firstname:this.firstname,
+            middlename:this.middlename,
+            lastname:this.lastname,
+            dob:this.dob,
+            pan:this.pan,
+            uan:this.uan,
+            doj:this.doj,
+            address:this.address,
+            emergency:this.emergency,
+            relation:this.relation,
+            bloodgroup:this.bloodgroup
+          }) .then(() => {
+            alert('Profile details updated successfully!');
+            // this.fetchTasks();
+          })
+   }
+DeletePayCalendar(): void {
+  if (!this.deleteGroupName || !this.deleteClientName) {
+    alert('Please fill both Group Name and Client Name.');
+    return;
+  }
+  const isConfirmed = window.confirm(`Are you sure you want delete all tasks of "${this.deleteClientName}" client?`);
+  if (isConfirmed) {
+  const taskCollectionRef = this.firestore.collection('tasks', ref =>
+    ref.where('group', '==', this.deleteGroupName)
+       .where('client', '==', this.deleteClientName)
+  );
+
+  taskCollectionRef.get().subscribe(snapshot => {
+    if (snapshot.empty) {
+      alert('No matching tasks found to delete.');
+      return;
+    }
+
+    const batch = this.firestore.firestore.batch(); // Raw Firestore batch
+    snapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    batch.commit().then(() => {
+      alert(`Deleted ${snapshot.size} task(s) for group "${this.deleteGroupName}" and client "${this.deleteClientName}".`);
+    }).catch(err => {
+      console.error('Error deleting tasks:', err);
+      alert('Error occurred while deleting tasks.');
+    });
+  });
+}
+}
+
+
   fetchCompletedTasks(){
   const today = new Date();
   let tomorrow = new Date(today);
@@ -127,7 +241,7 @@ export class ManagerComponent {
   tomorrow.setHours(23, 59, 0, 0);
   this.firestore
     .collection('tasks', ref =>
-      ref.where('status', '==','Completed').where('deadline', '<=', tomorrow.toISOString()).where('deadline', '>=', today.toISOString())
+      ref.where('status', '==','Completed').where('completedAt', '<=', tomorrow.toISOString()).where('completedAt', '>=', today.toISOString())
     )
     .valueChanges({ idField: 'id' })
     .subscribe((tasks: any[]) => {
@@ -468,6 +582,24 @@ cancelEdit(): void {
           };
           this.firestoreService.sendMail(bodydata);
         }
+        if(taskToUpdate.description=="Compliance Reports to Customer")
+          {
+            this.firestore.collection('compliance', ref =>
+                              ref.where('group', '==', taskToUpdate.group)
+                                  .where('client', '==', taskToUpdate.client)
+                                  .where('period', '==', taskToUpdate.period)
+                            ).get().subscribe(querySnapshot => {
+                              querySnapshot.forEach(doc => {
+                                this.firestore.collection('compliance').doc(doc.id).delete()
+                                  .then(() => {
+                                    console.log(`Deleted document: ${doc.id}`);
+                                  })
+                                  .catch(error => {
+                                    console.error(`Error deleting document: ${doc.id}`, error);
+                                  });
+                              });
+                            });
+          }
         if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
@@ -477,6 +609,74 @@ cancelEdit(): void {
           .update({
             headcount: headcount,
           })
+          let originalDate = new Date(taskToUpdate.deadline);
+          originalDate.setDate(originalDate.getDate() + 2);
+          let task = {
+            reportType:'Compliance Reports',
+            assignedTo: taskToUpdate.assignedTo,
+            teamId: taskToUpdate.teamId,
+            period:taskToUpdate.period,
+            group:taskToUpdate.group,
+            client: taskToUpdate.client,
+            description: "Compliance Reports to QC",
+            deadline: originalDate.toISOString(), // Convert deadline to ISO format
+            completedAt:'',
+            status: 'Pending',
+            createdBy:taskToUpdate.createdBy,
+            leadermail: taskToUpdate.leadermail,
+            clientStatus:'Active',
+            QcApproval:'Pending',
+            Sequence:0,
+            comment:""
+          };
+          this.firestore
+          .collection('tasks')
+          .add(task)
+          .then(() => {
+          })
+          .catch((error) => {
+            alert('Failed to assign task. Please try again.');
+          });
+          originalDate.setDate(originalDate.getDate() + 1);
+          let task2 = {
+            assignedTo: taskToUpdate.assignedTo,
+            teamId: taskToUpdate.teamId,
+            period:taskToUpdate.period,
+            group:taskToUpdate.group,
+            client: taskToUpdate.client,
+            description: "Compliance Reports to Customer",
+            deadline: originalDate.toISOString(), // Convert deadline to ISO format
+            completedAt:'',
+            status: 'Pending',
+            createdBy:taskToUpdate.createdBy,
+            leadermail: taskToUpdate.leadermail,
+            clientStatus:'Active',
+            comment:""
+          };
+          this.firestore
+          .collection('tasks')
+          .add(task2)
+          .then(() => {
+          })
+          .catch((error) => {
+            alert('Failed to assign task. Please try again.');
+          });
+          let task3 = {
+            period:taskToUpdate.period,
+            group:taskToUpdate.group,
+            client: taskToUpdate.client,
+            status: 'In-Progress',
+            clientStatus:'Active',
+            comment:""
+          };
+          this.firestore
+          .collection('compliance')
+          .add(task3)
+          .then(() => {
+          })
+          .catch((error) => {
+            alert('Failed to assign task. Please try again.');
+          });
         }
         if(taskToUpdate.QcApproval=="Pending")
         {
@@ -487,7 +687,7 @@ cancelEdit(): void {
               reportType:taskToUpdate.reportType,
               groupName:taskToUpdate.group,
               clientName: taskToUpdate.client,
-              Period:taskToUpdate.deadline,
+              Period:taskToUpdate.period,
               ops:taskToUpdate.assignedTo,
               AssignedTo:"Pending",
               opsName:taskToUpdate.assignedToName,
@@ -512,7 +712,7 @@ cancelEdit(): void {
                 const subject = `${taskToUpdate.group}: QC Request: ${taskToUpdate.reportType}`;
                 const body = `
                   <p>Dear QC Team,</p>
-                  Please check Payroll Reports of client<br> ${taskToUpdate.client}<br>
+                  Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
                   of period:${taskToUpdate.period}.<br>
                   link:${link}<br>
                   note:${userNote}<br>
@@ -975,7 +1175,8 @@ formatPeriod(isoDate: string): string {
         if (users.length > 0) {
           this.membersWithNames = users.map(user => ({
             id: user.id,
-            name: user.name
+            name: user.name,
+            email:user.email
           }));
         } else {
           console.log('No users found in the database.');

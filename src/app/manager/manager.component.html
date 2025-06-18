@@ -4,7 +4,7 @@
     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home">Add/Manage Employees</button>
   </li> -->
   <li class="nav-item" role="presentation">
-    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile17">Profile</button>
+    <button class="nav-link" data-bs-toggle="tab" routerLink="/profile"> Profile</button>
   </li>
   <!-- dropdown we have to work -->
    <li class="nav-item" role="presentation">
@@ -14,15 +14,15 @@
       </button>
       <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
         <!-- <li><a class="dropdown-item" href="#">Dashboard</a></li> -->
-         <li class="nav-item" role="presentation">
-          <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#home">Add/Manage Employees</button>
-          </li>
-         <li class="nav-item" role="presentation">
-          <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile1">Add/Manage Clients</button>
-          </li>
-           <li class="nav-item" role="presentation">
-            <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile6">Transfer Clients</button>
-          </li>
+            <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#home">Add/Manage Employees</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile1">Add/Manage Clients</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile6">Transfer Clients</button>
+            </li>
             <li class="nav-item" role="presentation">
               <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile2">Download Reports</button>
             </li>
@@ -33,11 +33,14 @@
               <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile8">Assign Tasks</button>
             </li>
             <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile11">Search employee</button>
+            </li>
+            <li class="nav-item" role="presentation">
               <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile5">View Today's Status</button>
             </li>
              <li class="nav-item" role="presentation">
                 <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile7">View Tomorrow's Tasks</button>
-              </li>
+             </li>
           </ul>
         </div>
       </li>
@@ -91,6 +94,8 @@
                     <option value="QCLead">QC Lead</option>
                     <option value="Team Lead">Team Lead</option>
                     <option value="Manager">Manager</option>
+                    <option value="General Manager">General Manager</option>
+                    <option value="Director">Director</option>
                   </select>
                 </td>
                 <td>
@@ -102,6 +107,55 @@
             </tbody>
           </table>
         </div>
+  </div>
+  <div class="tab-pane fade" id="profile11">
+    <div class="container p-4">
+  <h2 class="mb-4 text-primary">🔍 Search Employee Profile</h2>
+
+  <div class="input-group mb-3">
+    <input
+      type="email"
+      class="form-control"
+      placeholder="Enter employee email"
+      [(ngModel)]="searchprofile"
+      list="searchList"
+    />
+    <datalist id="searchList">
+        <option *ngFor="let value of membersWithNames" [value]="value.email">{{value.name}}</option>
+      </datalist>
+    <button class="btn btn-success" (click)="searchUserByEmail()">
+      Search
+    </button>
+  </div>
+   <div *ngIf="profile" class="card shadow-sm border-primary mt-4" style="max-width: 600px; margin: auto;">
+    <div class="card-header bg-primary text-white d-flex align-items-center">
+      <i class="bi bi-person-circle fs-3 me-2"></i>
+      <h5 class="mb-0">Profile</h5>
+    </div>
+    <div class="card-body">
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Name:</strong> {{ searchedUser[0].firstname }} {{ searchedUser[0].middlename }} {{ searchedUser[0].lastname }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Email:</strong> {{ searchedUser[0].email }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Designation:</strong> {{ searchedUser[0].role }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Dob:</strong> {{ searchedUser[0].dob | date: 'dd-MM-yyyy' }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Address Line 1:</strong> {{ searchedUser[0].addressline1 }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Address Line 2:</strong> {{ searchedUser[0].addressline2 }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>City:</strong> {{ searchedUser[0].city }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>State:</strong> {{ searchedUser[0].state }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Pincode:</strong> {{ searchedUser[0].pincode }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Permanent Address Line 1:</strong> {{ searchedUser[0].permanentAddressline1 }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Permanent Address Line 2:</strong> {{ searchedUser[0].permanentAddressline2 }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Permanent City:</strong> {{ searchedUser[0].permanentCity }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Permanent State:</strong> {{ searchedUser[0].permanentState }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Permanent Pincode:</strong> {{ searchedUser[0].permanentPin }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Emergency no & Relation:</strong> {{ searchedUser[0].emergency }} ({{ searchedUser[0].relation }})</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Personal Email:</strong> {{ searchedUser[0].personalemail }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Blood Group:</strong> {{ searchedUser[0].bloodgroup }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Doj:</strong> {{ searchedUser[0].doj| date: 'dd-MM-yyyy' }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>PAN:</strong> {{ searchedUser[0].pan }}</p>
+      <p class="mb-0"><i class="bi bi-briefcase"></i> <strong>Aadhar:</strong> {{ searchedUser[0].aadhar }}</p>
+    </div>
+</div>
+</div>
   </div>
   <div class="tab-pane fade" id="profile1">
       <div class="p-4 max-w-3xl mx-auto bg-white rounded-xl shadow space-y-6">
@@ -313,6 +367,32 @@
               </button>
             </div>
           </div>
+          <br><br>
+           <div class="task-assignment-container">
+            <h2 class="section-title">Delete calendar</h2>
+            
+            <div class="form-group">
+              <label for="Client" class="form-label">Group Name:</label>
+              <input type="text" class="form-control" id="Client" [(ngModel)]="deleteGroupName" list="GroupList">
+              <datalist id="GroupList">
+                <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
+              </datalist>
+            </div>
+            
+            <div class="form-group">
+              <label for="Client" class="form-label">Client Name:</label>
+              <input type="text" class="form-control" id="Client" [(ngModel)]="deleteClientName" list="ClientList"style="width: 400px;">
+              <datalist id="ClientList">
+                <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+              </datalist>
+            </div>
+            <br>
+            <div class="form-group">
+              <button (click)="DeletePayCalendar()" class="btn btn-primary assign-btn">
+                Delete Pay Calendar
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -469,6 +549,7 @@
   </div>
 </div>
 <div class="tab-pane fade show active" id="profile5">
+  Welcome, {{nm}} <br><br>
       <div *ngIf="tasksWithNames.length > 0">
         <h3>All Today's Tasks</h3><br>
         <div  style="display: flex;justify-content: center; vertical-align: middle; gap: 10px; padding: 15px; border: 2px solid #ffffff; border-radius: 10px; background-color: #ffffff;">
@@ -601,6 +682,29 @@
                       <button (click)="assignQc(task.id,selectedQC)" class="btn btn-dark">Assign</button>
                     </td>
                     </ng-container>
+                  </tr>
+                </tbody>
+              </table>
+          </div>
+          <br>
+          <div *ngIf="ComplianceTasks.length > 0">
+          <h3>All In-Progress Compliance</h3>
+            <br>
+               <table id="myTable" class="table  table-bordered">
+                 <thead>
+                  <tr>
+                    <th>Group</th>
+                    <th>Client</th>
+                    <th>Period</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let task of ComplianceTasks">
+                      <td>{{ task.group }}</td>
+                      <td>{{ task.client }}</td>
+                      <td>{{ task.period | date: 'MMMM-yyyy' }}</td>
+                      <td>{{ task.status }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -846,6 +950,80 @@
         <button (click)="transferTasks()" class="btn btn-primary">
           Transfer
         </button>
+  </div>
+  <div class="tab-pane fade" id="profile17">
+     <div class="container profile-form">
+    <h2 class="form-title">Your Profile</h2>
+    <form (ngSubmit)="UpdateProfile()">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">First Name</label>
+          <input type="text" [value]="profile[0].firstname"[(ngModel)]="firstname" name="firstname" class="form-control" placeholder="First Name" required >
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Middle Name</label>
+          <input type="text"[value]="profile[0].middlename"[(ngModel)]="middlename" name="middlename" class="form-control" placeholder="Middle Name">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Last Name</label>
+          <input type="text"[value]="profile[0].lastname" class="form-control"[(ngModel)]="lastname" name="lastname" placeholder="Last Name" required>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Date of Birth</label>
+          <input type="date"[value]="profile[0].dob" class="form-control" name="dob" [(ngModel)]="dob" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">PAN</label>
+          <input type="text"[value]="profile[0].pan" class="form-control" name="pan" [(ngModel)]="pan" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">UAN</label>
+          <input type="text" class="form-control"[value]="profile[0].uan" name="uan" [(ngModel)]="uan" required>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Date of Joining</label>
+        <input type="date"[value]="profile[0].doj" name="doj" class="form-control"[(ngModel)]="doj" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Address</label>
+        <textarea class="form-control"[value]="profile[0].address" name="address" [(ngModel)]="address" rows="3" placeholder="Your full address" required ></textarea>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Emergency Contact Number</label>
+          <input type="tel" class="form-control" name="emergency" [value]="profile[0].emergency"[(ngModel)]="emergency" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Relation</label>
+          <input type="text"name="relation" class="form-control"[value]="profile[0].relation"[(ngModel)]="relation" placeholder="e.g. Father, Spouse" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Blood Group</label>
+          <input type="text"[value]="profile[0].bloodgroup"list="bloodgrouplist" class="form-control"name="bloodgroup" required [(ngModel)]="bloodgroup" placeholder="Blood group" required>
+            <datalist id="bloodgrouplist">
+              <option value="A+">
+              <option value="A-">
+              <option value="B+">
+              <option value="B-">
+              <option value="O+">
+              <option value="O-">
+              <option value="AB+">
+              <option value="AB-">
+            </datalist>
+        </div>
+      </div>
+      <div class="d-grid">
+        <button type="submit" class="btn btn-primary btn-lg">Update Profile</button>
+      </div>
+    </form>
+  </div>
   </div>
 </div>
 <div class="modal fade" id="updateTaskModal" tabindex="-1" aria-labelledby="updateTaskModalLabel" aria-hidden="true">

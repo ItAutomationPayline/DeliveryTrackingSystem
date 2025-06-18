@@ -33,11 +33,21 @@ export class ExecutiveComponent {
  AllClientsAndGroups:any[] = [];
  reasonInput: string = '';
  employeeId: any= localStorage.getItem('id');
- profile:any=localStorage.getItem('profile');
+ profile: any[] = [];
  nm:any=localStorage.getItem('nm');
  public sessionTimeout: any;
  public inactivityDuration = 30 * 60 * 1000;
-
+firstname:string='';
+middlename:string='';
+lastname:string='';
+dob:string='';
+doj:string='';
+pan:string='';
+uan:string='';
+address:string='';
+emergency:string='';
+relation:string='';
+bloodgroup:string='';
   ngOnInit() {
     const role = localStorage.getItem('role');
     const token=localStorage.getItem('authToken');
@@ -48,6 +58,8 @@ export class ExecutiveComponent {
     }
 
     const id = localStorage.getItem('id');
+    this.profile[0]="";
+    this.fetchprofile();
     this.fetchTasks();
     this.fetchClients();
     this.sortTasks(this.tasks);
@@ -58,8 +70,44 @@ export class ExecutiveComponent {
       sessionStorage.removeItem('hasReloaded'); // Clear the reload marker after the first load
       console.log('Component initialized after reload');
     }
+    
     // this.startSessionTimer();
    }
+   UpdateProfile()
+   {
+    console.log(this.firstname);
+    console.log(this.lastname);
+    console.log(this.address);
+     this.firestore
+          .collection('users')
+          .doc(this.employeeId)
+          .update({
+            firstname:this.firstname,
+            middlename:this.middlename,
+            lastname:this.lastname,
+            dob:this.dob,
+            pan:this.pan,
+            uan:this.uan,
+            doj:this.doj,
+            address:this.address,
+            emergency:this.emergency,
+            relation:this.relation,
+            bloodgroup:this.bloodgroup
+          }).then(() => {
+            alert('Profile details updated successfully!');
+            // this.fetchTasks();
+          })
+   }
+   fetchprofile()
+   {
+     this.firestore
+          .collection('users', (ref) => ref.where('id', '==', this.employeeId))
+          .valueChanges()
+          .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
+          .subscribe((users: any[]) => {
+            this.profile[0]=users[0];
+          })
+    }
   fetchClients()
   {
     this.firestore
@@ -119,6 +167,24 @@ export class ExecutiveComponent {
           };
           this.firestoreService.sendMail(bodydata);
         }
+        if(taskToUpdate.description=="Compliance Reports to Customer")
+          {
+            this.firestore.collection('compliance', ref =>
+                              ref.where('group', '==', taskToUpdate.group)
+                                  .where('client', '==', taskToUpdate.client)
+                                  .where('period', '==', taskToUpdate.period)
+                            ).get().subscribe(querySnapshot => {
+                              querySnapshot.forEach(doc => {
+                                this.firestore.collection('compliance').doc(doc.id).delete()
+                                  .then(() => {
+                                    console.log(`Deleted document: ${doc.id}`);
+                                  })
+                                  .catch(error => {
+                                    console.error(`Error deleting document: ${doc.id}`, error);
+                                  });
+                              });
+                            });
+          }
         if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
@@ -127,7 +193,75 @@ export class ExecutiveComponent {
           .doc(taskId)
           .update({
             headcount: headcount,
+          });
+          let originalDate = new Date(taskToUpdate.deadline);
+          originalDate.setDate(originalDate.getDate() + 2);
+          let task = {
+            reportType:'Compliance Reports',
+            assignedTo: taskToUpdate.assignedTo,
+            teamId: taskToUpdate.teamId,
+            period:taskToUpdate.period,
+            group:taskToUpdate.group,
+            client: taskToUpdate.client,
+            description: "Compliance Reports to QC",
+            deadline: originalDate.toISOString(), // Convert deadline to ISO format
+            completedAt:'',
+            status: 'Pending',
+            createdBy:taskToUpdate.createdBy,
+            leadermail: taskToUpdate.leadermail,
+            clientStatus:'Active',
+            QcApproval:'Pending',
+            Sequence:0,
+            comment:""
+          };
+          this.firestore
+          .collection('tasks')
+          .add(task)
+          .then(() => {
           })
+          .catch((error) => {
+            alert('Failed to assign task. Please try again.');
+          });
+          originalDate.setDate(originalDate.getDate() + 1);
+          let task2 = {
+            assignedTo: taskToUpdate.assignedTo,
+            teamId: taskToUpdate.teamId,
+            period:taskToUpdate.period,
+            group:taskToUpdate.group,
+            client: taskToUpdate.client,
+            description: "Compliance Reports to Customer",
+            deadline: originalDate.toISOString(), // Convert deadline to ISO format
+            completedAt:'',
+            status: 'Pending',
+            createdBy:taskToUpdate.createdBy,
+            leadermail: taskToUpdate.leadermail,
+            clientStatus:'Active',
+            comment:""
+          };
+          this.firestore
+          .collection('tasks')
+          .add(task2)
+          .then(() => {
+          })
+          .catch((error) => {
+            alert('Failed to assign task. Please try again.');
+          });
+          let task3 = {
+            period:taskToUpdate.period,
+            group:taskToUpdate.group,
+            client: taskToUpdate.client,
+            status: 'In-Progress',
+            clientStatus:'Active',
+            comment:""
+          };
+          this.firestore
+          .collection('compliance')
+          .add(task3)
+          .then(() => {
+          })
+          .catch((error) => {
+            alert('Failed to assign task. Please try again.');
+          });
         }
         if(taskToUpdate.QcApproval=="Pending")
         { 
@@ -138,7 +272,7 @@ export class ExecutiveComponent {
               reportType:taskToUpdate.reportType,
               groupName:taskToUpdate.group,
               clientName: taskToUpdate.client,
-              Period:taskToUpdate.deadline,
+              Period:taskToUpdate.period,
               ops:this.employeeId,
               AssignedTo:"Pending",
               opsName:this.nm,
@@ -164,7 +298,7 @@ export class ExecutiveComponent {
                 const subject = `${taskToUpdate.group}: QC Request: ${taskToUpdate.reportType}`;
                 const body = `
                   <p>Dear QC Team,</p>
-                  Please check Payroll Reports of client<br> ${taskToUpdate.client}<br>
+                  Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
                   of period:${taskToUpdate.period}.<br>
                   link:${link}<br>
                   note:${userNote}<br>
@@ -172,14 +306,15 @@ export class ExecutiveComponent {
                   <p>Best regards,
                   <br>${localStorage.getItem('nm')}</p>
                 `;
-        
+                recipients=[...new Set(recipients)];
                 const bodydata = {
                   recipients: recipients,
                   subject: subject,
                   body: body
                 };
+                console.log("qcteam:"+recipients);
                 this.firestoreService.sendMail(bodydata);
-              } 
+              }
               else {
                 console.warn('No manager emails found to send notification.');
               }

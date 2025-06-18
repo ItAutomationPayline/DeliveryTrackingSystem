@@ -1,0 +1,162 @@
+    <app-navbar></app-navbar>
+    <div class="container profile-form">
+    <h2 class="form-title">Your Profile</h2>
+    <form (ngSubmit)="UpdateProfile()">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">First Name</label>
+          <input type="text" [value]="profile[0].firstname"[(ngModel)]="profile[0].firstname" name="firstname" class="form-control" placeholder="First Name" required >
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Middle Name</label>
+          <input type="text"[value]="profile[0].middlename"[(ngModel)]="profile[0].middlename" name="middlename" class="form-control" placeholder="Middle Name">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Last Name</label>
+          <input type="text"[value]="profile[0].lastname" class="form-control"[(ngModel)]="profile[0].lastname" name="lastname" placeholder="Last Name" required>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Date of Birth</label>
+          <input type="date"[value]="profile[0].dob" class="form-control" name="dob" [(ngModel)]="profile[0].dob" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">PAN</label>
+          <input type="text"[value]="profile[0].pan" class="form-control" name="pan" [(ngModel)]="profile[0].pan" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Aadhar number</label>
+          <input type="number" class="form-control"[value]="profile[0].aadhar" name="aadhar" [(ngModel)]="profile[0].aadhar" required>
+        </div>
+      </div>
+      <div class="row mb-3">
+      <div class="col-md-6">
+        <label class="form-label">Date of Joining</label>
+        <input type="date"[value]="profile[0].doj" name="doj" class="form-control"[(ngModel)]="profile[0].doj" required>
+      </div>
+        <div class="col-md-6">
+          <label class="form-label">Personal Email</label>
+          <input type="email"[value]="profile[0].personalemail" class="form-control" name="personalemail" [(ngModel)]="profile[0].personalemail" required>
+        </div>
+      </div>
+     <h5>Current Address</h5>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label class="form-label">Address Line 1</label>
+      <input type="text" class="form-control" name="addressline1" [(ngModel)]="profile[0].addressline1" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Address Line 2</label>
+      <input type="text" class="form-control" name="addressline2" [(ngModel)]="profile[0].addressline2">
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label class="form-label">City</label>
+      <input type="text" class="form-control" name="city" [(ngModel)]="profile[0].city" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">State</label>
+      <input type="text" class="form-control" name="state" list="statelist" [(ngModel)]="profile[0].state" required>
+    </div>
+    <datalist id="statelist">
+      <option value="Andhra Pradesh">
+      <option value="Arunachal Pradesh">
+      <option value="Assam">
+      <option value="Bihar">
+      <option value="Chhattisgarh">
+      <option value="Goa">
+      <option value="Gujarat">
+      <option value="Haryana">
+      <option value="Himachal Pradesh">
+      <option value="Jharkhand">
+      <option value="Karnataka">
+      <option value="Kerala">
+      <option value="Madhya Pradesh">
+      <option value="Maharashtra">
+      <option value="Manipur">
+      <option value="Meghalaya">
+      <option value="Mizoram">
+      <option value="Nagaland">
+      <option value="Odisha">
+      <option value="Punjab">
+      <option value="Rajasthan">
+      <option value="Sikkim">
+      <option value="Tamil Nadu">
+      <option value="Telangana">
+      <option value="Tripura">
+      <option value="Uttar Pradesh">
+      <option value="Uttarakhand">
+      <option value="West Bengal">
+    </datalist>
+    <div class="col-md-4">
+      <label class="form-label">Pincode</label>
+      <input type="number" class="form-control" name="pincode" [(ngModel)]="profile[0].pincode" required>
+    </div>
+  </div>
+
+  <!-- Checkbox for Permanent Address -->
+  <div class="form-check mb-3">
+    <input type="checkbox" class="form-check-input" id="sameAddress" [(ngModel)]="sameAddress" name="sameAddress" (change)="copyAddressIfSame()">
+    <label class="form-check-label" for="sameAddress">
+      Permanent address is same as current address
+    </label>
+  </div>
+
+  <!-- Permanent Address -->
+  <h5>Permanent Address</h5>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label class="form-label">Address Line 1</label>
+      <input type="text" class="form-control" name="permanentAddressline1" [(ngModel)]="profile[0].permanentAddressline1" [disabled]="sameAddress" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Address Line 2</label>
+      <input type="text" class="form-control" name="permanentAddressline2" [(ngModel)]="profile[0].permanentAddressline2" [disabled]="sameAddress">
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label class="form-label">City</label>
+      <input type="text" class="form-control" name="permanentCity" [(ngModel)]="profile[0].permanentCity" [disabled]="sameAddress" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">State</label>
+      <input type="text" class="form-control" name="permanentState" list="statelist" [(ngModel)]="profile[0].permanentState" [disabled]="sameAddress" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Pincode</label>
+      <input type="number" class="form-control" name="permanentPin" [(ngModel)]="profile[0].permanentPin" [disabled]="sameAddress" required>
+    </div>
+  </div>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Emergency Contact Number</label>
+          <input type="number" class="form-control" name="emergency" [value]="profile[0].emergency"[(ngModel)]="profile[0].emergency" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Relation</label>
+          <input type="text"name="relation" class="form-control"[value]="profile[0].relation"[(ngModel)]="profile[0].relation" placeholder="e.g. Father, Spouse" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Blood Group</label>
+          <input type="text"[value]="profile[0].bloodgroup"list="bloodgrouplist" class="form-control"name="bloodgroup" required [(ngModel)]="profile[0].bloodgroup" placeholder="Blood group" required>
+            <datalist id="bloodgrouplist">
+              <option value="A+">
+              <option value="A-">
+              <option value="B+">
+              <option value="B-">
+              <option value="O+">
+              <option value="O-">
+              <option value="AB+">
+              <option value="AB-">
+            </datalist>
+        </div>
+      </div>
+      <div class="d-grid">
+        <button type="submit" class="btn btn-primary btn-lg">Update Profile</button>
+      </div>
+    </form>
+  </div>
