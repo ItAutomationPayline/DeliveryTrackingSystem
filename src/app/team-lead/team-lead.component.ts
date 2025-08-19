@@ -18,6 +18,7 @@ export class TeamLeadComponent {
   selfTasks: any[] = [];
   teams: any[] = [];
   managerId: any = '';
+  beforedeadline: any;
   // List of teams led by the team lead
   profile: any[] = [];
   leadmail:any=localStorage.getItem('profilemail');
@@ -76,6 +77,8 @@ export class TeamLeadComponent {
   emergency:string='';
   relation:string='';
   bloodgroup:string='';
+  public sessionTimeout: any;
+  public inactivityDuration = 20 * 60 * 1000;
   
   constructor(private cdRef: ChangeDetectorRef,private router: Router, private firestore: AngularFirestore,private firestoreService: FirestoreService,private datePipe: DatePipe) {}
 
@@ -118,8 +121,9 @@ export class TeamLeadComponent {
     this.getFilteredDescription();
     this.loadDescriptionSuggestions();
     this.fetchClients();
+    this.startSessionTimer();
   }
-     fetchselfprofile()
+  fetchselfprofile()
    {
      this.firestore
           .collection('users', (ref) => ref.where('id', '==', this.managerId))
@@ -191,6 +195,10 @@ export class TeamLeadComponent {
         if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
+           if (!headcount || headcount.trim() === '') {
+              alert("Headcount is required. Submission cancelled. Kindly submit again.");
+              return; // Stop execution
+            }
           this.firestore
           .collection('tasks')
           .doc(taskToUpdate.id)
@@ -268,11 +276,21 @@ export class TeamLeadComponent {
         }
         if(taskToUpdate.QcApproval=="Pending")
         {
+             let desc;
+           const regex = /\bto\b/i; // Matches the word 'to' as a whole word, case-insensitive
+           const match = taskToUpdate.description.match(regex);
+           if (match && match.index !== undefined) {
+              desc=taskToUpdate.description.substring(0, match.index).trim();
+            }
             let link = prompt("Paste the link of reports if any:");
+            if (!link || link.trim() === '') {
+              alert("Link is required. Submission cancelled. Kindly submit again.");
+              return; // Stop execution
+            }
             let userNote = prompt("Enter a note/special instruction for qc if any:");
             let finalData = {
               taskId:taskToUpdate.id,
-              reportType:taskToUpdate.reportType,
+              reportType:desc,
               groupName:taskToUpdate.group,
               clientName: taskToUpdate.client,
               Period:taskToUpdate.deadline,
@@ -285,7 +303,7 @@ export class TeamLeadComponent {
               leadermail:taskToUpdate.leadermail
             };
             this.firestore
-              .collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC']))
+              .collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC','Manager','General Manager']))
               .get()
               .subscribe((querySnapshot: any) => {
                 let recipients: string[] = [];
@@ -303,7 +321,6 @@ export class TeamLeadComponent {
                   <p>Dear QC Team,</p>
                   Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
                   of period:${taskToUpdate.period}.<br>
-                  link:${link}<br>
                   note:${userNote}<br>
                   For any issues or queries or if link is not given, feel free to reach out.<br>
                   <p>Best regards,
@@ -530,6 +547,7 @@ onFileChange(event: any) {
     this.editTaskGroup=task.group;
     this.editTaskClient=task.client;
     this.taskToEdit = task;
+    this.beforedeadline=task.deadline;
     this.editTaskDescription = task.description;
     this.editSelectedMemberId = task.assignedTo;
     this.editTaskComment=task.comment;
@@ -584,12 +602,12 @@ onFileChange(event: any) {
             <ul>
               <li><strong>Client:</strong> ${updatedTask.client}</li>
               <li><strong>Description:</strong> ${updatedTask.description}</li>
-              <li><strong>Deadline:</strong> ${new Date(updatedTask.deadline).toLocaleString()}</li>
+              <li><strong>Deadline:</strong> From ${new Date(this.beforedeadline).toLocaleString()} to ${new Date(updatedTask.deadline).toLocaleString()}</li>
               <li><strong>Reason:</strong> ${updatedTask.comment}</li>
             </ul>
             <p>Best regards,<br>DTS</p>
           `;
-  
+          console.log("BODY:"+body);
           const bodydata = {
             recipients: recipients,
             subject: subject,
@@ -778,14 +796,30 @@ onFileChange(event: any) {
       alert('Please select an executive and upload a valid Excel file.');
       return;
     }
+    for (const taskData of this.tasksWithDeadlines) {
+    const deadlineDate: Date = new Date(taskData.deadline);
+
+    if (deadlineDate.getDay() === 0) {
+      alert("Deadline:"+deadlineDate+"of task: "+ taskData.description+" is on sunday. Kindly change the date and reupload");
+      window.location.reload();
+      return;  // <-- this will exit the entire method
+    }
+    }
     this.tasksWithDeadlines.forEach((taskData) => {
+
         const formattedDeadline = this.formatExcelDate(taskData.deadline);
         console.log("taskDesc"+taskData.description+"Deadline"+formattedDeadline);
         let  task = {};
         if(formattedDeadline!=null){
         if(taskData.description.includes("QC")||taskData.description.includes("qc")){
+          let desc;
+           const regex = /\bto\b/i; // Matches the word 'to' as a whole word, case-insensitive
+           const match = taskData.description.match(regex);
+           if (match && match.index !== undefined) {
+              desc=taskData.description.substring(0, match.index).trim();
+            }
         task = {
-          reportType:'Payroll Reports',
+          reportType:desc,
           assignedTo: this.selectedMemberId,
           teamId: this.selectedTeamId,
           group:this.GroupName,
@@ -836,8 +870,15 @@ onFileChange(event: any) {
     if (this.selectedTeamId||this.selectedMemberId && this.taskDescription && this.taskDeadline) {
      let  task = {};
     if(this.taskDescription.includes("QC")||this.taskDescription.includes("qc")){
+       let desc;
+           const regex = /\bto\b/i; // Matches the word 'to' as a whole word, case-insensitive
+           const match = this.taskDescription.match(regex);
+           if (match && match.index !== undefined) {
+              desc=this.taskDescription.substring(0, match.index).trim();
+            }
+            //Here because of multiple qc's reporttype will be the word before to
     task = {
-      reportType:'Payroll Reports',
+      reportType:desc,
       assignedTo: this.selectedMemberId,
       teamId: this.selectedTeamId,
       period:this.formatPeriod(this.taskDeadline),
@@ -958,5 +999,25 @@ getUserNameById(id: string){
     this.taskDescription = '';
     this.selectedMemberId = null;
     this.taskDeadline = '';
+  }
+  startSessionTimer() {
+    // Clear any existing timer to avoid multiple timers
+    if (this.sessionTimeout) {
+      clearTimeout(this.sessionTimeout);
+    }
+    // Set a new inactivity timer
+    this.sessionTimeout = setTimeout(() => {
+      this.router.navigateByUrl('/login');
+    }, this.inactivityDuration);
+  }
+  resetSessionTimer() {
+    this.startSessionTimer();
+  }
+  // Listen for user interaction events and reset the timer
+  @HostListener('document:mousemove')
+  @HostListener('document:click')
+  @HostListener('document:keydown')
+  handleUserActivity() {
+    this.resetSessionTimer(); // Reset timer on activity
   }
 }

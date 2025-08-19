@@ -63,7 +63,7 @@ export class FirestoreService {
           if (docSnapshot.exists) {
             const userData = docSnapshot.data();
             resolve(userData.name); // assuming 'name' field exists in user doc
-          } 
+          }
           else {
             reject(`No user found with ID: ${id}`);
           }

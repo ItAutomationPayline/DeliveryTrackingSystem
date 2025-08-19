@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FirestoreService } from '../services/firestore.service';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
@@ -32,7 +32,7 @@ export class QCComponent{
   nm: any = localStorage.getItem('nm');
   profilemail:any=localStorage.getItem('profilemail');
   public sessionTimeout: any;
-  public inactivityDuration = 30 * 60 * 1000; // 30 minutes in milliseconds
+  public inactivityDuration = 15 * 60 * 1000; // 15 minutes in milliseconds
   firstname:string='';
   middlename:string='';
   lastname:string='';
@@ -44,6 +44,9 @@ export class QCComponent{
   emergency:string='';
   relation:string='';
   bloodgroup:string='';
+  AllActiveQcReports: any[] = [];
+  selectedQCMap: { [taskId: string]: string } = {};
+  QcTeam:any[]=[];
 
   constructor(
     private router: Router,
@@ -56,8 +59,20 @@ export class QCComponent{
   ngOnInit() {
     const role = localStorage.getItem('role');
     const token = localStorage.getItem('authToken');
-    
-    if ((!token) || (role !== 'QC')) {
+    // if ((!token) || (role !== 'QC')) {
+    //   this.router.navigateByUrl('/login');
+    //   return;
+    // }
+    this.AllActiveQcReports=[];
+    this.QcTeam=[];
+     if (role == 'QCLead') {
+      this.fetchAllQcReports();
+      this.fetchQcTeam();
+    }
+    if ((token)||(role === 'Manager')||(role === 'Director')||(role === 'General Manager')||(role == 'QC')||(role == 'Team Lead')||(role == 'QCLead')) {
+    }
+    else
+    {
       this.router.navigateByUrl('/login');
       return;
     }
@@ -69,6 +84,35 @@ export class QCComponent{
     this.fetchQcReports();
     
   }
+     fetchAllQcReports(){
+    this.firestore
+     .collection('QcReports', ref => ref.where('status', '!=', 'completed'))
+       .valueChanges({ idField: 'id' })
+       .subscribe((requests: any[]) => {
+         this.AllActiveQcReports = requests;
+         console.log("Assigned requests: ", this.assignedRequests);
+       });
+   }
+  deleteFinding(index: number): void {
+  if (!this.currentReport || !this.currentReport.findings) return;
+  if (confirm(`Are you sure want to delete this finding ?`)) {
+      // Create a new array without the finding at the given index
+      const updatedFindings = this.currentReport.findings.filter((_: any, i: number) => i !== index);
+
+      this.firestore.collection('QcReports').doc(this.currentReport.id)
+        .update({
+          findings: updatedFindings,
+          updatedAt: new Date()
+        })
+        .then(() => {
+          // Update local data
+          this.currentReport.findings = updatedFindings;
+        })
+        .catch(error => {
+          console.error("Error deleting finding: ", error);
+        });
+      }
+    }
      UpdateProfile()
      {
       console.log(this.firstname);
@@ -135,6 +179,7 @@ export class QCComponent{
       status: 'in-progress',
       findings: [],
       updatedAt: new Date(),
+      startedAt:new Date().toISOString(),
       qcName:this.nm
     };
     // Directly update the existing QC report with document ID = requestId
@@ -234,6 +279,7 @@ export class QCComponent{
          this.rec.push(currentReport.leadermail);
          this.rec.push(this.profilemail);
          let recipients= [...new Set(this.rec)];
+         console.log("Sorted recipents:",recipients);
          let bodydata = {
            "recipients": recipients,
            "subject": `${currentReport.groupName}:QC Findings - ${currentReport.reportType}- ${formattedPeriod}`,
@@ -271,59 +317,157 @@ export class QCComponent{
         "subject": `${currentReport.groupName}: No QC Findings - ${currentReport.reportType} ${formattedPeriod}`,
         "body": `Hi ${user.name},<br><br>Hope you're doing well.<br>This is to inform you that the Quality Check (QC) for the ${currentReport.reportType} of client: ${currentReport.clientName} <br>for the period of ${formattedPeriod} has been completed.<br>✅ No findings were observed during the QC process.<br><br>Best regards,<br>${this.nm}`,
       };
+      // console.log(`Hi ${user.name},<br><br>Hope you're doing well.<br>This is to inform you that the Quality Check (QC) for the ${currentReport.reportType} of client: ${currentReport.clientName} <br>for the period of ${formattedPeriod} has been completed.<br>✅ No findings were observed during the QC process.<br><br>Best regards,<br>${this.nm}`);
     this.firestoreService.sendMail(bodydata);
       }
     });
     console.log("USER:",this.user[0]);
     
   }
+  formatDuration(ms: number): string {
+  const minutes = Math.floor(ms / (1000 * 60)) % 60;
+  const hours = Math.floor(ms / (1000 * 60 * 60)) % 24;
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+
+  let result = '';
+  if (days > 0)    result += `${days}d`;
+  if (hours > 0)   result += `${hours}h`;
+  if (minutes > 0) result += `${minutes}m`;
+
+  // If everything is 0 (same date) then return 0m
+  return result || '0m';
+}
+
+subtractDates(startDateIso: string, endDateIso: string): string {
+  const start = new Date(startDateIso);
+  const end = new Date(endDateIso);
+  const diff = Math.abs(end.getTime() - start.getTime());
+  return this.formatDuration(diff);
+}
   // Complete the QC report
-  completeQcReport() {
-    if (!this.currentReport) return;
-if (confirm(`Are you sure QC for ${this.currentReport.reportType} is completed?`)) {
-    this.firestore.collection('QcReports').doc(this.currentReport.id)
-      .update({
-        status: 'completed',
-        completedAt: new Date(),
-        updatedAt: new Date()
-      })
-      .then(() => {
-          if(this.currentReport.findings.length==0)
-            {
-              this.sendQcApprovedMail(this.currentReport);
+   completeQcReport() {
+     if (!this.currentReport) return;
+     if(this.newFinding.description!="")
+      {
+        alert("Please add or remove the finding which you typed in the textbox.");
+        return;
+      }
+ if (confirm(`Are you sure QC for ${this.currentReport.reportType} is completed?`)) {
+  let duration=this.subtractDates(this.currentReport.startedAt,new Date().toISOString());
+     this.firestore.collection('QcReports').doc(this.currentReport.id)
+       .update({
+         status: 'completed',
+         completedAT:new Date().toISOString(),
+         updatedAt: new Date()
+       })
+       .then(() => {
+        const taskRef = this.firestore.collection('tasks').doc(this.currentReport.taskId);
+
+taskRef.get().subscribe(docSnapshot => {
+          if (docSnapshot.exists) {
+            const taskData: any = docSnapshot.data();
+            if ('qcduration' in taskData && taskData.qcduration != null) {
+              console.log('qcduration exists:', taskData.qcduration);
+            } else {
               this.firestore.collection('tasks').doc(this.currentReport.taskId)
-              .update({
-                QcApproval: 'Approved'
-              });
-            }
-            else{
-              console.log("Found findings");
-              this.sendQcFindingsMail(this.currentReport);
-              this.firestore
-              .collection('tasks').doc(this.currentReport.taskId)
-              .update({
-                status: 'Pending',
-                Sequence:increment(1)
-              })
-              .then(() => {
-              })
-              .catch((error) => {
-                console.error('Error updating task status: ', error);
-              });
-            }
+                      .update({
+                        qcduration: duration
+                      });
+                  console.log('qcduration not found');
+                }
+            }     else {
+                console.log('Document does not exist');
+                }
+                });
+           if(this.currentReport.findings.length==0)
+             {
+               this.sendQcApprovedMail(this.currentReport);[]
+               this.firestore.collection('tasks').doc(this.currentReport.taskId)
+               .update({
+                 QcApproval: 'Approved',
+                 QCPerson:this.nm
+               });
+             }
+             else{
+               console.log("Found findings");
+               this.sendQcFindingsMail(this.currentReport);
+               this.firestore
+               .collection('tasks').doc(this.currentReport.taskId)
+               .update({
+                 status: 'Pending',
+                 Sequence:increment(1)
+               })
+               .then(() => {
+               })
+               .catch((error) => {
+                 console.error('Error updating task status: ', error);
+               });
+             }
              setTimeout(() => {
                 this.currentReport = null;
                console.log(this.rec);
                this.rec=[];
               }, 500);
-            // this.intervalId = setInterval(() => {
-            //   this.currentReport = null;
-            //   this.rec=[];
-            // }, 1000);
-      })
-      .catch(error => {
-        console.error("Error completing QC report: ", error);
+            //  this.intervalId = setInterval(() => {
+            //    this.currentReport = null;
+            //    console.log(this.rec);
+            //    this.rec=[];
+            //  }, 1000);
+       })
+       .catch(error => {
+         console.error("Error completing QC report: ", error);
+       });
+   }
+ }
+fetchQcTeam() {
+    this.firestore
+      .collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC']))
+      .valueChanges({ idField: 'id' })
+      .subscribe((requests: any[]) => {
+        this.QcTeam = requests;
+        console.log("QcTeam: ", this.QcTeam);
       });
   }
-}
+ assignQc(id:any,selectedQC:any)
+ {
+  const selectedQcUser = this.QcTeam.find(qc => qc.id === selectedQC);
+  const report = {
+    AssignedTo:selectedQC,
+    qcPersonId: selectedQC,
+    status: 'in-progress',
+    findings: [],
+    updatedAt: new Date(),
+    startedAt:new Date().toISOString(),
+    qcName:selectedQcUser.name
+  };
+
+  // Directly update the existing QC report with document ID = requestId
+  this.firestore.collection('QcReports').doc(id).update(report)
+    .then(() => {
+      console.log("QC Report updated with ID: ", id);
+    })
+    .catch(error => {
+      console.error("Error updating QC report: ", error);
+    });
+ }
+    startSessionTimer() {
+      // Clear any existing timer to avoid multiple timers
+      if (this.sessionTimeout) {
+        clearTimeout(this.sessionTimeout);
+      }
+      // Set a new inactivity timer
+      this.sessionTimeout = setTimeout(() => {
+        this.router.navigateByUrl('/login');
+      }, this.inactivityDuration);
+    }
+    resetSessionTimer() {
+      this.startSessionTimer();
+    }
+    // Listen for user interaction events and reset the timer
+    @HostListener('document:mousemove')
+    @HostListener('document:click')
+    @HostListener('document:keydown')
+    handleUserActivity() {
+      this.resetSessionTimer(); // Reset timer on activity
+    }
 }

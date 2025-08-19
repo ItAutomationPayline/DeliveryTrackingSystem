@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { FirestoreService } from '../services/firestore.service';
@@ -6,7 +6,6 @@ import { debounceTime, forkJoin, take } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { collection, doc, getDocs, query, where, writeBatch } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-manager',
@@ -26,6 +25,7 @@ export class ManagerComponent {
   AllActiveQcReports: any[] = [];
   ComplianceTasks: any[] = [];
   selectedQC:any;
+  selectedQCMap: { [taskId: string]: string } = {};
   QcTeam:any[]=[];
   boss:any;
   ops:any;
@@ -33,8 +33,12 @@ export class ManagerComponent {
   searchedUser: any[] = [];
   searchprofile:string=''
   ClientName: string = '';
+  PayPeriod: string = '';
+  Days: any = '';
+  Preponeorpostponeaction: string = '';
   deleteGroupName: string = '';
   deleteClientName: string = '';
+  deletetaskDescription: string = '';
   taskDescription: string = '';
   minDeadline: string = '';
   taskDeadline: string = '';
@@ -85,6 +89,8 @@ export class ManagerComponent {
   emergency:string='';
   relation:string='';
   bloodgroup:string='';
+  public sessionTimeout: any;
+  public inactivityDuration = 30 * 60 * 1000;
   public userMap: Map<string, string> = new Map(); // Map of user IDs to names
 
   constructor(private fb: FormBuilder,private router: Router,private firestoreService: FirestoreService,private firestore: AngularFirestore) 
@@ -94,7 +100,6 @@ export class ManagerComponent {
       toDat: ['', Validators.required],
       opsNames:['', Validators.required]
     });
-    
   }
 
   ngOnInit() {
@@ -137,6 +142,7 @@ export class ManagerComponent {
       this.getAllEmployees();
       this.fetchprofile();
       this.fetchAssignedTasks();
+      
       this.fetchCompletedTasks();
       this.fetchAllClientList();
       this.sortClientsByGroupAndName();
@@ -145,7 +151,159 @@ export class ManagerComponent {
       this.fetchQcTeam();
       this.fetchComplianceTasks();
      }, 500);
+     this.startSessionTimer();
+     setTimeout(() => {
+      this.fixDeadlinesAfter8PM();
+      this.fixDeadlinesBefore8AM();
+     },3500);
+     
   }
+  fixDeadlinesAfter8PM() {
+    
+    console.log("Method initiated");
+  this.tasksAssigned.forEach((task: any) => {
+    if (task.deadline) {
+      const deadlineDate = new Date(task.deadline);
+
+      // Check if the deadline is beyond 8 PM
+      if (
+        deadlineDate.getHours() > 20 ||
+        (deadlineDate.getHours() === 20 && deadlineDate.getMinutes() > 0)
+      ) {
+        console.log("TAsk found.");
+        // Reset to 8:00 PM same day
+        deadlineDate.setHours(20, 0, 0, 0);
+
+        // Convert back to ISO format before saving
+        const updatedISO = deadlineDate.toISOString();
+
+        this.firestore.collection('tasks').doc(task.id).update({
+          deadline: updatedISO
+        }).then(() => {
+          console.log(`Deadline fixed to 8 PM for task: ${task.id}`);
+        }).catch(err => {
+          console.error(`Error updating task ${task.id}:`, err);
+        });
+      }
+    }
+  });
+}
+fixDeadlinesBefore8AM() {
+    
+    console.log("Method initiated");
+  this.tasksAssigned.forEach((task: any) => {
+    if (task.deadline) {
+      const deadlineDate = new Date(task.deadline);
+
+      // Check if the deadline is beyond 8 PM
+      if (
+        deadlineDate.getHours() < 8 ||
+        (deadlineDate.getHours() === 20 && deadlineDate.getMinutes() > 0)
+      ) {
+        console.log("TAsk found.");
+        // Reset to 8:00 PM same day
+        deadlineDate.setHours(8, 0, 0, 0);
+
+        // Convert back to ISO format before saving
+        const updatedISO = deadlineDate.toISOString();
+
+        this.firestore.collection('tasks').doc(task.id).update({
+          deadline: updatedISO
+        }).then(() => {
+          console.log(`Deadline fixed to 8 AM for task: ${task.id}`);
+        }).catch(err => {
+          console.error(`Error updating task ${task.id}:`, err);
+        });
+      }
+    }
+  });
+}
+ PreponeorPostPone() {
+  if(this.GroupName=='')
+    {
+      alert("Group name is required");
+      return;
+    }
+  if(this.ClientName=='')
+    {
+      alert("Client name is required.");
+      return;
+    }
+  if(this.PayPeriod=='')
+    {
+      alert("valid PayPeriod is required.");
+      return;
+    }
+  if(this.Days=='')
+    {
+      alert("valid Days are required.");
+      return;
+    }
+    if(this.Preponeorpostponeaction=='')
+    {
+      alert("Choose Prepone or Postpone.");
+      return;
+    }
+  console.log(this.GroupName);
+  console.log(this.ClientName);
+  console.log(this.PayPeriod);
+  console.log(this.Days);
+  console.log(this.Preponeorpostponeaction);
+
+  this.firestore.collection('tasks', ref =>
+    ref.where('group', '==', this.GroupName)
+       .where('client', '==', this.ClientName)
+       .where('period', '==', this.PayPeriod)
+  ).get().toPromise().then(querySnapshot => {
+    if (!querySnapshot || querySnapshot.empty) {
+      alert("No tasks found. Make sure you've correctly spelled client, group and period");
+      return;
+    }
+
+    const batch = this.firestore.firestore.batch();
+
+  querySnapshot.forEach(doc => {
+  const taskData: any = doc.data();
+  const rawDeadline = taskData.deadline;
+
+  console.log(`Document ${doc.id} raw deadline:`, rawDeadline);
+
+  const originalDeadline = new Date(rawDeadline);
+  if (isNaN(originalDeadline.getTime())) {
+    console.warn(`Skipping document ${doc.id}: invalid or missing deadline`);
+    return;
+  }
+
+  const daysToAdjust = this.Preponeorpostponeaction === 'Prepone'
+    ? -this.Days
+    : this.Days;
+
+  const newDeadline = new Date(originalDeadline);
+  newDeadline.setDate(newDeadline.getDate() + daysToAdjust);
+
+  // Save as ISO string to maintain consistency
+  batch.update(doc.ref, { deadline: newDeadline.toISOString() });
+});
+
+    batch.commit().then(() => {
+      if(this.Preponeorpostponeaction==="Prepone")
+        {
+          alert(`Payroll of client: ${this.GroupName} having period ${this.PayPeriod} is preponed to ${this.Days} days.`);
+        }
+        else
+          {
+             alert(`Payroll of client: ${this.GroupName} having period ${this.PayPeriod} is postponed to ${this.Days} days.`);
+          }
+      
+    }).catch(commitErr => {
+      console.error("Error committing batch:", commitErr);
+    });
+
+  }).catch(error => {
+    console.error("Error retrieving tasks:", error);
+  });
+}
+
   fetchComplianceTasks()
   {
     this.firestore.collection('compliance', ref => ref.where('status', '==', 'In-Progress'))
@@ -199,6 +357,74 @@ export class ManagerComponent {
             // this.fetchTasks();
           })
    }
+   DeleteTaskofcalendar()
+   {
+    if(!this.deletetaskDescription)
+    {
+      alert("Task description is required.");
+      return;
+    }
+     if (!this.deleteGroupName || !this.deleteClientName) {
+const isConfirmed = window.confirm('As group and client is not provided. Task will be deleted from all clients.');
+  if (isConfirmed) {
+  const taskCollectionRef = this.firestore.collection('tasks', ref =>
+    ref.where('description', '==', this.deletetaskDescription)
+       .where('status', '!=', 'Completed')
+  );
+
+  taskCollectionRef.get().subscribe(snapshot => {
+    if (snapshot.empty) {
+      alert('No matching tasks found to delete.');
+      return;
+    }
+
+    const batch = this.firestore.firestore.batch(); // Raw Firestore batch
+    snapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    batch.commit().then(() => {
+       alert(`Deleted ${snapshot.size} task(s) for all clients.`);
+    }).catch(err => {
+      console.error('Error deleting tasks:', err);
+      alert('Error occurred while deleting tasks.');
+    });
+  });
+}
+  }
+  else
+    {
+      const isConfirmed= window.confirm('Are you sure want to delete the task:'+this.deletetaskDescription+" from client "+this.deleteClientName+"?");
+      if (isConfirmed) 
+        {
+          const taskCollectionRef = this.firestore.collection('tasks', ref =>
+    ref.where('description', '==', this.deletetaskDescription)
+       .where('status', '!=', 'Completed')
+       .where('group', '==',this.deleteGroupName)
+       .where('client', '==',this.deleteClientName)
+  );
+
+  taskCollectionRef.get().subscribe(snapshot => {
+    if (snapshot.empty) {
+      alert('No matching tasks found to delete.');
+      return;
+    }
+
+    const batch = this.firestore.firestore.batch(); // Raw Firestore batch
+    snapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    batch.commit().then(() => {
+      alert(`Deleted ${snapshot.size} task(s) for group "${this.deleteGroupName}" and client "${this.deleteClientName}".`);
+    }).catch(err => {
+      console.error('Error deleting tasks:', err);
+      alert('Error occurred while deleting tasks.');
+    });
+    });
+    }
+    }
+   }
 DeletePayCalendar(): void {
   if (!this.deleteGroupName || !this.deleteClientName) {
     alert('Please fill both Group Name and Client Name.');
@@ -209,6 +435,7 @@ DeletePayCalendar(): void {
   const taskCollectionRef = this.firestore.collection('tasks', ref =>
     ref.where('group', '==', this.deleteGroupName)
        .where('client', '==', this.deleteClientName)
+       .where('status', '!=', 'Completed')
   );
 
   taskCollectionRef.get().subscribe(snapshot => {
@@ -291,8 +518,14 @@ DeletePayCalendar(): void {
     const selectedManager = this.managers.find(m => m.id === this.boss);
     const leaderEmail = selectedManager ? selectedManager.email : '';
     if(this.taskDescription.includes("QC")||this.taskDescription.includes("qc")){
+      let desc;
+           const regex = /\bto\b/i; // Matches the word 'to' as a whole word, case-insensitive
+           const match = this.taskDescription.match(regex);
+           if (match && match.index !== undefined) {
+              desc=this.taskDescription.substring(0, match.index).trim();
+            }
     task = {
-      reportType:'Payroll Reports',
+      reportType:desc,
       assignedTo: this.ops,
       group:this.GroupName,
       client: this.ClientName,
@@ -398,7 +631,7 @@ onFileChange2(event: any) {
       const [, dd, mm, yyyy, hh, min] = datetimeMatch;
       const date = new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:00`);
       if (hh === '00' && min === '00') {
-        date.setHours(23, 59, 0); // Replace 00:00 with 11:59 PM
+        date.setHours(20, 0, 0); // Replace 00:00 with 11:59 PM
       }else {
         date.setHours(date.getHours() + 3); // Add 4 hours to given time
         date.setMinutes(date.getMinutes() + 30); // Add 4 hours to given time
@@ -417,7 +650,7 @@ onFileChange2(event: any) {
   }
   adjustTime(date: Date): Date {
     if (date.getHours() === 0 && date.getMinutes() === 0) {
-      date.setHours(23, 59, 0); // Adjust 00:00 to 11:59 PM
+      date.setHours(20, 0, 0); // Adjust 00:00 to 11:59 PM
     }
     return date;
   }
@@ -437,8 +670,14 @@ onFileChange2(event: any) {
         let  task = {};
         if(formattedDeadline!=null){
         if(taskData.description.includes("QC")||taskData.description.includes("qc")){
+          let desc;
+           const regex = /\bto\b/i; // Matches the word 'to' as a whole word, case-insensitive
+           const match = this.taskDescription.match(regex);
+           if (match && match.index !== undefined) {
+              desc=this.taskDescription.substring(0, match.index).trim();
+            }
         task = {
-          reportType:'Payroll Reports',
+          reportType:desc,
           assignedTo: this.ops,
           group:this.GroupName,
           client: this.ClientName,
@@ -532,6 +771,7 @@ cancelEdit(): void {
       status: 'in-progress',
       findings: [],
       updatedAt: new Date(),
+      startedAt:new Date().toISOString(),
       qcName:selectedQcUser.name
     };
     // Directly update the existing QC report with document ID = requestId
@@ -549,7 +789,7 @@ cancelEdit(): void {
     });
   }
   fetchQcTeam() {
-    this.firestore.collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC']))
+    this.firestore.collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC','Manager','General Manager','Team Lead']))
       .valueChanges({ idField: 'id' })
       .subscribe((requests: any[]) => {
         this.QcTeam = requests;
@@ -603,6 +843,10 @@ cancelEdit(): void {
         if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
+           if (!headcount || headcount.trim() === '') {
+              alert("Headcount is required. Submission cancelled.");
+              return; // Stop execution
+            }
           this.firestore
           .collection('tasks')
           .doc(taskToUpdate.id)
@@ -714,13 +958,11 @@ cancelEdit(): void {
                   <p>Dear QC Team,</p>
                   Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
                   of period:${taskToUpdate.period}.<br>
-                  link:${link}<br>
                   note:${userNote}<br>
                   For any issues or queries or if link is not given, feel free to reach out.<br>
                   <p>Best regards,
                   <br>${taskToUpdate.assignedToName}</p>
                 `;
-        
                 const bodydata = {
                   recipients: recipients,
                   subject: subject,
@@ -809,7 +1051,9 @@ formatPeriod(isoDate: string): string {
           status: t.status || '',
           reportType: t.reportType || '',
           QcApproval: t.QcApproval || '',
+          qcduration:t.qcduration||'',
           comment: t.comment,
+          QCPerson:t.QCPerson,
           headcount: t.headcount || '',
           sequence: t.Sequence !== undefined ? t.Sequence.toString() : '' // Ensure sequence is a string
         }));
@@ -856,7 +1100,9 @@ formatPeriod(isoDate: string): string {
           status: t.status || '',
           reportType: t.reportType || '',
           QcApproval: t.QcApproval || '',
+          qcduration:t.qcduration||'',
           comment: t.comment,
+          QCPerson:t.QCPerson,
           headcount: t.headcount || '',
           sequence: t.Sequence !== undefined ? t.Sequence.toString() : '' // Ensure sequence is a string
         }));
@@ -871,8 +1117,8 @@ formatPeriod(isoDate: string): string {
     // First create an array with correct headings and data
     const headings = [
       'Group', 'Client','Period', 'Description', 'Deadline', 
-      'Completed At', 'TL', 'Ops', 'Status', 
-      'Report Type', 'Qc Approval', 'Sequence','Headcount','Comment'
+      'Completed At', 'TL', 'Ops', 'Status','Comment',
+      'Report Type', 'QC Person','QC Duration', 'Sequence','Headcount'
     ];
     const formattedData = data.map(item => ({
       Group: item.group,
@@ -885,7 +1131,8 @@ formatPeriod(isoDate: string): string {
       Ops: item.assignedTo,
       Status: item.status,
       'Report Type': item.reportType,
-      'Qc Approval': item.QcApproval,
+      'QC Person': item.QCPerson,
+      'QC Duration': item.qcduration,
       Sequence: item.sequence,
       Headcount:item.headcount,
       Comment: item.comment
@@ -1469,5 +1716,24 @@ fetchAssignedTasks() {
         alert('Failed to update the role. Please try again later.');
       });
   }
-  
+    startSessionTimer() {
+      // Clear any existing timer to avoid multiple timers
+      if (this.sessionTimeout) {
+        clearTimeout(this.sessionTimeout);
+      }
+      // Set a new inactivity timer
+      this.sessionTimeout = setTimeout(() => {
+        this.router.navigateByUrl('/login');
+      }, this.inactivityDuration);
+    }
+    resetSessionTimer() {
+      this.startSessionTimer();
+    }
+    // Listen for user interaction events and reset the timer
+    @HostListener('document:mousemove')
+    @HostListener('document:click')
+    @HostListener('document:keydown')
+    handleUserActivity() {
+      this.resetSessionTimer(); // Reset timer on activity
+    }
 }

@@ -122,7 +122,7 @@
           Type: {{ request.reportType}}<br>
           Period: {{ request.Period| date: 'MMMM-yyyy'}}<br>
           Ops: {{ request.opsName}}<br>
-          link:{{request.link}}<br>
+          <!-- link:{{request.link}}<br> -->
           note:{{request.note}}<br>
           <button class="btn btn-primary"(click)="startQcReport(request.id)">Start QC</button>
         </ng-container>
@@ -135,7 +135,7 @@
           You have no active QC reports.
         </div>
         <div *ngFor="let report of QcReports" class="report-card">
-          <div *ngIf="report.status != 'Completed' &&report.AssignedTo==this.employeeId">
+          <div *ngIf="report.status != 'Completed' && report.AssignedTo==this.employeeId">
           <h6>{{ report.clientName }}</h6><br>
           Type: {{ report.reportType}}<br>
           Ops: {{ report.opsName}}<br>
@@ -163,10 +163,11 @@
         <div *ngIf="!currentReport.findings || currentReport.findings.length === 0">
           No findings added yet.
         </div>
-        <div *ngFor="let finding of currentReport.findings" class="finding-item">
+        <div *ngFor="let finding of currentReport.findings;let i = index" class="finding-item">
           <div class="finding-header">
             <span class="category">{{ finding.category }}</span>
             <span class="timestamp">{{ finding.timestamp?.toDate() | date:'short' }}</span>
+            <button (click)="deleteFinding(i)" style="margin-left: auto;"><i class="bi bi-trash"></i></button>
           </div>
           <div class="finding-description">{{ finding.description }}</div>
         </div>
@@ -240,13 +241,13 @@
             <td>{{ task.Period }}</td>
             <td>{{ task.status }}</td>
             <td class="d-flex align-items-center gap-2">
-            <select class="form-select" id="role" [(ngModel)]="selectedQC" required>
+            <select class="form-select" id="role" [(ngModel)]="selectedQCMap[task.id]" required>
               <option value="" disabled selected>Select QC</option>
               <option *ngFor="let qc of QcTeam" [value]="qc.id">
                 {{ qc.name }}
               </option>
             </select>
-            <button (click)="assignQc(task.id,selectedQC)" class="btn btn-dark">Assign</button>
+            <button (click)="assignQc(task.id,selectedQCMap[task.id])" class="btn btn-dark"[disabled]="!selectedQCMap[task.id]">Assign</button>
           </td>
           </ng-container>
         </tr>

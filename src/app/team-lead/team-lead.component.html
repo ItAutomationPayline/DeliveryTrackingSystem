@@ -25,6 +25,9 @@
   <li class="nav-item" role="presentation">
     <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile5">Today's Status</button>
   </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" routerLink="/qc">QC Mode</button>
+  </li>
 </ul>
 <br>
 <div class="tab-content mt-3">
@@ -169,8 +172,25 @@
             <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a' }}</td>
             <td>{{ task.status }}</td>
             <td>
+              <div class="dropdown">
+                  <button  class="btn-select-lookalike" type="button"id="taskActionsDropdown"
+                    data-bs-toggle="dropdown"aria-expanded="false" style="width: 70px; height: 30px;">
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                    <li>
+                      <a class="dropdown-item"(click)="openEditModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
+                        Update
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item"(click)="markTaskasComplete(task)">
+                        Mark as Complete
+                      </a>
+                    </li>
+                  </ul>
+                </div>
               <!-- <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button> -->
-              <button (click)="openEditModal(task)" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
+              <!-- <button (click)="openEditModal(task)" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button> -->
             </td>
             <td>{{ task.comment }}</td>
           </ng-container>
@@ -367,7 +387,7 @@
 </div>
   </div>
   <div class="tab-pane fade" id="profile8">
-        <div>
+        <div style="margin-left: 25px;">
           <h2>Assign Tasks to Executives</h2>
           <!-- Team Selection -->
           <label for="teamSelect">Select Team:</label>
@@ -407,11 +427,22 @@
                 <option value="Payroll Input Received">
                 <option value="Payroll Processing">
                 <option value="Payroll Reports to QC">
-                <option value="Payroll reports sent to client">
+                <option value="Incentive Reports to QC">
+                <option value="LWF Reports to QC">
+                <option value="PF Reports to QC">
+                <option value="PT Reports to QC">
+                <option value="ESIC Reports to QC">
+                <option value="TDS Reports to QC">
+                <option value="E-TDS Reco to QC">
+                <option value="TDS return Reports to QC">
+                <option value="Form 16 Reports to QC">
+                <option value="Bank file to QC">
+                <option value="Compliance Reports to QC">
+                <option value="Statutory Reports to QC">
+                <option value="Payroll Reports sent to client">
                 <option value="Customer Approves the Payroll Reports">
                 <option value="Bank file">
                 <option value="Upload individual IT report on UKG portal">
-                <option value="Statutory reports sent to QC">
                 <option value="Statutory reports sent to client">
                 <option value="Check PAN of new joiner on Traces">
                 <option value="Send new joiner details to compliance team to generate UAN number">
@@ -419,6 +450,7 @@
                 <option value="PF return (IW)">
                 <option value="PT return">
                 <option value="Payslip, IT Sheet, FnF on ESS Portal">
+                <option value="Journal to QC">
               </datalist>
           </div>
           

@@ -35,8 +35,8 @@ export class ExecutiveComponent {
  employeeId: any= localStorage.getItem('id');
  profile: any[] = [];
  nm:any=localStorage.getItem('nm');
- public sessionTimeout: any;
- public inactivityDuration = 30 * 60 * 1000;
+public sessionTimeout: any;
+public inactivityDuration = 15 * 60 * 1000;
 firstname:string='';
 middlename:string='';
 lastname:string='';
@@ -71,7 +71,7 @@ bloodgroup:string='';
       console.log('Component initialized after reload');
     }
     
-    // this.startSessionTimer();
+    this.startSessionTimer();
    }
    UpdateProfile()
    {
@@ -188,6 +188,10 @@ bloodgroup:string='';
         if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
+          if (!headcount || headcount.trim() === '') {
+              alert("Headcount is required. Submission cancelled.");
+              return; // Stop execution
+            }
           this.firestore
           .collection('tasks')
           .doc(taskId)
@@ -265,11 +269,21 @@ bloodgroup:string='';
         }
         if(taskToUpdate.QcApproval=="Pending")
         { 
+       let desc;
+           const regex = /\bto\b/i; // Matches the word 'to' as a whole word, case-insensitive
+           const match = taskToUpdate.description.match(regex);
+           if (match && match.index !== undefined) {
+              desc=taskToUpdate.description.substring(0, match.index).trim();
+            }
             let link = prompt("Paste the link of reports if any:");
+            if (!link || link.trim() === '') {
+              alert("Link is required. Submission cancelled. Kindly submit again");
+              return; // Stop execution
+            }
             let userNote = prompt("Enter a note/special instruction for qc if any:");
             let finalData = {
               taskId:taskId,
-              reportType:taskToUpdate.reportType,
+              reportType:desc,
               groupName:taskToUpdate.group,
               clientName: taskToUpdate.client,
               Period:taskToUpdate.period,
@@ -282,7 +296,7 @@ bloodgroup:string='';
               leadermail:taskToUpdate.leadermail
             };
              this.firestore
-              .collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC']))
+              .collection('users', ref => ref.where('role', 'in', ['QCLead', 'QC','Manager','General Manager']))
               .get()
               .subscribe((querySnapshot: any) => {
                 let recipients: string[] = [];
@@ -300,7 +314,6 @@ bloodgroup:string='';
                   <p>Dear QC Team,</p>
                   Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
                   of period:${taskToUpdate.period}.<br>
-                  link:${link}<br>
                   note:${userNote}<br>
                   For any issues or queries or if link is not given, feel free to reach out.<br>
                   <p>Best regards,

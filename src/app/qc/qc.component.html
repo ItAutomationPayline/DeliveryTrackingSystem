@@ -116,7 +116,7 @@
         Type: {{ request.reportType}}<br>
         Period: {{ request.Period}}<br>
         Ops: {{ request.opsName}}<br>
-        link:{{request.link}}<br>
+        <!-- link:{{request.link}}<br> -->
         note:{{request.note}}<br>
         <button class="btn btn-primary"(click)="startQcReport(request.id)">Start QC</button>
       </ng-container>
@@ -134,7 +134,7 @@
         Type: {{ report.reportType}}<br>
         Ops: {{ report.opsName}}<br>
         <p>Period: {{ report.Period }}</p>
-        link:{{report.link}}<br>
+        link: {{report.link}}<br>
         note:{{report.note}}<br>
         <p>Status: {{ report.status }}</p>
         <p>Findings: {{ report.findings?.length || 0 }}</p>
@@ -153,19 +153,20 @@
     </div>
 
     <div class="findings-list">
-      <h4>Findings</h4>
-      <div *ngIf="!currentReport.findings || currentReport.findings.length === 0">
-        No findings added yet.
-      </div>
-      <div *ngFor="let finding of currentReport.findings" class="finding-item">
-        <div class="finding-header">
-          <!-- <span class="severity {{finding.severity}}">{{ finding.severity }}</span> -->
-          <span class="category">{{ finding.category }}</span>
-          <span class="timestamp">{{ finding.timestamp?.toDate() | date:'short' }}</span>
-        </div>
-        <div class="finding-description">{{ finding.description }}</div>
-      </div>
+  <h4>Findings</h4>
+  <div *ngIf="!currentReport.findings || currentReport.findings.length === 0">
+    No findings added yet.
+  </div>
+  <div *ngFor="let finding of currentReport.findings; let i = index" class="finding-item">
+    <div class="finding-header">
+      <!-- <span class="severity {{finding.severity}}">{{ finding.severity }}</span> -->
+      <span class="category">{{ finding.category }}</span>
+      <span class="timestamp">{{ finding.timestamp?.toDate() | date:'short' }}</span>
+      <button (click)="deleteFinding(i)" style="margin-left: auto;"><i class="bi bi-trash"></i></button>
     </div>
+    <div class="finding-description">{{ finding.description }}</div>
+  </div>
+</div>
 
     <div class="add-finding">
       <h4>Add New Finding</h4>
@@ -211,12 +212,57 @@
       <button class="btn btn-primary"(click)="currentReport = null">Save</button>
     </div>
   </div>
+  <br>
+
 </div>
+  <div *ngIf="AllActiveQcReports.length > 0; else noQC">
+    <h3>All In-Progress and unassigned-QC's</h3>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th> Group</th>
+          <th>Client</th>
+          <th> Ops Person</th>
+          <th> Report Type</th>
+          <th>Qc Person</th>
+          <th>Period</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let task of AllActiveQcReports">
+          <ng-container *ngIf="task.status != 'Completed'">
+            <td>{{ task.groupName }}</td>
+            <td>{{ task.clientName }}</td>
+            <td>{{ task.opsName }}</td>
+            <td>{{ task.reportType }}</td>
+            <td>{{ task.qcName }}</td>
+            <td>{{ task.Period }}</td>
+            <td>{{ task.status }}</td>
+            <td class="d-flex align-items-center gap-2">
+            <select class="form-select" id="role" [(ngModel)]="selectedQCMap[task.id]" required>
+              <option value="" disabled selected>Select QC</option>
+              <option *ngFor="let qc of QcTeam" [value]="qc.id">
+                {{ qc.name }}
+              </option>
+            </select>
+            <button (click)="assignQc(task.id,selectedQCMap[task.id])" class="btn btn-dark"[disabled]="!selectedQCMap[task.id]">Assign</button>
+          </td>
+          </ng-container>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   </div>
 </div>
   <ng-template #noTasks>
     <p>
       No requests currently available for QC.
+    </p>
+  </ng-template>
+   <ng-template #noQC>
+    <p>
     </p>
   </ng-template>
 

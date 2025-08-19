@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { Router } from '@angular/router';
@@ -14,6 +14,9 @@ import { FirestoreService } from '../services/firestore.service';
 export class LoginComponent {
   public email: string = '';
   public password: string = '';
+  public sessionTimeout: any;
+  public inactivityDuration = 30 * 60 * 1000;
+
   ngOnInit() {
     localStorage.removeItem('authToken');
     localStorage.removeItem('role');
@@ -27,6 +30,7 @@ export class LoginComponent {
       sessionStorage.removeItem('hasReloaded'); // Clear the reload marker after the first load
       console.log('Component initialized after reload');
     }
+    this.startSessionTimer();
   }
   constructor(public firestoreService: FirestoreService,private afAuth: AngularFireAuth,private router: Router,private firestore: AngularFirestore) {}
   public users: any[] = [];
@@ -71,7 +75,7 @@ export class LoginComponent {
                 localStorage.setItem('role', role);
               }
               else if (role === "QCLead") {
-                this.router.navigateByUrl('/qclead');
+                this.router.navigateByUrl('/qc');
                 localStorage.setItem('role', role);
               }
                else if (role === "Team Lead") {
@@ -86,4 +90,24 @@ export class LoginComponent {
       })
       .catch(err => alert('Login Failed: ' + err.message));
   }
+    startSessionTimer() {
+      // Clear any existing timer to avoid multiple timers
+      if (this.sessionTimeout) {
+        clearTimeout(this.sessionTimeout);
+      }
+      // Set a new inactivity timer
+      this.sessionTimeout = setTimeout(() => {
+        window.location.reload();
+      }, this.inactivityDuration);
+    }
+    resetSessionTimer() {
+      this.startSessionTimer();
+    }
+    // Listen for user interaction events and reset the timer
+    @HostListener('document:mousemove')
+    @HostListener('document:click')
+    @HostListener('document:keydown')
+    handleUserActivity() {
+      this.resetSessionTimer(); // Reset timer on activity
+    }
 }
