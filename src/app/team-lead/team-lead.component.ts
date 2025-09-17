@@ -15,8 +15,22 @@ import { debounce, take } from 'rxjs';
 })
 
 export class TeamLeadComponent {
+  PayPeriod: string = '';//for prepone or postpone
+  Days: any = '';//for prepone or postpone
+  Preponeorpostponeaction: string = '';
+newFinding = {
+  description: '',
+  category: '',
+  employees:'',
+  timestamp: new Date()
+};
+private comebackModalResolver: (() => void) | null = null;
+currentReport = {
+  findings: [] as any[]
+};
   selfTasks: any[] = [];
   teams: any[] = [];
+  payPeriods: string[] = [];
   managerId: any = '';
   beforedeadline: any;
   // List of teams led by the team lead
@@ -77,6 +91,7 @@ export class TeamLeadComponent {
   emergency:string='';
   relation:string='';
   bloodgroup:string='';
+  payperiod:string='';
   public sessionTimeout: any;
   public inactivityDuration = 20 * 60 * 1000;
   
@@ -115,14 +130,47 @@ export class TeamLeadComponent {
       this.fetchselfprofile();
       setTimeout(() => {
         this.loadData(this.managerId); // Your logic here
-      }, 1500);
+      }, 500);
     this.updateMinDeadline();
     this.getFilteredClients();
     this.getFilteredDescription();
     this.loadDescriptionSuggestions();
     this.fetchClients();
     this.startSessionTimer();
+    this.fillPayPeriods();
   }
+  fillPayPeriods(): void {
+  const today = new Date();
+  // helper to format month + year
+  const formatMonthYear = (date: Date): string =>
+    date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  // previous month
+  const prevDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const previous = formatMonthYear(prevDate);
+  // current month
+  const current = formatMonthYear(today);
+  // next month
+  const nextDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const next = formatMonthYear(nextDate);
+  // store in array
+  this.payPeriods = [previous, current, next];
+}
+addFinding() {
+  if (this.newFinding.description && this.newFinding.category) {
+    this.currentReport.findings.push({
+      description: this.newFinding.description,
+      category: this.newFinding.category,
+      employees:this.newFinding.employees,
+      timestamp: new Date()
+    });
+    // Reset input fields
+    this.newFinding = { description: '', category: '',employees:'', timestamp: new Date() };
+  }
+}
+
+deleteFinding(index: number) {
+  this.currentReport.findings.splice(index, 1);
+}
   fetchselfprofile()
    {
      this.firestore
@@ -133,7 +181,8 @@ export class TeamLeadComponent {
             this.profile[0]=users[0];
           })
     }
-     UpdateProfile()
+
+  UpdateProfile()
    {
     console.log(this.firstname);
     console.log(this.lastname);
@@ -165,17 +214,8 @@ export class TeamLeadComponent {
       );
       
       if (isConfirmed) {
-        if(taskToUpdate.description=="Customer Provides Payroll Inputs"||taskToUpdate.description=="Payroll Input Received"||taskToUpdate.description=="Payroll Inputs to Partner")
+        if(taskToUpdate.description=="Compliance Reports to Customer")
         {
-          const bodydata = {
-          recipients: [taskToUpdate.leadermail],
-          subject: [taskToUpdate.group] + `: Payroll Input Received`,
-          body: `This is to inform you that the payroll input of client ${taskToUpdate.client} has been received.<br>I will proceed with the necessary processing as per the defined timelines.<br><br>Best regards,<br>${taskToUpdate.assignedToName}`,
-          };
-          this.firestoreService.sendMail(bodydata);
-        }
-          if(taskToUpdate.description=="Compliance Reports to Customer")
-          {
             this.firestore.collection('compliance', ref =>
                               ref.where('group', '==', taskToUpdate.group)
                                   .where('client', '==', taskToUpdate.client)
@@ -191,7 +231,7 @@ export class TeamLeadComponent {
                                   });
                               });
                             });
-          }
+        }
         if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
@@ -206,34 +246,7 @@ export class TeamLeadComponent {
             headcount: headcount,
           });
           let originalDate = new Date(taskToUpdate.deadline);
-          originalDate.setDate(originalDate.getDate() + 2);
-          let task = {
-            reportType:'Compliance Reports',
-            assignedTo: taskToUpdate.assignedTo,
-            teamId: taskToUpdate.teamId,
-            period:taskToUpdate.period,
-            group:taskToUpdate.group,
-            client: taskToUpdate.client,
-            description: "Compliance Reports to QC",
-            deadline: originalDate.toISOString(), // Convert deadline to ISO format
-            completedAt:'',
-            status: 'Pending',
-            createdBy:taskToUpdate.createdBy,
-            leadermail: taskToUpdate.leadermail,
-            clientStatus:'Active',
-            QcApproval:'Pending',
-            Sequence:0,
-            comment:""
-          };
-          this.firestore
-          .collection('tasks')
-          .add(task)
-          .then(() => {
-          })
-          .catch((error) => {
-            alert('Failed to assign task. Please try again.');
-          });
-          originalDate.setDate(originalDate.getDate() + 1);
+          originalDate.setDate(originalDate.getDate() + 5);
           let task2 = {
             assignedTo: taskToUpdate.assignedTo,
             teamId: taskToUpdate.teamId,
@@ -287,19 +300,24 @@ export class TeamLeadComponent {
               alert("Link is required. Submission cancelled. Kindly submit again.");
               return; // Stop execution
             }
+            // if (!(link.includes(":") && (link.includes("\\") || link.includes("/")))) {
+            //     alert("Please provide a valid link.");
+            //     return;
+            // }
             let userNote = prompt("Enter a note/special instruction for qc if any:");
             let finalData = {
               taskId:taskToUpdate.id,
               reportType:desc,
               groupName:taskToUpdate.group,
               clientName: taskToUpdate.client,
-              Period:taskToUpdate.deadline,
+              Period:taskToUpdate.period,
               ops:taskToUpdate.assignedTo,
               AssignedTo:"Pending",
               opsName:taskToUpdate.assignedToName,
               status:"Pending",
               note:userNote,
               link:link,
+              createdAt: new Date(),
               leadermail:taskToUpdate.leadermail
             };
             this.firestore
@@ -321,6 +339,7 @@ export class TeamLeadComponent {
                   <p>Dear QC Team,</p>
                   Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
                   of period:${taskToUpdate.period}.<br>
+                  link:${link}<br>
                   note:${userNote}<br>
                   For any issues or queries or if link is not given, feel free to reach out.<br>
                   <p>Best regards,
@@ -518,7 +537,7 @@ onFileChange(event: any) {
 
     // Calculate tomorrow's date
     const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+    tomorrow.setDate(today.getDate() + 2);
 
     return taskDate <= tomorrow;
 }
@@ -622,7 +641,149 @@ onFileChange(event: any) {
         console.error('Error fetching managers:', error);
       });
   }
-  
+   PreponeorPostPone() {
+  if(this.GroupName=='')
+    {
+      alert("Group name is required");
+      return;
+    }
+  if(this.ClientName=='')
+    {
+      alert("Client name is required.");
+      return;
+    }
+  if(this.PayPeriod=='')
+    {
+      alert("valid PayPeriod is required.");
+      return;
+    }
+  if(this.Days=='')
+    {
+      alert("valid Days are required.");
+      return;
+    }
+    if(this.Preponeorpostponeaction=='')
+    {
+      alert("Choose Prepone or Postpone.");
+      return;
+    }
+  console.log(this.GroupName);
+  console.log(this.ClientName);
+  console.log(this.PayPeriod);
+  console.log(this.Days);
+  console.log(this.Preponeorpostponeaction);
+
+  this.firestore.collection('tasks', ref =>
+    ref.where('group', '==', this.GroupName)
+       .where('client', '==', this.ClientName)
+       .where('period', '==', this.PayPeriod)
+  ).get().toPromise().then(querySnapshot => {
+    if (!querySnapshot || querySnapshot.empty) {
+      alert("No tasks found. Make sure you've correctly spelled client, group and period");
+      return;
+    }
+
+    const batch = this.firestore.firestore.batch();
+
+  querySnapshot.forEach(doc => {
+  const taskData: any = doc.data();
+  const rawDeadline = taskData.deadline;
+
+  console.log(`Document ${doc.id} raw deadline:`, rawDeadline);
+
+  const originalDeadline = new Date(rawDeadline);
+  if (isNaN(originalDeadline.getTime())) {
+    console.warn(`Skipping document ${doc.id}: invalid or missing deadline`);
+    return;
+  }
+
+  const daysToAdjust = this.Preponeorpostponeaction === 'Prepone'
+    ? -this.Days
+    : this.Days;
+
+  const newDeadline = new Date(originalDeadline);
+  newDeadline.setDate(newDeadline.getDate() + daysToAdjust);
+
+  // Save as ISO string to maintain consistency
+  batch.update(doc.ref, { deadline: newDeadline.toISOString() });
+});
+
+    batch.commit().then(() => {
+      if(this.Preponeorpostponeaction==="Prepone")
+        {
+          alert(`Payroll of client: ${this.GroupName} having period ${this.PayPeriod} is preponed to ${this.Days} days.`);
+        }
+        else
+          {
+             alert(`Payroll of client: ${this.GroupName} having period ${this.PayPeriod} is postponed to ${this.Days} days.`);
+          }
+      
+    }).catch(commitErr => {
+      console.error("Error committing batch:", commitErr);
+    });
+
+  }).catch(error => {
+    console.error("Error retrieving tasks:", error);
+  });
+}
+async openComebackModal(): Promise<void> {
+  return new Promise(resolve => {
+    const modal = document.getElementById('addComebackModal');
+    if (modal) {
+      // Add Bootstrap classes
+      modal.classList.add('show');
+      modal.setAttribute('style', 'display: block; padding-right: 17px;');
+      modal.removeAttribute('aria-hidden');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('role', 'dialog');
+
+      // Prevent body scrolling
+      document.body.classList.add('modal-open');
+
+      // Add backdrop if not already present
+      if (!document.querySelector('.modal-backdrop')) {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        document.body.appendChild(backdrop);
+      }
+
+      // 🔑 Store resolver so closeComebackModal can call it
+      this.comebackModalResolver = resolve;
+    } else {
+      resolve(); // if modal not found, resolve immediately
+    }
+  });
+}
+submitAllComebacks() {
+  if ( !this.selectedMemberId ) {
+    alert("Please fill all required fields (Group, Client, Ops person, Pay period).");
+    return;
+  }
+
+  const comebackDoc = {
+    group: this.GroupName,
+    client: this.ClientName,
+    assignedTo: this.selectedMemberId,
+    payPeriod: this.payperiod,
+    findings: this.currentReport.findings || [],
+    createdBy: localStorage.getItem("id"),
+    createdAt: new Date().toISOString(),  // or Firestore server timestamp
+  };
+
+  this.firestore
+    .collection("comebacks")
+    .add(comebackDoc)
+    .then(() => {
+      alert("Comebacks submitted successfully!");
+      this.currentReport.findings = [];  // reset findings
+      this.newFinding = { description: "", category: "",employees:"",timestamp:new Date() }; // reset input
+      this.closeComebackModal();
+    })
+    .catch((error) => {
+      console.error("Error adding comeback:", error);
+      alert("Failed to submit comebacks. Please try again.");
+    });
+}
   // Close modal manually
   closeModal() {
     const modal = document.getElementById('updateTaskModal');
@@ -636,7 +797,25 @@ onFileChange(event: any) {
       }
     }
   }
+  closeComebackModal() {
+  const modal = document.getElementById('addComebackModal');
+  if (modal) {
+    modal.classList.remove('show');
+    modal.setAttribute('style', 'display: none;');
+    document.body.classList.remove('modal-open');
 
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.remove();
+    }
+  }
+
+  // ✅ Resolve the promise when modal closes
+  if (this.comebackModalResolver) {
+    this.comebackModalResolver();
+    this.comebackModalResolver = null;
+  }
+}
   closeScheduledTasksModal() {
     const modal = document.getElementById('updateScheduledTaskModal');
     if (modal) {
@@ -653,7 +832,7 @@ onFileChange(event: any) {
   fetchAssignedTasks() {
     let now = new Date();
     const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
+    tomorrow.setDate(now.getDate() + 2);
     now.setHours(23, 59, 0, 0);
     tomorrow.setHours(23, 59, 0, 0);
     // Query Firestore for tasks where `createdBy` matches the Team Lead's ID
@@ -866,11 +1045,27 @@ onFileChange(event: any) {
   }
   
   // Assign a task to a selected team member
-  assignTask() {
+  async assignTask() {
+    if(this.taskDescription==null)
+      {
+        alert("Description is required.");
+        return;
+      }
+      if(this.payperiod==null)
+      {
+        alert("Pay period is required.");
+        return;
+      }
     if (this.selectedTeamId||this.selectedMemberId && this.taskDescription && this.taskDeadline) {
      let  task = {};
     if(this.taskDescription.includes("QC")||this.taskDescription.includes("qc")){
        let desc;
+       if(this.taskDescription.toLowerCase().includes("revised")){
+          const isConfirmed = window.confirm(`Is there any client comeback?`);
+          if (isConfirmed){
+           await this.openComebackModal();
+            }
+          }
            const regex = /\bto\b/i; // Matches the word 'to' as a whole word, case-insensitive
            const match = this.taskDescription.match(regex);
            if (match && match.index !== undefined) {
@@ -881,7 +1076,7 @@ onFileChange(event: any) {
       reportType:desc,
       assignedTo: this.selectedMemberId,
       teamId: this.selectedTeamId,
-      period:this.formatPeriod(this.taskDeadline),
+      period:this.payperiod,
       group:this.GroupName,
       client: this.ClientName,
       description: this.taskDescription,
@@ -900,7 +1095,7 @@ onFileChange(event: any) {
     task = {
       assignedTo: this.selectedMemberId,
       teamId: this.selectedTeamId,
-      period:this.formatPeriod(this.taskDeadline),
+      period:this.payperiod,
       group:this.GroupName,
       client: this.ClientName,
       description: this.taskDescription,

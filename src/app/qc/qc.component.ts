@@ -82,7 +82,38 @@ export class QCComponent{
     this.fetchprofile();
     this.fetchAssignedRequests();
     this.fetchQcReports();
-    
+      setTimeout(() => {
+         this.cleanOldQcReports(); // Your logic here
+      }, 1500);
+   
+  }
+  cleanOldQcReports(): void {
+    // Get 3 days ago
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    // Start and end of that day
+    const startOfDay = new Date(threeDaysAgo.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(threeDaysAgo.setHours(23, 59, 59, 999));
+
+    this.firestore.collection('QcReports', ref =>
+      ref.where('createdAt', '<=', endOfDay)
+         .where('AssignedTo', '==', 'Pending')
+    ).get().subscribe(snapshot => {
+      if (snapshot.empty) {
+        console.log("No matching QcReports found.");
+        return;
+      }
+
+      const batch = this.firestore.firestore.batch();
+      snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      batch.commit().then(() => {
+        console.log(`${snapshot.size} old QcReports deleted.`);
+      });
+    });
   }
      fetchAllQcReports(){
     this.firestore
@@ -311,6 +342,7 @@ export class QCComponent{
         //console.log("Sending gentle reminder to:", user.email);
         let recipients: string[] = [];
         recipients.push(user.email);
+        recipients= [...new Set(recipients)];
         this.rec[0]=user.email
         let bodydata = {
         "recipients": recipients,
@@ -405,14 +437,8 @@ taskRef.get().subscribe(docSnapshot => {
              }
              setTimeout(() => {
                 this.currentReport = null;
-               console.log(this.rec);
                this.rec=[];
               }, 500);
-            //  this.intervalId = setInterval(() => {
-            //    this.currentReport = null;
-            //    console.log(this.rec);
-            //    this.rec=[];
-            //  }, 1000);
        })
        .catch(error => {
          console.error("Error completing QC report: ", error);

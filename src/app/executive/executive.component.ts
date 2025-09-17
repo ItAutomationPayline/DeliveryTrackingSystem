@@ -32,6 +32,12 @@ export class ExecutiveComponent {
  selectedTask: any = null;
  AllClientsAndGroups:any[] = [];
  reasonInput: string = '';
+ bankfile: any
+ pf:any
+ pt: any
+ esic: any
+ lwf: any
+ tds: any
  employeeId: any= localStorage.getItem('id');
  profile: any[] = [];
  nm:any=localStorage.getItem('nm');
@@ -144,7 +150,7 @@ bloodgroup:string='';
 
     // Calculate tomorrow's date
     const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+    tomorrow.setDate(today.getDate() + 2);
 
     return taskDate <= tomorrow;
 }
@@ -185,7 +191,7 @@ bloodgroup:string='';
                               });
                             });
           }
-        if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
+        if(taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
           if (!headcount || headcount.trim() === '') {
@@ -199,34 +205,7 @@ bloodgroup:string='';
             headcount: headcount,
           });
           let originalDate = new Date(taskToUpdate.deadline);
-          originalDate.setDate(originalDate.getDate() + 2);
-          let task = {
-            reportType:'Compliance Reports',
-            assignedTo: taskToUpdate.assignedTo,
-            teamId: taskToUpdate.teamId,
-            period:taskToUpdate.period,
-            group:taskToUpdate.group,
-            client: taskToUpdate.client,
-            description: "Compliance Reports to QC",
-            deadline: originalDate.toISOString(), // Convert deadline to ISO format
-            completedAt:'',
-            status: 'Pending',
-            createdBy:taskToUpdate.createdBy,
-            leadermail: taskToUpdate.leadermail,
-            clientStatus:'Active',
-            QcApproval:'Pending',
-            Sequence:0,
-            comment:""
-          };
-          this.firestore
-          .collection('tasks')
-          .add(task)
-          .then(() => {
-          })
-          .catch((error) => {
-            alert('Failed to assign task. Please try again.');
-          });
-          originalDate.setDate(originalDate.getDate() + 1);
+          originalDate.setDate(originalDate.getDate() + 5);
           let task2 = {
             assignedTo: taskToUpdate.assignedTo,
             teamId: taskToUpdate.teamId,
@@ -280,6 +259,10 @@ bloodgroup:string='';
               alert("Link is required. Submission cancelled. Kindly submit again");
               return; // Stop execution
             }
+            // if (!(link.includes(":") && (link.includes("\\") || link.includes("/")))) {
+            //     alert("Please provide a valid link.");
+            //     return;
+            // }
             let userNote = prompt("Enter a note/special instruction for qc if any:");
             let finalData = {
               taskId:taskId,
@@ -293,6 +276,7 @@ bloodgroup:string='';
               status:"Pending",
               note:userNote,
               link:link,
+              createdAt: new Date(),
               leadermail:taskToUpdate.leadermail
             };
              this.firestore
@@ -305,7 +289,7 @@ bloodgroup:string='';
                   if (userData.email) {
                     recipients.push(userData.email);
                   }
-                  
+            
                 });
             recipients.push(taskToUpdate.leadermail);
               if (recipients.length > 0) {
@@ -314,6 +298,7 @@ bloodgroup:string='';
                   <p>Dear QC Team,</p>
                   Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
                   of period:${taskToUpdate.period}.<br>
+                  link:${link}<br>
                   note:${userNote}<br>
                   For any issues or queries or if link is not given, feel free to reach out.<br>
                   <p>Best regards,
@@ -430,7 +415,7 @@ submitReport() {
    fetchTasks() {
     let now = new Date();
     const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
+    tomorrow.setDate(now.getDate() + 2);
     now.setHours(23, 59, 0, 0);
     tomorrow.setHours(23, 59, 0, 0);
     this.firestore

@@ -21,6 +21,7 @@ export class ManagerComponent {
   nm:any=localStorage.getItem('nm');
   tasksWithDeadlines: any[] = [];
   reportForm: FormGroup;
+  pps:any[]=[];
   todayscompletedTasks:any[] = [];
   AllActiveQcReports: any[] = [];
   ComplianceTasks: any[] = [];
@@ -96,9 +97,13 @@ export class ManagerComponent {
   constructor(private fb: FormBuilder,private router: Router,private firestoreService: FirestoreService,private firestore: AngularFirestore) 
   {
     this.reportForm = this.fb.group({
-      fromDat: ['', Validators.required],
-      toDat: ['', Validators.required],
-      opsNames:['', Validators.required]
+      // fromDat: ['', Validators.required],
+      // toDat: ['', Validators.required],
+      opsNames:['', Validators.required],
+      includePayroll: [true], // ✅ default checked
+      includeQc: [false] ,
+      includeComeback: [false] ,
+      period: ['', Validators.required]
     });
   }
 
@@ -156,8 +161,22 @@ export class ManagerComponent {
       this.fixDeadlinesAfter8PM();
       this.fixDeadlinesBefore8AM();
      },3500);
-     
+     this.pps = this.generatePayPeriods();
   }
+  generatePayPeriods(): string[] {
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const now = new Date();
+  const periods: string[] = [];
+
+  for (let offset of [-5,-4,-3,-2,-1,0,1,2,3]) {
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    periods.push(`${months[d.getMonth()]} ${d.getFullYear()}`);
+  }
+  return periods;
+}
   fixDeadlinesAfter8PM() {
     
     console.log("Method initiated");
@@ -813,15 +832,6 @@ cancelEdit(): void {
       );
       
       if (isConfirmed) {
-        if(taskToUpdate.description=="Customer Provides Payroll Inputs"||taskToUpdate.description=="Payroll Input Received"||taskToUpdate.description=="Payroll Inputs to Partner")
-        {
-          const bodydata = {
-          recipients: [taskToUpdate.leadermail],
-          subject: [taskToUpdate.group] + `: Payroll Input Received`,
-          body: `This is to inform you that the payroll input of client ${taskToUpdate.client} has been received.<br>I will proceed with the necessary processing as per the defined timelines.<br><br>Best regards,<br>${taskToUpdate.assignedToName}`,
-          };
-          this.firestoreService.sendMail(bodydata);
-        }
         if(taskToUpdate.description=="Compliance Reports to Customer")
           {
             this.firestore.collection('compliance', ref =>
@@ -840,7 +850,7 @@ cancelEdit(): void {
                               });
                             });
           }
-        if(taskToUpdate.description.includes("Approves")||taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
+        if(taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
            if (!headcount || headcount.trim() === '') {
@@ -854,34 +864,7 @@ cancelEdit(): void {
             headcount: headcount,
           })
           let originalDate = new Date(taskToUpdate.deadline);
-          originalDate.setDate(originalDate.getDate() + 2);
-          let task = {
-            reportType:'Compliance Reports',
-            assignedTo: taskToUpdate.assignedTo,
-            teamId: taskToUpdate.teamId,
-            period:taskToUpdate.period,
-            group:taskToUpdate.group,
-            client: taskToUpdate.client,
-            description: "Compliance Reports to QC",
-            deadline: originalDate.toISOString(), // Convert deadline to ISO format
-            completedAt:'',
-            status: 'Pending',
-            createdBy:taskToUpdate.createdBy,
-            leadermail: taskToUpdate.leadermail,
-            clientStatus:'Active',
-            QcApproval:'Pending',
-            Sequence:0,
-            comment:""
-          };
-          this.firestore
-          .collection('tasks')
-          .add(task)
-          .then(() => {
-          })
-          .catch((error) => {
-            alert('Failed to assign task. Please try again.');
-          });
-          originalDate.setDate(originalDate.getDate() + 1);
+          originalDate.setDate(originalDate.getDate() + 5);
           let task2 = {
             assignedTo: taskToUpdate.assignedTo,
             teamId: taskToUpdate.teamId,
@@ -938,6 +921,7 @@ cancelEdit(): void {
               status:"Pending",
               link:link,
               note:userNote,
+              createdAt: new Date(),
               leadermail:taskToUpdate.leadermail
             };
              this.firestore
@@ -958,6 +942,7 @@ cancelEdit(): void {
                   <p>Dear QC Team,</p>
                   Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
                   of period:${taskToUpdate.period}.<br>
+                  link:${link}<br>
                   note:${userNote}<br>
                   For any issues or queries or if link is not given, feel free to reach out.<br>
                   <p>Best regards,
@@ -1008,22 +993,50 @@ formatPeriod(isoDate: string): string {
   const year = date.getFullYear();
   return `${month} ${year}`;
 }
-  generateReport() {
-    const { fromDat, toDat ,opsNames} = this.reportForm.value;
-    let fr = new Date(fromDat);
-    let t = new Date(toDat);
-    console.log("FROM"+fr);
-    console.log("TO"+t);
-    if(opsNames==""){
+generateReport() {
+  const { fromDat, toDat, opsNames, includePayroll, includeQc,includeComeback ,period} = this.reportForm.value;
+  let fr = new Date(fromDat);
+  let t = new Date(toDat);
+  if(period=="")
+    {
+      alert("Period is required.");
+      return;
+    }
+  const wb = XLSX.utils.book_new();
+  let reportsCompleted = 0;
+  const totalReports = (includePayroll ? 1 : 0) + (includeQc ? 1 : 0)+ (includeComeback ? 1 : 0);
+
+  // Helper function to check if we should save the file
+  const checkAndSave = () => {
+    reportsCompleted++;
+    if (reportsCompleted === totalReports) {
+      const fileName = `Merged_Report_${period}_to_.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    }
+  };
+
+  // ✅ If Payroll selected
+  if (includePayroll) {
     this.firestore.collection('tasks', ref =>
-      ref.where('deadline', '>=', fr.toISOString())
-         .where('deadline', '<=', t.toISOString())
-    ).valueChanges({ idField: 'id' }).pipe(debounceTime(1000))
-    .subscribe((temp: any[]) => {
-      // Fetch user details for assignedTo and createdBy
+      opsNames == ""
+        ? ref.where('period', '==', period)
+        : ref.where('period', '==', period)
+             .where('assignedTo', '==', opsNames)
+    ).valueChanges({ idField: 'id' }).pipe(
+      debounceTime(1000),
+      take(1) // Take only one emission to complete the observable
+    ).subscribe((temp: any[]) => {
+      if (temp.length === 0) {
+        // If no data, add empty sheet and check if we should save
+        const ws1 = XLSX.utils.json_to_sheet([{ message: 'No data available for the selected criteria' }]);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Payroll Report');
+        checkAndSave();
+        return;
+      }
+
       const userIds = [
-        ...new Set(temp.map(temp => temp.assignedTo).filter(id => id)), // Get unique user IDs for assignedTo
-        ...new Set(temp.map(temp => temp.createdBy).filter(id => id)) // Get unique user IDs for createdBy
+        ...new Set(temp.map(temp => temp.assignedTo).filter(id => id)),
+        ...new Set(temp.map(temp => temp.createdBy).filter(id => id))
       ];
 
       const userPromises = userIds.map(id =>
@@ -1034,45 +1047,121 @@ formatPeriod(isoDate: string): string {
         const users = userDocs.reduce((acc, doc) => {
           if (doc && doc.exists) {
             const userData = doc.data();
-            acc[doc.id] = userData.name || ''; // Store name against user ID
+            acc[doc.id] = userData.name || '';
           }
           return acc;
         }, {});
+
         let formattedTask = temp.map(t => ({
-          group: t.group || '',
-          client: t.client || '',
-          period:t.period,
-          clientStatus: t.clientStatus || '',
-          description: t.description || '',
-          deadline: this.formatDate(t.deadline),
-          completedAt: this.formatDate(t.completedAt),
-          createdBy: users[t.createdBy] || '', // Get the name for createdBy
-          assignedTo: users[t.assignedTo] || '', // Get the name for assignedTo
-          status: t.status || '',
-          reportType: t.reportType || '',
-          QcApproval: t.QcApproval || '',
-          qcduration:t.qcduration||'',
-          comment: t.comment,
-          QCPerson:t.QCPerson,
-          headcount: t.headcount || '',
-          sequence: t.Sequence !== undefined ? t.Sequence.toString() : '' // Ensure sequence is a string
+          Group: t.group || '',
+          Client: t.client || '',
+          Period: t.period,
+          Description: t.description || '',
+          Deadline: this.formatDate(t.deadline),
+          'Completed At': this.formatDate(t.completedAt),
+          TL: users[t.createdBy] || '',
+          Ops: users[t.assignedTo] || '',
+          Status: t.status || '',
+          'Report Type': t.reportType || '',
+          'QC Approval': t.QcApproval || '',
+          'QC Duration': t.qcduration || '',
+          Comment: t.comment,
+          'QC Person': t.QCPerson,
+          Headcount: t.headcount || '',
+          Sequence: t.Sequence !== undefined ? t.Sequence.toString() : ''
         }));
-        console.log("ShortListedTasks:",formattedTask);
-        this.downloadExcel(formattedTask);
-        window.location.reload();
+        
+        const ws1 = XLSX.utils.json_to_sheet(formattedTask);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Payroll Report');
+        checkAndSave();
+      }, error => {
+        // Handle error by adding an error sheet
+        const ws1 = XLSX.utils.json_to_sheet([{ error: 'Failed to generate payroll report' }]);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Payroll Report');
+        checkAndSave();
       });
     });
-    }
-    else{
-      this.firestore.collection('tasks', ref =>
-      ref.where('deadline', '>=', fr.toISOString())
-         .where('deadline', '<=', t.toISOString()).where('assignedTo','==',opsNames)
-    ).valueChanges({ idField: 'id' }).pipe(debounceTime(1000))
-    .subscribe((temp: any[]) => {
-      // Fetch user details for assignedTo and createdBy
+  }
+
+  // ✅ If QC selected
+  if (includeQc) {
+    this.firestore.collection('QcReports', ref =>
+      ref.where('Period', '==', period)
+    ).valueChanges({ idField: 'id' }).pipe(
+      debounceTime(1000),
+      take(1) // Take only one emission to complete the observable
+    ).subscribe((temp: any[]) => {
+      if (temp.length === 0) {
+        // If no data, add empty sheet and check if we should save
+        const ws2 = XLSX.utils.json_to_sheet([{ message: 'No data available for the selected criteria' }]);
+        XLSX.utils.book_append_sheet(wb, ws2, 'QC Report');
+        checkAndSave();
+        return;
+      }
+
+      const userIds = [...new Set(temp.map(temp => temp.ops).filter(id => id))];
+
+      const userPromises = userIds.map(id =>
+        this.firestore.collection('users').doc(id).get().toPromise().catch(() => null)
+      );
+
+      forkJoin(userPromises).subscribe((userDocs: any[]) => {
+        const users = userDocs.reduce((acc, doc) => {
+          if (doc && doc.exists) {
+            const userData = doc.data();
+            acc[doc.id] = userData.name || '';
+          }
+          return acc;
+        }, {});
+
+        let formattedTask = temp.map(t => {
+          const findingsText = (t.findings || [])
+            .map((f: { category: any; description: any }, idx: number) => `${idx + 1}) ${f.category} - ${f.description}`)
+            .join("\n");
+
+          return {
+            Group: t.groupName || '',
+            Client: t.clientName || '',
+            Period: t.Period,
+            Ops: users[t.ops] || t.opsName || '',
+            'Completed At': this.formatDate(t.completedAT),
+            'Report Type': t.reportType,
+            'QC Person': t.qcName,
+            Findings: findingsText
+          };
+        });
+
+        const ws2 = XLSX.utils.json_to_sheet(formattedTask);
+        XLSX.utils.book_append_sheet(wb, ws2, 'QC Report');
+        checkAndSave();
+      }, error => {
+        // Handle error by adding an error sheet
+        const ws2 = XLSX.utils.json_to_sheet([{ error: 'Failed to generate QC report' }]);
+        XLSX.utils.book_append_sheet(wb, ws2, 'QC Report');
+        checkAndSave();
+      });
+    });
+  }
+   // ✅ If Commeback selected
+    if (includeComeback) {
+    this.firestore.collection('comebacks', ref =>
+      ref.where('payPeriod', '==', period)
+    ).valueChanges({ idField: 'id' }).pipe(
+      debounceTime(1000),
+      take(1) // Take only one emission to complete the observable
+    ).subscribe((temp: any[]) => {
+      if (temp.length === 0) {
+        console.log("No comeback records found");
+        // If no data, add empty sheet and check if we should save
+        const ws2 = XLSX.utils.json_to_sheet([{ message: 'No data available for the selected criteria' }]);
+        XLSX.utils.book_append_sheet(wb, ws2, 'Comeback Report');
+        checkAndSave();
+        return;
+      }
+
       const userIds = [
-        ...new Set(temp.map(temp => temp.assignedTo).filter(id => id)), // Get unique user IDs for assignedTo
-        ...new Set(temp.map(temp => temp.createdBy).filter(id => id)) // Get unique user IDs for createdBy
+        ...new Set(temp.map(temp => temp.assignedTo).filter(id => id)),
+        ...new Set(temp.map(temp => temp.createdBy).filter(id => id))
       ];
 
       const userPromises = userIds.map(id =>
@@ -1083,40 +1172,43 @@ formatPeriod(isoDate: string): string {
         const users = userDocs.reduce((acc, doc) => {
           if (doc && doc.exists) {
             const userData = doc.data();
-            acc[doc.id] = userData.name || ''; // Store name against user ID
+            acc[doc.id] = userData.name || '';
           }
           return acc;
         }, {});
-        let formattedTask = temp.map(t => ({
-          group: t.group || '',
-          client: t.client || '',
-          period:t.period,
-          clientStatus: t.clientStatus || '',
-          description: t.description || '',
-          deadline: this.formatDate(t.deadline),
-          completedAt: this.formatDate(t.completedAt),
-          createdBy: users[t.createdBy] || '', // Get the name for createdBy
-          assignedTo: users[t.assignedTo] || '', // Get the name for assignedTo
-          status: t.status || '',
-          reportType: t.reportType || '',
-          QcApproval: t.QcApproval || '',
-          qcduration:t.qcduration||'',
-          comment: t.comment,
-          QCPerson:t.QCPerson,
-          headcount: t.headcount || '',
-          sequence: t.Sequence !== undefined ? t.Sequence.toString() : '' // Ensure sequence is a string
-        }));
-        console.log("ShortListedTasks:",formattedTask);
-        this.downloadExcel(formattedTask);
-        window.location.reload();
+
+        let formattedTask = temp.map(t => {
+          const findingsText = (t.findings || [])
+            .map((f: { category: any; description: any ,employees:any}, idx: number) => `${idx + 1}) ${f.category} - ${f.description}-[Affected employees:${f.employees}]`)
+            .join("\n");
+
+          return {
+            Group: t.group || '',
+            Client: t.client || '',
+            Period: t.payPeriod,
+            Ops: users[t.assignedTo] || t.opsName || '',
+            TL:users[t.createdBy],
+            Comebacks: findingsText
+          };
+        });
+
+        const ws2 = XLSX.utils.json_to_sheet(formattedTask);
+        XLSX.utils.book_append_sheet(wb, ws2, 'Comeback Report');
+        checkAndSave();
+      }, error => {
+        // Handle error by adding an error sheet
+        const ws2 = XLSX.utils.json_to_sheet([{ error: 'Failed to generate QC report' }]);
+        XLSX.utils.book_append_sheet(wb, ws2, 'Comeback Report');
+        checkAndSave();
       });
     });
-    }
+  }
 }
+
   downloadExcel(data: any[]) {
     // First create an array with correct headings and data
     const headings = [
-      'Group', 'Client','Period', 'Description', 'Deadline', 
+      'Group', 'Client','Period','Description','Deadline' ,
       'Completed At', 'TL', 'Ops', 'Status','Comment',
       'Report Type', 'QC Person','QC Duration', 'Sequence','Headcount'
     ];
@@ -1145,6 +1237,164 @@ formatPeriod(isoDate: string): string {
     const fileName = `Tasks_report_${from}_to_${to}.xlsx`;
     XLSX.writeFile(wb, fileName);
   }
+  generateQcReport() {
+  console.log("QC REPORT DOWNLOAD Initiated");
+  const { fromDat, toDat, opsNames } = this.reportForm.value;
+  let fr = new Date(fromDat);
+  let t = new Date(toDat);
+  fr.setHours(0, 0, 0, 0);
+  t.setHours(23, 59, 59, 999);
+  console.log("FROM" + fr.toISOString());
+  console.log("TO" + t.toISOString());
+
+  this.firestore.collection('QcReports', ref =>
+    ref.where('updatedAt', '>=', fr)
+       .where('updatedAt', '<=', t)
+  ).valueChanges({ idField: 'id' }).pipe(debounceTime(1000))
+  .subscribe((temp: any[]) => {
+    console.log("QC'S", temp);
+
+    const userIds = [
+      ...new Set(temp.map(temp => temp.ops).filter(id => id))
+    ];
+
+    const userPromises = userIds.map(id =>
+      this.firestore.collection('users').doc(id).get().toPromise().catch(() => null)
+    );
+
+    forkJoin(userPromises).subscribe((userDocs: any[]) => {
+      const users = userDocs.reduce((acc, doc) => {
+        if (doc && doc.exists) {
+          const userData = doc.data();
+          acc[doc.id] = userData.name || '';
+        }
+        return acc;
+      }, {});
+
+      let formattedTask = temp.map(t => {
+        // 🔹 Merge findings into one string
+        const findingsText = (t.findings || [])
+          .map((f: { category: any; description: any; }, idx: number) => `${idx + 1}) ${f.category} - ${f.description}`)
+          .join("\n"); // newline separated
+
+        return {
+          group: t.groupName || '',
+          client: t.clientName || '',
+          period: t.Period,
+          qcName: t.qcName,
+          ops: t.opsName,
+          reportType: t.reportType,
+          completedAt: this.formatDate(t.completedAT),
+          findings: findingsText
+        };
+      });
+
+      console.log("ShortListedQCTasks:", formattedTask);
+      this.downloadQcExcel(formattedTask);
+    });
+  });
+}
+
+downloadQcExcel(data: any[]) {
+  console.log("DownloadQc initiated");
+  const headings = [
+    'Group', 'Client', 'Period', 'Completed At', 'Ops',
+    'Report Type', 'QC Person', 'Findings'
+  ];
+
+  const formattedData = data.map(item => ({
+    Group: item.group,
+    Client: item.client,
+    Period: item.period,
+    'Report Type': item.reportType,
+    Ops: item.ops,
+    'Completed At': item.completedAt,
+    'QC Person': item.qcName,
+    Findings: item.findings
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(formattedData, { header: headings });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'QC');
+
+  const from = this.reportForm.value.fromDat;
+  const to = this.reportForm.value.toDat;
+  const fileName = `QC_Findings_report_${from}_to_${to}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+}
+
+// generateQcReport()
+// {
+//   console.log("QC REPORT DOWNLOAD Initiated");
+//    const { fromDat, toDat ,opsNames} = this.reportForm.value;
+//     let fr = new Date(fromDat);
+//     let t = new Date(toDat);
+//       fr.setHours(0, 0, 0, 0);
+//   t.setHours(23, 59, 59, 999);
+//     console.log("FROM"+fr.toISOString());
+//     console.log("TO"+t.toISOString());
+//     this.firestore.collection('QcReports', ref =>
+//       ref.where('completedAt', '>=', fr)
+//          .where('completedAt', '<=', t)
+//     ).valueChanges({ idField: 'id' }).pipe(debounceTime(1000))
+//     .subscribe((temp: any[]) => {
+//       console.log("QC'S",temp);
+//       // Fetch user details for assignedTo and createdBy
+//       const userIds = [
+//         ...new Set(temp.map(temp => temp.ops).filter(id => id)) // Get unique user IDs for createdBy
+//       ];
+
+//       const userPromises = userIds.map(id =>
+//         this.firestore.collection('users').doc(id).get().toPromise().catch(() => null)
+//       );
+
+//       forkJoin(userPromises).subscribe((userDocs: any[]) => {
+//         const users = userDocs.reduce((acc, doc) => {
+//           if (doc && doc.exists) {
+//             const userData = doc.data();
+//             acc[doc.id] = userData.name || ''; // Store name against user ID
+//           }
+//           return acc;
+//         }, {});
+//         let formattedTask = temp.map(t => ({
+//           group: t.groupName || '',
+//           client: t.clientName || '',
+//           period:t.Period,
+//           qcName:t.qcName,
+//           ops:t.opsName,
+//           reportType:t.reportType,
+//           completedAt:t.completedAt
+//         }));
+//         console.log("ShortListedQCTasks:",formattedTask);
+        
+//         this.downloadQcExcel(formattedTask);
+//         // window.location.reload();
+//       });
+//     });
+// }
+// downloadQcExcel(data: any[]) {
+//   console.log("DownloadQc initiated");
+//     // First create an array with correct headings and data
+//     const headings = [
+//       'Group', 'Client','Period','Completed At', 'Ops',
+//       'Report Type', 'QC Person'];
+//     const formattedData = data.map(item => ({
+//       Group: item.group,
+//       Client: item.client,
+//       Period:item.period,
+//       'Report Type': item.reportType,
+//       Ops: item.ops,
+//       'Completed At': item.completedAt,
+//       'QC Person': item.qcName,
+//     }));
+//     const ws = XLSX.utils.json_to_sheet(formattedData, { header: headings });
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, 'QC');
+//     const from = this.reportForm.value.fromDat;
+//     const to = this.reportForm.value.toDat;
+//     const fileName = `QC_report_${from}_to_${to}.xlsx`;
+//     XLSX.writeFile(wb, fileName);
+//   }
   formatDate(isoTimestamp: string): string {
     if (!isoTimestamp) return '';
     
@@ -1167,6 +1417,7 @@ formatPeriod(isoDate: string): string {
     
     return `${day}-${month}-${year} ${hours}:${minutes} ${ampm}`;
   }
+
    isTaskDueTomorrowOrEarlier(dueDate: string | Date): boolean {
     const today = new Date();
     const taskDate = new Date(dueDate);
@@ -1180,7 +1431,7 @@ formatPeriod(isoDate: string): string {
     tomorrow.setDate(today.getDate() + 1);
 
     return taskDate <= tomorrow;
-}
+  }
 
   transferTasks() { 
     console.log("Group"+this.selectedgroupName);

@@ -19,6 +19,9 @@
             <li class="nav-item" role="presentation">
               <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile5">View Today's Status</button>
             </li>
+             <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile4">Prepone/Postpone Payroll</button>
+            </li>
           </ul>
         </div>
       </li>
@@ -105,6 +108,45 @@
     </form>
   </div>
   </div>
+    <div class="tab-pane fade" id="profile4">
+        <div class="task-assignment-container" style=" margin-left: 25px;">
+          <h3>Prepone/Postpone Payroll</h3>
+    <div class="form-group">
+      <label for="Client" class="form-label">Group Name:</label>
+      <input type="text" class="form-control" id="Client"placeholder="Type Group name" [(ngModel)]="GroupName" list="GroupList"style="width: 400px;">
+      <datalist id="GroupList">
+        <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
+      </datalist>
+    </div>
+    
+    <div class="form-group">
+      <label for="Client" class="form-label">Client Name:</label>
+      <input type="text" class="form-control" id="Client"placeholder="Type Client name" [(ngModel)]="ClientName" list="ClientList"style="width: 400px;">
+      <datalist id="ClientList">
+        <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+      </datalist>
+    </div>
+     <div class="form-group">
+      <label for="Period" class="form-label">Pay Period:</label>
+      <input type="text" class="form-control" id="Client"placeholder="e.g. March 2025" [(ngModel)]="PayPeriod" style="width: 400px;">
+    </div>
+    <div class="form-group">
+      <label for="Client" class="form-label">Type Days:</label>
+      <input type="number" class="form-control"  [(ngModel)]="Days" style="width: 400px;">
+    </div>
+    <div class="col-md-6">
+        <label for="opsNames" class="form-label">Action</label>
+        <select id="opsNames" class="form-select" [(ngModel)]="Preponeorpostponeaction"style="width: 400px;">
+          <option value="Prepone" selected>Prepone</option>
+          <option value="Postpone">Postpone</option>
+        </select>
+    </div>
+    <br>
+    <div class="form-group">
+      <button (click)="PreponeorPostPone()" class="btn btn-primary assign-btn">Reschedule Payroll</button>
+    </div>
+  </div>
+      </div>
   <div class="tab-pane fade show active" id="profile5">
       <div *ngIf="tasksWithNames.length > 0; else noTasks">
     <h3>Today's Tasks Assigned by You</h3>
@@ -114,7 +156,7 @@
             <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.description"list="descriptionlist"  placeholder="Filter Description" (focus)="getFilteredDescription()" />
             <input type="text"class="form-control"style="width: 300px;" [(ngModel)]="filters.assignedToName"list="AssignedToList"  placeholder="Filter Ops"(focus)="getFilteredAssignedTo()" />
             <input type="text" class="form-control"style="width: 120px;" [(ngModel)]="filters.status"  list="StatusList" placeholder="Filter Status" (focus)="getFilteredStatus()"/> 
-        </div>
+    </div>
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
@@ -155,9 +197,6 @@
           <th>Actions</th>
           <th>
             Comments
-            <datalist id="StatusList">
-              <option *ngFor="let value of filterStatus" [value]="value"></option>
-            </datalist>
           </th>
         </tr>
       </thead>
@@ -294,6 +333,7 @@
     <p>No tasks assigned yet.</p>
   </ng-template>
  <!-- Bootstrap Modal for Updating Task -->
+
 <div class="modal fade" id="updateTaskModal" tabindex="-1" aria-labelledby="updateTaskModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -419,6 +459,13 @@
           <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
         </datalist>
       </div>
+        <div>
+        <label for="">Period:</label>
+        <input type="text" placeholder="E.g, November 2025"class="form-control" id="period"[(ngModel)]="payperiod"list="payperiods">
+        <datalist id="payperiods">
+          <option *ngFor="let period of payPeriods" [value]="period"></option>
+        </datalist>
+      </div>
           <!-- Task Description -->
           <div>
             <label for="taskDescription">Task Description:</label>
@@ -427,6 +474,7 @@
                 <option value="Payroll Input Received">
                 <option value="Payroll Processing">
                 <option value="Payroll Reports to QC">
+                  <option value="Revised Reports to QC">
                 <option value="Incentive Reports to QC">
                 <option value="LWF Reports to QC">
                 <option value="PF Reports to QC">
@@ -523,4 +571,121 @@
 </div>
 <br>
 
+ <div class="modal fade" id="addComebackModal" tabindex="-2" aria-labelledby="addComebackModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addComebackModalLabel">Submit Comeback</h5>
+        <button type="button" (click)="closeComebackModal()" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Group Name -->
+        <div>
+          <label for="">Group Name:</label>
+          <input type="text" class="form-control" [(ngModel)]="GroupName" [value]="GroupName">
+        </div>
+
+        <!-- Client Name -->
+        <div>
+          <label for="">Client Name:</label>
+          <input type="text" class="form-control" [(ngModel)]="ClientName" [value]="ClientName">
+        </div>
+
+        <!-- Ops person -->
+        <div class="mb-3">
+          <label for="editMember" class="form-label">Ops person</label>
+          <select id="memberSelect" [(ngModel)]="selectedMemberId" class="form-select">
+            <option *ngFor="let member of membersWithNames" [value]="member.id">
+              {{ member.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Pay Period -->
+        <div class="mb-3">
+          <label for="editPayPeriod" class="form-label">Pay Period:</label>
+          <input type="text" class="form-control" [(ngModel)]="payperiod"[value]="payperiod">
+        </div>
+
+        <!-- Add Comebacks Section -->
+        <div class="add-finding">
+          <h4>Add Comebacks</h4>
+
+          <!-- Findings List -->
+          <div class="findings-list">
+            <h4>Findings</h4>
+            <div *ngIf="!currentReport.findings || currentReport.findings.length === 0">
+              No findings added yet.
+            </div>
+
+            <div *ngFor="let finding of currentReport.findings; let i = index" 
+                 class="finding-item border p-2 my-2 rounded bg-light">
+              <div class="finding-header d-flex align-items-center">
+                <span class="fw-bold me-2">{{ finding.category }}</span>
+                <span class="text-muted small">{{ finding.timestamp | date:'short' }}</span>
+                <button (click)="deleteFinding(i)" class="btn btn-sm btn-outline-danger ms-auto">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+              <div class="finding-description mt-1">{{ finding.description }}</div>
+            </div>
+          </div>
+
+          <!-- Add Finding Inputs -->
+          <textarea 
+            [(ngModel)]="newFinding.description" 
+            placeholder="Finding description"
+            class="form-control my-2"
+            style="white-space: pre-wrap; word-wrap: break-word; min-height: 100px;"
+          ></textarea>
+
+          <input 
+            type="text" 
+            [(ngModel)]="newFinding.category" 
+            placeholder="Category" 
+            list="categoryList" 
+            class="form-control my-2">
+
+          <datalist id="categoryList">
+            <option value="Input Missed to Process">
+            <option value="Incorrect salary calculation">
+            <option value="Payroll Reports Delayed">
+            <option value="Investment declaration/Proofs not considered/wrong amount considered">
+            <option value="Incorrect Report Format">
+            <option value="Incomplete Reports Provided for QC">
+            <option value="Exception Tracker is not maintained">
+            <option value="Income Tax deducted for New Starter">
+            <option value="ETDS Return">
+            <option value="Statutory Related PF/PT/ESIC/LWF/TDS Challan">
+            <option value="Form 16">
+            <option value="Employee Master not updated">
+            <option value="CTC Master not updated">
+            <option value="Bank Beneficiary Name not updated">
+            <option value="Bank account number not updated">
+            <option value="Bank IFSC code not updated">
+            <option value="Bank Format Incorrect">
+          </datalist>
+          <input 
+            type="number" 
+            [(ngModel)]="newFinding.employees" 
+            placeholder="Type no of Affected employees." 
+            class="form-control my-2">
+          <button class="btn btn-primary mt-2" 
+                  (click)="addFinding()" 
+                  [disabled]="!newFinding.description || !newFinding.category|| !newFinding.employees">
+            Add Comeback
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" (click)="closeComebackModal()">Cancel</button>
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal"(click)="submitAllComebacks()">
+          Submit all comebacks
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 

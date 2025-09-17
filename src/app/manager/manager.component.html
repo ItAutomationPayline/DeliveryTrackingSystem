@@ -434,27 +434,55 @@
   </div>
 </div>
     <div class="tab-pane fade" id="profile2">
-      <form [formGroup]="reportForm" (ngSubmit)="generateReport()" class="row g-3">
-        <div class="col-md-6">
-        <label for="opsNames" class="form-label">Ops Name</label>
-        <select id="opsNames" class="form-select" formControlName="opsNames">
-          <option value="" selected>All</option>
-          <option *ngFor="let member of membersWithNames" [value]="member.id">{{member.name}}</option>
-        </select>
-        </div>
-          <div class="col-md-6">
-            <label for="fromDate" class="form-label">From Date</label>
-            <input type="date" id="fromDat" class="form-control" formControlName="fromDat" required>
-          </div>
-          <div class="col-md-6">
-            <label for="toDate" class="form-label">To Date</label>
-            <input type="date" id="toDat" class="form-control" formControlName="toDat" required>
-          </div>
-          <div class="col-12 mt-3">
-            <button type="submit" class="btn btn-secondary">Download Report</button>
-          </div>
-        </form>
-      </div>
+  <form [formGroup]="reportForm" (ngSubmit)="generateReport()" class="row g-3">
+    
+    <div class="col-md-6">
+      <label for="opsNames" class="form-label">Ops Name</label>
+      <select id="opsNames" class="form-select" formControlName="opsNames">
+        <option value="" selected>All</option>
+        <option *ngFor="let member of membersWithNames" [value]="member.id">{{member.name}}</option>
+      </select>
+    </div>
+
+    <!-- <div class="col-md-6">
+      <label for="fromDate" class="form-label">From Date</label>
+      <input type="date" id="fromDat" class="form-control" formControlName="fromDat" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="toDate" class="form-label">To Date</label>
+      <input type="date" id="toDat" class="form-control" formControlName="toDat" required>
+    </div> -->
+
+     <div class="col-md-6">
+      <label for="period" class="form-label">Pay Period</label>
+      <input type="text" id="toDat" class="form-control" formControlName="period" required list="pps">
+      <datalist id="pps">
+        <option *ngFor="let p of pps" [value]="p"></option>
+      </datalist>
+    </div>
+    <!-- ✅ Checkboxes for selecting reports -->
+    <div class="col-12 mt-3">
+      <label class="form-check-label me-3">
+        <input type="checkbox" formControlName="includePayroll" class="form-check-input">
+        Payroll Report
+      </label>
+      <label class="form-check-label">
+        <input type="checkbox" formControlName="includeQc" class="form-check-input">
+        QC Report
+      </label>
+      <label class="form-check-label">
+        <input type="checkbox" formControlName="includeComeback" class="form-check-input">
+        Comebacks
+      </label>
+    </div>
+
+    <div class="col-12 mt-3">
+      <button type="submit" class="btn btn-secondary">Download Report</button>
+    </div>
+  </form>
+</div>
+
       <div class="tab-pane fade" id="profile4">
         <div class="task-assignment-container" style=" margin-left: 25px;">
           <h3>Prepone/Postpone Payroll</h3>
