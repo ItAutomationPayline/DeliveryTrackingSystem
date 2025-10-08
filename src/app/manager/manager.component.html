@@ -85,6 +85,7 @@
                 <th>Current Role</th>
                 <th>Change Role</th>
                 <th>Actions</th>
+                <th>Payroll Country Code</th>
               </tr>
             </thead>
             <tbody>
@@ -154,8 +155,8 @@
       <p class="mb-0"> <strong>Permanent State:</strong> {{ searchedUser[0].permanentState }}</p>
       <p class="mb-0"> <strong>Permanent Pincode:</strong> {{ searchedUser[0].permanentPin }}</p>
       <p class="mb-0"> <strong>Emergency no & Relation:</strong> {{ searchedUser[0].emergency }} ({{ searchedUser[0].relation }})</p>
-      <p class="mb-0"><strong>Personal Email:</strong> {{ searchedUser[0].personalemail }}</p>
-      <p class="mb-0"><strong>Blood Group:</strong> {{ searchedUser[0].bloodgroup }}</p>
+      <p class="mb-0"> <strong>Personal Email:</strong> {{ searchedUser[0].personalemail }}</p>
+      <p class="mb-0"> <strong>Blood Group:</strong> {{ searchedUser[0].bloodgroup }}</p>
       <p class="mb-0"> <strong>Doj:</strong> {{ searchedUser[0].doj| date: 'dd-MM-yyyy' }}</p>
       <p class="mb-0"> <strong>PAN:</strong> {{ searchedUser[0].pan }}</p>
       <p class="mb-0"> <strong>Aadhar:</strong> {{ searchedUser[0].aadhar }}</p>
@@ -235,9 +236,9 @@
                   <td class="p-2 border">
                     <label class="flex items-center space-x-2">
                       <div class="form-check form-switch">
-                      <input type="checkbox" role="switch"class="form-check-input"
+                        <input type="checkbox" role="switch"class="form-check-input"
                         [checked]="client.status === 'Active'"(change)="toggleStatus(client)"/>
-                    </div>
+                      </div>
                     </label>
                   </td>
                 </tr>
@@ -501,7 +502,7 @@
         <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
       </datalist>
     </div>
-     <div class="form-group">
+    <div class="form-group">
       <label for="Client" class="form-label">Pay Period:</label>
       <input type="text" class="form-control" id="Client"placeholder="e.g. March 2025" [(ngModel)]="PayPeriod" style="width: 400px;">
     </div>

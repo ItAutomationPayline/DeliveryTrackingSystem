@@ -131,6 +131,7 @@ currentReport = {
       setTimeout(() => {
         this.loadData(this.managerId); // Your logic here
       }, 500);
+    this.fixDeadlinesOnSunday();
     this.updateMinDeadline();
     this.getFilteredClients();
     this.getFilteredDescription();
@@ -138,7 +139,34 @@ currentReport = {
     this.fetchClients();
     this.startSessionTimer();
     this.fillPayPeriods();
+     setTimeout(() => {
+        this.fixDeadlinesOnSunday();// Your logic here
+      }, 1500);
+    
   }
+  fixDeadlinesOnSunday() {
+  console.log("Method initiated for Sunday check");
+  this.tasksWithNames.forEach((task: any) => {
+    if (task.deadline) {
+      const deadlineDate = new Date(task.deadline);
+      // Check if it's Sunday (0 = Sunday, 6 = Saturday)
+      if (deadlineDate.getDay() === 0) {
+        console.log("Task found on Sunday.");
+        // Move deadline back to Saturday (same hour/minute/second)
+        deadlineDate.setDate(deadlineDate.getDate() - 1);
+        // Convert back to ISO format before saving
+        const updatedISO = deadlineDate.toISOString();
+        this.firestore.collection('tasks').doc(task.id).update({
+          deadline: updatedISO
+        }).then(() => {
+          console.log(`Deadline moved to Saturday for task: ${task.id}`);
+        }).catch(err => {
+          console.error(`Error updating task ${task.id}:`, err);
+        });
+      }
+    }
+  });
+}
   fillPayPeriods(): void {
   const today = new Date();
   // helper to format month + year
@@ -975,15 +1003,15 @@ submitAllComebacks() {
       alert('Please select an executive and upload a valid Excel file.');
       return;
     }
-    for (const taskData of this.tasksWithDeadlines) {
-    const deadlineDate: Date = new Date(taskData.deadline);
+    // for (const taskData of this.tasksWithDeadlines) {
+    // const deadlineDate: Date = new Date(taskData.deadline);
 
-    if (deadlineDate.getDay() === 0) {
-      alert("Deadline:"+deadlineDate+"of task: "+ taskData.description+" is on sunday. Kindly change the date and reupload");
-      window.location.reload();
-      return;  // <-- this will exit the entire method
-    }
-    }
+    // if (deadlineDate.getDay() === 0) {
+    //   alert("Deadline:"+deadlineDate+"of task: "+ taskData.description+" is on sunday. Kindly change the date and reupload");
+    //   window.location.reload();
+    //   return;  // <-- this will exit the entire method
+    // }
+    // }
     this.tasksWithDeadlines.forEach((taskData) => {
 
         const formattedDeadline = this.formatExcelDate(taskData.deadline);

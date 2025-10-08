@@ -32,7 +32,7 @@ export class ManagerComponent {
   ops:any;
   GroupName: string = '';
   searchedUser: any[] = [];
-  searchprofile:string=''
+  searchprofile:string='';
   ClientName: string = '';
   PayPeriod: string = '';
   Days: any = '';
@@ -158,11 +158,13 @@ export class ManagerComponent {
      }, 500);
      this.startSessionTimer();
      setTimeout(() => {
+      this.fixDeadlinesOnSunday();
       this.fixDeadlinesAfter8PM();
       this.fixDeadlinesBefore8AM();
      },3500);
      this.pps = this.generatePayPeriods();
   }
+
   generatePayPeriods(): string[] {
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -177,18 +179,39 @@ export class ManagerComponent {
   }
   return periods;
 }
-  fixDeadlinesAfter8PM() {
-    
-    console.log("Method initiated");
+fixDeadlinesOnSunday() {
+  console.log("Method initiated for Sunday check");
   this.tasksAssigned.forEach((task: any) => {
+    if (task.deadline) {
+      const deadlineDate = new Date(task.deadline);
+      // Check if it's Sunday (0 = Sunday, 6 = Saturday)
+      if (deadlineDate.getDay() === 0) {
+        console.log("Task found on Sunday.");
+        // Move deadline back to Saturday (same hour/minute/second)
+        deadlineDate.setDate(deadlineDate.getDate() - 1);
+        // Convert back to ISO format before saving
+        const updatedISO = deadlineDate.toISOString();
+        this.firestore.collection('tasks').doc(task.id).update({
+          deadline: updatedISO
+        }).then(() => {
+          console.log(`Deadline moved to Saturday for task: ${task.id}`);
+        }).catch(err => {
+          console.error(`Error updating task ${task.id}:`, err);
+        });
+      }
+    }
+  });
+}
+
+  fixDeadlinesAfter8PM() {
+    console.log("Method initiated");
+    this.tasksAssigned.forEach((task: any) => {
     if (task.deadline) {
       const deadlineDate = new Date(task.deadline);
 
       // Check if the deadline is beyond 8 PM
-      if (
-        deadlineDate.getHours() > 20 ||
-        (deadlineDate.getHours() === 20 && deadlineDate.getMinutes() > 0)
-      ) {
+      if (deadlineDate.getHours() > 20 ||
+        (deadlineDate.getHours() === 20 && deadlineDate.getMinutes() > 0)) {
         console.log("TAsk found.");
         // Reset to 8:00 PM same day
         deadlineDate.setHours(20, 0, 0, 0);
@@ -208,7 +231,6 @@ export class ManagerComponent {
   });
 }
 fixDeadlinesBefore8AM() {
-    
     console.log("Method initiated");
   this.tasksAssigned.forEach((task: any) => {
     if (task.deadline) {
@@ -350,7 +372,7 @@ fixDeadlinesBefore8AM() {
           .subscribe((users: any[]) => {
             this.profile[0]=users[0];
           })
-    }
+  }
    UpdateProfile()
    {
     console.log(this.firstname);
@@ -736,7 +758,7 @@ onFileChange2(event: any) {
           .catch((error) => console.error('Error assigning task:', error));
         }
         else{
-          console.log("Wrong formatteddeadline");
+          console.log("Wrong formatted deadline");
         }
       });
     alert('All tasks assigned successfully!');
