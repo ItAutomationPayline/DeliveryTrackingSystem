@@ -22,6 +22,7 @@ export class ManagerComponent {
   tasksWithDeadlines: any[] = [];
   reportForm: FormGroup;
   pps:any[]=[];
+  userToEdit:any={};
   todayscompletedTasks:any[] = [];
   AllActiveQcReports: any[] = [];
   ComplianceTasks: any[] = [];
@@ -31,6 +32,8 @@ export class ManagerComponent {
   boss:any;
   ops:any;
   GroupName: string = '';
+  newState:any = {};
+  allStates:any={};
   searchedUser: any[] = [];
   searchprofile:string='';
   ClientName: string = '';
@@ -52,6 +55,7 @@ export class ManagerComponent {
   fromMemberId: string = '';
   toMemberId: string = '';
   clientName = '';
+  clientCode='';
   selectedclientName: string = '';
   isActive = true;
   AllClients: any[] = [];
@@ -62,6 +66,7 @@ export class ManagerComponent {
   public tasksWithNames: any[] = [];
   membersWithNames: any[] = [];
   Client: string = '';
+  tempCountry:string='';
   filterStatus: string[] = [];
   filterComments: string[] = [];
   filterGroup: string[] = [];
@@ -78,18 +83,8 @@ export class ManagerComponent {
   excelFile: File | null = null;
   teamBeingEdited: any = null;
   editedTeamMemberIds: string[] = [];
-  profile: any[] = [];
-  firstname:string='';
-  middlename:string='';
-  lastname:string='';
-  dob:string='';
-  doj:string='';
-  pan:string='';
-  uan:string='';
-  address:string='';
-  emergency:string='';
-  relation:string='';
-  bloodgroup:string='';
+  profile:any = {};
+  payperiod:string='';
   public sessionTimeout: any;
   public inactivityDuration = 30 * 60 * 1000;
   public userMap: Map<string, string> = new Map(); // Map of user IDs to names
@@ -129,11 +124,11 @@ export class ManagerComponent {
     this.users=[];
     this.firestoreService.getUsers().subscribe((users) => {
       this.users = users;
-      this.managers = users.filter((user) => user.role === 'Manager' || user.role === 'Team Lead'|| user.role === 'QCLead');
+      this.managers = users.filter((user) => user.role === 'Manager' || user.role === 'Team Lead'|| user.role === 'QCLead'|| user.role === 'Compliance Lead');
       this.userMap = new Map(users.map((user) => [user.id, user.name]));
       this.fetchTeams();
     });
-    this.profile[0]="";
+    this.profile="";
     this.searchedUser[0]="";
     this.teams=[];
     this.tasksAssigned=[];
@@ -155,6 +150,7 @@ export class ManagerComponent {
       this.fetchClients();
       this.fetchQcTeam();
       this.fetchComplianceTasks();
+      this.fetchAllStates();
      }, 500);
      this.startSessionTimer();
      setTimeout(() => {
@@ -164,7 +160,43 @@ export class ManagerComponent {
      },3500);
      this.pps = this.generatePayPeriods();
   }
+  fetchAllStates()
+  {
+    this.firestore.collection('states')
+      .valueChanges({ idField: 'id' })
+      .subscribe((states: any[]) => {
+        this.allStates= states;
+      });
+  }
+addState()
+{
+  if(this.newState.pt==null)
+    {
+      alert("Select PT Freq");
+    }
+  if(this.newState.lwf==null)
+    {
+      alert("Select LWF Freq");
+    }
+    console.log(this.newState)
+    let state= {
+      name:this.newState.name,
+      ptFreq: this.newState.pt,
+      lwfFreq: this.newState.lwf,
+      ptReturn:this.newState.ptReturn
+    };
+    this.firestore
+      .collection('states')
+      .add(state)
+      .then(() => {
+        alert('State added successfully!');
+        this.fetchAllStates();
+      })
+      .catch((error) => {
+        alert('Failed to assign task. Please try again.');
+      });
 
+}
   generatePayPeriods(): string[] {
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -370,34 +402,10 @@ fixDeadlinesBefore8AM() {
           .valueChanges()
           .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
           .subscribe((users: any[]) => {
-            this.profile[0]=users[0];
+            this.profile=users[0];
           })
   }
-   UpdateProfile()
-   {
-    console.log(this.firstname);
-    console.log(this.lastname);
-    console.log(this.address);
-     this.firestore
-          .collection('users')
-          .doc(this.employeeId)
-          .update({
-            firstname:this.firstname,
-            middlename:this.middlename,
-            lastname:this.lastname,
-            dob:this.dob,
-            pan:this.pan,
-            uan:this.uan,
-            doj:this.doj,
-            address:this.address,
-            emergency:this.emergency,
-            relation:this.relation,
-            bloodgroup:this.bloodgroup
-          }) .then(() => {
-            alert('Profile details updated successfully!');
-            // this.fetchTasks();
-          })
-   }
+
    DeleteTaskofcalendar()
    {
     if(!this.deletetaskDescription)
@@ -499,8 +507,40 @@ DeletePayCalendar(): void {
   });
 }
 }
-
-
+deleteCountry(index: number) {
+  this.userToEdit.country.splice(index, 1);
+}
+addCountry() {
+  if (this.tempCountry) {
+      if (!Array.isArray(this.userToEdit.country)) {
+        this.userToEdit.country = [];
+      }
+    this.userToEdit.country.push(this.tempCountry);
+    this.tempCountry='';
+  }
+  else
+    {
+      alert("Please type country")
+    }
+}
+ updateEmployeeCountry(user:any)
+  {
+    if(this.tempCountry!='')
+      {
+        alert("Please add or remove the country which you typed in textbox");
+        return;
+      }
+    // Update the user's role in Firestore
+    this.firestore
+      .collection('users')
+      .doc(user.id) // Firestore document ID
+      .update({ country: user.country }) // Update the role field
+      .then(() => {})
+      .catch((error) => {
+        console.error('Error updating role:', error);
+        alert('Failed to update the country. Please try again later.');
+      });
+  }
   fetchCompletedTasks(){
   const today = new Date();
   let tomorrow = new Date(today);
@@ -571,7 +611,7 @@ DeletePayCalendar(): void {
       group:this.GroupName,
       client: this.ClientName,
       description: this.taskDescription,
-      period:this.formatPeriod(this.taskDeadline),
+      period:this.payperiod,
       deadline: new Date(this.taskDeadline).toISOString(), // Convert deadline to ISO format
       completedAt:'',
       status: 'Pending',
@@ -588,7 +628,7 @@ DeletePayCalendar(): void {
       assignedTo: this.ops,
       group:this.GroupName,
       client: this.ClientName,
-      period:this.formatPeriod(this.taskDeadline),
+      period:this.payperiod,
       description: this.taskDescription,
       deadline: new Date(this.taskDeadline).toISOString(), // Convert deadline to ISO format
       completedAt:'',
@@ -1658,11 +1698,16 @@ downloadQcExcel(data: any[]) {
      }, 1000);
   }
   addClient() {
+      if (isNaN(Number(this.clientCode))) {
+      alert("clientCode must contain numbers only.");
+      return; // stop method execution
+    }
     const clientData = {
       groupName: this.groupName,
       clientName: this.clientName,
       status:'Active',
       timestamp: new Date(),
+      country:this.clientCode
     };
 
     this.firestore
@@ -1671,6 +1716,7 @@ downloadQcExcel(data: any[]) {
       .then(() => {
         this.groupName = '';
         this.clientName = '';
+        this.clientCode=''
         this.fetchAllClientList()
       })
       .catch((error) => {
@@ -1685,6 +1731,15 @@ downloadQcExcel(data: any[]) {
       .doc(client.id)
       .update({ status: newStatus });
   }
+  toggleField(client: any, field: string) {
+  const newStatus = client[field] === 'Active' ? 'Inactive' : 'Active';
+  this.firestore.collection('clients')
+    .doc(client.id).update({ [field]: newStatus });
+}
+  updateField(client: any, field: string ,value:string) {
+  this.firestore.collection('clients')
+    .doc(client.id).update({ [field]: value });
+}
   getAllEmployees() {
     this.membersWithNames = [];
     this.firestore
@@ -1954,6 +2009,7 @@ fetchAssignedTasks() {
       });
     }
   }
+
   openEditModal(task: any) {
     this.editTaskClient=task.client;
     this.taskToEdit = task;
@@ -1964,6 +2020,11 @@ fetchAssignedTasks() {
     this.editTaskDeadline = utcDate.toISOString().slice(0, 16); // Format properly
     console.log("DEADLINE:"+this.editTaskDeadline);
   }
+    openCountryEditModal(user: any) {
+    this.userToEdit=user;
+    console.log(user);
+  }
+ 
   updateRole(user: any) {
     if (!user.newRole) {
       alert('Please select a new role.');

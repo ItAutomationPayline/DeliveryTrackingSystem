@@ -55,10 +55,8 @@ export class FirestoreService {
    }
    getUserNameById(id: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      this.firestore
-        .collection('users')
-        .doc(id)
-        .get()
+      this.firestore.collection('users')
+        .doc(id).get()
         .subscribe((docSnapshot: any) => {
           if (docSnapshot.exists) {
             const userData = docSnapshot.data();
@@ -76,10 +74,8 @@ export class FirestoreService {
   getNameById(id: string)
   {
     let userName:string;
-    this.firestore
-    .collection('users')
-    .doc(id)
-    .get()
+    this.firestore.collection('users')
+    .doc(id).get()
     .subscribe((docSnapshot: any) => {
       if (docSnapshot.exists) {
         const userData = docSnapshot.data();

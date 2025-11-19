@@ -10,39 +10,31 @@ import { RegisterComponent } from './register/register.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { routes } from './app-routing.module';
-import { DashboardComponent } from './dashboard/dashboard.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
 import { ExecutiveComponent } from './executive/executive.component';
 import { TeamLeadComponent } from './team-lead/team-lead.component';
 import { NavbarComponent } from './navbar/navbar.component';
 import { ManagerComponent } from './manager/manager.component';
-import { EmailSenderComponent } from './email-sender/email-sender.component';
-import { TasksCheckerComponent } from './tasks-checker/tasks-checker.component';
-import { UploadComponent } from './upload/upload.component';
 import { QCComponent } from './qc/qc.component';
-import { QcLeadComponent } from './qc-lead/qc-lead.component';
-import { ReportsDownloaderComponent } from './reports-downloader/reports-downloader.component';
 import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
 import { ProfileComponent } from './profile/profile.component';
+import { ComplianceComponent } from './compliance/compliance.component';
+import { DeploymentComponent } from './deployment/deployment.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
     RegisterComponent,
-    DashboardComponent,
     ResetPasswordComponent,
     ExecutiveComponent,
     TeamLeadComponent,
     NavbarComponent,
     ManagerComponent,
-    EmailSenderComponent,
-    TasksCheckerComponent,
-    UploadComponent,
     QCComponent,
-    QcLeadComponent,
-    ReportsDownloaderComponent,
-    ProfileComponent
+    ProfileComponent,
+    ComplianceComponent,
+    DeploymentComponent
   ],
   imports: [
     BrowserModule,

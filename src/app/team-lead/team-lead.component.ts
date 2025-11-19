@@ -18,23 +18,22 @@ export class TeamLeadComponent {
   PayPeriod: string = '';//for prepone or postpone
   Days: any = '';//for prepone or postpone
   Preponeorpostponeaction: string = '';
-newFinding = {
-  description: '',
-  category: '',
-  employees:'',
-  timestamp: new Date()
-};
-private comebackModalResolver: (() => void) | null = null;
-currentReport = {
-  findings: [] as any[]
-};
-  selfTasks: any[] = [];
+  newFinding = {
+    description: '',
+    category: '',
+    employees:'',
+    timestamp: new Date()
+  };
+  private comebackModalResolver: (() => void) | null = null;
+  currentReport = {
+    findings: [] as any[]
+  };
   teams: any[] = [];
   payPeriods: string[] = [];
   managerId: any = '';
   beforedeadline: any;
   // List of teams led by the team lead
-  profile: any[] = [];
+  profile:any = {};
   leadmail:any=localStorage.getItem('profilemail');
   selectedTeamId: string | null = null;
   AllClientsAndGroups:any[] = [];
@@ -44,9 +43,6 @@ currentReport = {
   taskDescription: string = '';
   GroupName: string = '';
   ClientName: string = '';
-  opsName: string = '';
-  TaskName: string = '';
-  ScheduledDate: number = 0;
   filterThings: string[] = [];
   filterClients: string[] = [];
   filterGroups: string[] = [];
@@ -80,17 +76,6 @@ currentReport = {
   editTaskComment: string = '';
   editSelectedMemberId: string | null = null;
   editTaskDeadline: string = '';
-  firstname:string='';
-  middlename:string='';
-  lastname:string='';
-  dob:string='';
-  doj:string='';
-  pan:string='';
-  uan:string='';
-  address:string='';
-  emergency:string='';
-  relation:string='';
-  bloodgroup:string='';
   payperiod:string='';
   public sessionTimeout: any;
   public inactivityDuration = 20 * 60 * 1000;
@@ -108,7 +93,6 @@ currentReport = {
         }
       }
       this.teams=[];
-      this.opsName='';
       this.tasksAssigned=[];
       this.memberNames=[];
       this.membersWithNames=[];
@@ -124,25 +108,26 @@ currentReport = {
       this.filterDescription=[];
       this.filterStatus=[];
       this.scheduledTasksAssignedWithNames=[];
-      console.log("profile",this.profile);
       console.log("leadmail",this.leadmail);
       this.profile[0]="";
       this.fetchselfprofile();
+      this.getTeams(this.managerId);
       setTimeout(() => {
         this.loadData(this.managerId); // Your logic here
-      }, 500);
+      }, 1500);
     this.fixDeadlinesOnSunday();
     this.updateMinDeadline();
     this.getFilteredClients();
     this.getFilteredDescription();
     this.loadDescriptionSuggestions();
-    this.fetchClients();
+      setTimeout(() => {
+       this.fetchClients();
+      }, 1500);
     this.startSessionTimer();
     this.fillPayPeriods();
      setTimeout(() => {
         this.fixDeadlinesOnSunday();// Your logic here
       }, 1500);
-    
   }
   fixDeadlinesOnSunday() {
   console.log("Method initiated for Sunday check");
@@ -201,40 +186,16 @@ deleteFinding(index: number) {
 }
   fetchselfprofile()
    {
-     this.firestore
-          .collection('users', (ref) => ref.where('id', '==', this.managerId))
-          .valueChanges()
-          .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
-          .subscribe((users: any[]) => {
-            this.profile[0]=users[0];
-          })
+      this.firestore
+    .collection('users')
+    .doc(this.managerId)
+    .valueChanges()
+    .subscribe(user => {
+      this.profile = user || {};
+      console.log("Profile loaded:", this.profile);
+    });
     }
 
-  UpdateProfile()
-   {
-    console.log(this.firstname);
-    console.log(this.lastname);
-    console.log(this.address);
-     this.firestore
-          .collection('users')
-          .doc(this.managerId)
-          .update({
-            firstname:this.firstname,
-            middlename:this.middlename,
-            lastname:this.lastname,
-            dob:this.dob,
-            pan:this.pan,
-            uan:this.uan,
-            doj:this.doj,
-            address:this.address,
-            emergency:this.emergency,
-            relation:this.relation,
-            bloodgroup:this.bloodgroup
-          }) .then(() => {
-            alert('Profile details updated successfully!');
-            // this.fetchTasks();
-          })
-   }
    markTaskasComplete(taskToUpdate: any) {
     if (taskToUpdate) {
       const isConfirmed = window.confirm(
@@ -414,8 +375,11 @@ deleteFinding(index: number) {
   }
   fetchClients()
   {
+    const allowedCountries = Array.isArray(this.profile.country)
+  ? this.profile.country
+  : [this.profile.country];
     this.firestore
-    .collection('clients', ref => ref.where('status', '==', 'Active'))
+    .collection('clients', ref => ref.where('status', '==', 'Active').where('country','in',allowedCountries))
     .valueChanges({ idField: 'id' }) // Include document ID in the result
     .subscribe((tasks: any[]) => {
       this.AllClientsAndGroups = tasks;
@@ -586,7 +550,7 @@ onFileChange(event: any) {
     this.fetchAssignedTasks();
     this.sortTasks(this.tasksWithNames);
     //this.fetchAssignedScheduledTasks();
-    this.getTeams(managerId); // Pass the managerId to getTeams
+     // Pass the managerId to getTeams
     console.log("membernames",this.memberNames)
   }
 
@@ -787,6 +751,10 @@ submitAllComebacks() {
     alert("Please fill all required fields (Group, Client, Ops person, Pay period).");
     return;
   }
+  if ( this.newFinding.description!="" ) {
+    alert("Please add or remove the comeback which you typed in the textbox.");
+    return;
+  }
 
   const comebackDoc = {
     group: this.GroupName,
@@ -803,7 +771,7 @@ submitAllComebacks() {
     .add(comebackDoc)
     .then(() => {
       alert("Comebacks submitted successfully!");
-      this.currentReport.findings = [];  // reset findings
+      this.currentReport.findings = [];
       this.newFinding = { description: "", category: "",employees:"",timestamp:new Date() }; // reset input
       this.closeComebackModal();
     })
@@ -865,7 +833,7 @@ submitAllComebacks() {
     tomorrow.setHours(23, 59, 0, 0);
     // Query Firestore for tasks where `createdBy` matches the Team Lead's ID
     this.firestore
-      .collection('tasks', ref => ref.where('createdBy', '==', this.teamLeadId).where('status', '!=', 'Completed').where('deadline', '<=', tomorrow.toISOString()))
+      .collection('tasks', ref => ref.where('assignedTo','in',this.teamMembers).where('status', '!=', 'Completed').where('deadline', '<=', tomorrow.toISOString()))
       .valueChanges({ idField: 'id' })
       .pipe(take(1))
       .subscribe((tasks: any[]) => {
@@ -939,6 +907,7 @@ submitAllComebacks() {
 
   getTeamMembers() {
     this.membersWithNames = [];
+    console.log("members:"+this.teamMembers)
     if (this.teamMembers && this.teamMembers.length > 0) {
       this.teamMembers.forEach((id) => {
         this.firestore
@@ -1003,15 +972,9 @@ submitAllComebacks() {
       alert('Please select an executive and upload a valid Excel file.');
       return;
     }
-    // for (const taskData of this.tasksWithDeadlines) {
-    // const deadlineDate: Date = new Date(taskData.deadline);
-
-    // if (deadlineDate.getDay() === 0) {
-    //   alert("Deadline:"+deadlineDate+"of task: "+ taskData.description+" is on sunday. Kindly change the date and reupload");
-    //   window.location.reload();
-    //   return;  // <-- this will exit the entire method
-    // }
-    // }
+    const matchedClient = this.AllClientsAndGroups.find(
+        c => c.clientName === this.ClientName
+      );
     this.tasksWithDeadlines.forEach((taskData) => {
 
         const formattedDeadline = this.formatExcelDate(taskData.deadline);
@@ -1041,7 +1004,8 @@ submitAllComebacks() {
           QcApproval:'Pending',
           Sequence:0,
           comment:"",
-          period:taskData.payPeriod
+          period:taskData.payPeriod,
+          country:matchedClient?.country || ''
         };
       }
       else{
@@ -1058,7 +1022,8 @@ submitAllComebacks() {
           leadermail: this.leadmail,
           clientStatus:'Active',
           comment:"",
-          period:taskData.payPeriod
+          period:taskData.payPeriod,
+          country:matchedClient?.country || ''
         };
       }
         this.firestore
@@ -1085,7 +1050,12 @@ submitAllComebacks() {
         return;
       }
     if (this.selectedTeamId||this.selectedMemberId && this.taskDescription && this.taskDeadline) {
+      const matchedClient = this.AllClientsAndGroups.find(
+        c => c.clientName === this.ClientName
+      );
      let  task = {};
+     let  task2 = {};
+     let  task3 = {};
     if(this.taskDescription.includes("QC")||this.taskDescription.includes("qc")){
        let desc;
        if(this.taskDescription.toLowerCase().includes("revised")){
@@ -1100,24 +1070,79 @@ submitAllComebacks() {
               desc=this.taskDescription.substring(0, match.index).trim();
             }
             //Here because of multiple qc's reporttype will be the word before to
-    task = {
-      reportType:desc,
-      assignedTo: this.selectedMemberId,
-      teamId: this.selectedTeamId,
-      period:this.payperiod,
-      group:this.GroupName,
-      client: this.ClientName,
-      description: this.taskDescription,
-      deadline: new Date(this.taskDeadline).toISOString(), // Convert deadline to ISO format
-      completedAt:'',
-      status: 'Pending',
-      createdBy: localStorage.getItem('id'),
-      leadermail: this.leadmail,
-      clientStatus:'Active',
-      QcApproval:'Pending',
-      Sequence:0,
-      comment:""
-    };
+            task = {
+              reportType:desc,
+              assignedTo: this.selectedMemberId,
+              teamId: this.selectedTeamId,
+              period:this.payperiod,
+              group:this.GroupName,
+              client: this.ClientName,
+              description: this.taskDescription,
+              deadline: new Date(this.taskDeadline).toISOString(), // Convert deadline to ISO format
+              completedAt:'',
+              status: 'Pending',
+              createdBy: localStorage.getItem('id'),
+              leadermail: this.leadmail,
+              clientStatus:'Active',
+              QcApproval:'Pending',
+              Sequence:0,
+              comment:"",
+              country:matchedClient?.country || ''
+            };
+      if(this.taskDescription.includes("Off-Cycle Payroll Reports to QC"))
+      {
+        let originalDate = new Date(this.taskDeadline);
+        originalDate.setDate(originalDate.getDate() + 2);
+        task2 = {
+          assignedTo: this.selectedMemberId,
+          teamId: this.selectedTeamId,
+          period:this.payperiod,
+          group:this.GroupName,
+          client: this.ClientName,
+          description: "Off-Cycle Reports to Client",
+          deadline: originalDate.toISOString(), // Convert deadline to ISO format
+          completedAt:'',
+          status: 'Pending',
+          createdBy: localStorage.getItem('id'),
+          leadermail: this.leadmail,
+          clientStatus:'Active',
+          comment:"",
+          country:matchedClient?.country || ''
+        }
+        originalDate.setDate(originalDate.getDate() + 2);
+        task3 = {
+          assignedTo: this.selectedMemberId,
+          teamId: this.selectedTeamId,
+          period:this.payperiod,
+          group:this.GroupName,
+          client: this.ClientName,
+          description: "Customer Approves the Off-Cycle Reports",
+          deadline: originalDate.toISOString(), // Convert deadline to ISO format
+          completedAt:'',
+          status: 'Pending',
+          createdBy: localStorage.getItem('id'),
+          leadermail: this.leadmail,
+          clientStatus:'Active',
+          comment:"",
+          country:matchedClient?.country || ''
+        }
+        this.firestore
+      .collection('tasks')
+      .add(task2)
+      .then(() => {
+      })
+      .catch((error) => {
+        alert('Failed to assign task. Please try again.');
+      });
+      this.firestore
+      .collection('tasks')
+      .add(task3)
+      .then(() => {
+      })
+      .catch((error) => {
+        alert('Failed to assign task. Please try again.');
+      });
+      }
   }
   else{
     task = {
@@ -1133,7 +1158,8 @@ submitAllComebacks() {
       createdBy: localStorage.getItem('id'),
       leadermail: this.leadmail,
       clientStatus:'Active',
-      comment:""
+      comment:"",
+      country:matchedClient?.country || ''
     };
   }
     this.firestore

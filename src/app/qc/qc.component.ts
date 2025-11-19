@@ -4,7 +4,6 @@ import { FirestoreService } from '../services/firestore.service';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { HttpClient } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
-import { Observable } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
 import { increment } from '@angular/fire/firestore';
 import 'firebase/compat/firestore';
@@ -26,24 +25,12 @@ export class QCComponent{
     category: ''
   };
   employeeId: any = localStorage.getItem('id');
-  profile: any[] = [];
-  public user: any[] = [];
+  profile:any = {};
   rec: string[] = [];
   nm: any = localStorage.getItem('nm');
   profilemail:any=localStorage.getItem('profilemail');
   public sessionTimeout: any;
   public inactivityDuration = 15 * 60 * 1000; // 15 minutes in milliseconds
-  firstname:string='';
-  middlename:string='';
-  lastname:string='';
-  dob:string='';
-  doj:string='';
-  pan:string='';
-  uan:string='';
-  address:string='';
-  emergency:string='';
-  relation:string='';
-  bloodgroup:string='';
   AllActiveQcReports: any[] = [];
   selectedQCMap: { [taskId: string]: string } = {};
   QcTeam:any[]=[];
@@ -85,12 +72,11 @@ export class QCComponent{
       setTimeout(() => {
          this.cleanOldQcReports(); // Your logic here
       }, 1500);
-   
   }
   cleanOldQcReports(): void {
     // Get 3 days ago
     const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 6);
 
     // Start and end of that day
     const startOfDay = new Date(threeDaysAgo.setHours(0, 0, 0, 0));
@@ -124,6 +110,7 @@ export class QCComponent{
          console.log("Assigned requests: ", this.assignedRequests);
        });
    }
+
   deleteFinding(index: number): void {
   if (!this.currentReport || !this.currentReport.findings) return;
   if (confirm(`Are you sure want to delete this finding ?`)) {
@@ -144,39 +131,13 @@ export class QCComponent{
         });
       }
     }
-     UpdateProfile()
-     {
-      console.log(this.firstname);
-      console.log(this.lastname);
-      console.log(this.address);
-       this.firestore
-            .collection('users')
-            .doc(this.employeeId)
-            .update({
-              firstname:this.firstname,
-              middlename:this.middlename,
-              lastname:this.lastname,
-              dob:this.dob,
-              pan:this.pan,
-              uan:this.uan,
-              doj:this.doj,
-              address:this.address,
-              emergency:this.emergency,
-              relation:this.relation,
-              bloodgroup:this.bloodgroup
-            }) .then(() => {
-              alert('Profile details updated successfully!');
-              // this.fetchTasks();
-            })
-     }
      fetchprofile()
      {
        this.firestore
             .collection('users', (ref) => ref.where('id', '==', this.employeeId))
-            .valueChanges()
-            .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
+            .valueChanges().pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
             .subscribe((users: any[]) => {
-              this.profile[0]=users[0];
+              this.profile=users[0];
             })
       }
   // Fetch requests that are accepted and ready for QC
@@ -284,7 +245,7 @@ export class QCComponent{
        })
        .join('');
          this.firestore
-      .collection('users', ref => ref.where('role', 'in', ['Manager', 'Director']))
+      .collection('users', ref => ref.where('role', 'in', ['Manager', 'Director','QCLead']))
       .get()
       .subscribe((querySnapshot: any) => {
          querySnapshot.forEach((doc: any) => {
@@ -293,21 +254,20 @@ export class QCComponent{
             this.rec.push(userData.email);
           }
       })});
-      //  this.firestore
-      // .collection('users', ref => ref.where('role', '==', 'Manager').where('role', '==', 'Director'))
-      // .get().pipe()
-      // .subscribe((querySnapshot: any) => {
-      //   querySnapshot.forEach((doc: any) => {
-      //     const userData = doc.data();
-      //     if (userData.email) {
-      //       this.rec.push(userData.email);
-      //     }
-      //   })});
      this.firestoreService.getUserById(currentReport.ops).subscribe(userData => {
        if (userData.length > 0) {
          const user = userData[0];
          this.rec.push(user.email);
+
          this.rec.push(currentReport.leadermail);
+         if(currentReport.compliancemail)
+          {
+            this.rec.push(currentReport.compliancemail);
+          }
+          if(currentReport.complianceLeadermail)
+          {
+            this.rec.push(currentReport.complianceLeadermail);
+          }
          this.rec.push(this.profilemail);
          let recipients= [...new Set(this.rec)];
          console.log("Sorted recipents:",recipients);
@@ -342,6 +302,10 @@ export class QCComponent{
         //console.log("Sending gentle reminder to:", user.email);
         let recipients: string[] = [];
         recipients.push(user.email);
+        if(currentReport.compliancemail)
+          {
+            this.rec.push(currentReport.compliancemail);
+          }
         recipients= [...new Set(recipients)];
         this.rec[0]=user.email
         let bodydata = {
@@ -353,7 +317,6 @@ export class QCComponent{
     this.firestoreService.sendMail(bodydata);
       }
     });
-    console.log("USER:",this.user[0]);
     
   }
   formatDuration(ms: number): string {

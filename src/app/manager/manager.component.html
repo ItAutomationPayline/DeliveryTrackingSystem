@@ -1,24 +1,23 @@
 <app-navbar></app-navbar>
 <ul class="nav nav-tabs" id="myTab" role="tablist">
-  <!-- <li class="nav-item" role="presentation">
-    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home">Add/Manage Employees</button>
-  </li> -->
   <li class="nav-item" role="presentation">
     <button class="nav-link" data-bs-toggle="tab" routerLink="/profile"> Profile</button>
   </li>
   <!-- dropdown we have to work -->
-   <li class="nav-item" role="presentation">
-    <div class="dropdown">
-      <button class="nav-link dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-        View
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-        <!-- <li><a class="dropdown-item" href="#">Dashboard</a></li> -->
+  <li class="nav-item" role="presentation">
+        <div class="dropdown">
+          <button class="nav-link dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+            View
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
             <li class="nav-item" role="presentation">
               <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#home">Add/Manage Employees</button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile1">Add/Manage Clients</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile12">Add/Manage States</button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile6">Transfer Clients</button>
@@ -42,36 +41,17 @@
               <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile5">View Today's Status</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile7">View Tomorrow's Tasks</button>
-             </li>
+              <button class="dropdown-item" data-bs-toggle="tab" data-bs-target="#profile7">View Tomorrow's Tasks</button>
+            </li>
           </ul>
-        </div>
-      </li>
-  <!-- dropdown ends -->
-  <!-- <li class="nav-item" role="presentation">
-    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile1">Add/Manage Clients</button>
+       </div>
   </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile6">Transfer Clients</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile2">Download Reports</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile3">Team Generation & Details</button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile8">Assign Tasks</button>
-  </li> -->
   <li class="nav-item" role="presentation">
     <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile5">Today's Status</button>
   </li>
   <li class="nav-item" role="presentation">
     <button class="nav-link" data-bs-toggle="tab" routerLink="/qc">QC Mode</button>
   </li>
-  <!-- <li class="nav-item" role="presentation">
-    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile7">View Tomorrow's Tasks</button>
-  </li> -->
 </ul>
 <div class="tab-content mt-3">
   <div class="tab-pane fade" id="home">
@@ -102,6 +82,8 @@
                     <option value="Team Lead">Team Lead</option>
                     <option value="Manager">Manager</option>
                     <option value="General Manager">General Manager</option>
+                    <option value="Compliance">Compliance</option>
+                    <option value="Compliance Lead">Compliance Lead</option>
                     <option value="Director">Director</option>
                   </select>
                 </td>
@@ -110,6 +92,9 @@
                     Update
                   </button>
                 </td>
+                <td>
+                 {{ user.country}} <button class="btn btn-primary" (click)="openCountryEditModal(user)" data-bs-toggle="modal" data-bs-target="#updateCountryModal">Edit</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -117,71 +102,118 @@
   </div>
   <div class="tab-pane fade" id="profile11">
     <div class="container p-4">
-  <h2 class="mb-4 text-primary">🔍 Search Employee Profile</h2>
+      <h2 class="mb-4 text-primary">🔍 Search Employee Profile</h2>
 
-  <div class="input-group mb-3">
-    <input
-      type="email"
-      class="form-control"
-      placeholder="Enter employee email"
-      [(ngModel)]="searchprofile"
-      list="searchList"
-    />
-    <datalist id="searchList">
-        <option *ngFor="let value of membersWithNames" [value]="value.email">{{value.name}}</option>
-      </datalist>
-    <button class="btn btn-success" (click)="searchUserByEmail()">
-      Search
-    </button>
-  </div>
-   <div *ngIf="profile" class="card shadow-sm border-primary mt-4" style="max-width: 600px; margin: auto;">
-    <div class="card-header bg-primary text-white d-flex align-items-center">
-      <i class="bi bi-person-circle fs-3 me-2"></i>
-      <h5 class="mb-0">Profile</h5>
+      <div class="input-group mb-3">
+        <input type="email"class="form-control" placeholder="Enter employee email"[(ngModel)]="searchprofile"list="searchList"/>
+        <datalist id="searchList">
+            <option *ngFor="let value of membersWithNames" [value]="value.email">{{value.name}}</option>
+        </datalist>
+        <button class="btn btn-success" (click)="searchUserByEmail()">
+          Search
+        </button>
+      </div>
+      <div *ngIf="profile" class="card shadow-sm border-primary mt-4" style="max-width: 600px; margin: auto;">
+        <div class="card-header bg-primary text-white d-flex align-items-center">
+          <i class="bi bi-person-circle fs-3 me-2"></i>
+          <h5 class="mb-0">Profile</h5>
+        </div>
+        <div class="card-body">
+          <p class="mb-0"> <strong>Name:</strong> {{ searchedUser[0].firstname }} {{ searchedUser[0].middlename }} {{ searchedUser[0].lastname }}</p>
+          <p class="mb-0"> <strong>Email:</strong> {{ searchedUser[0].email }}</p>
+          <p class="mb-0"> <strong>Designation:</strong> {{ searchedUser[0].role }}</p>
+          <p class="mb-0"> <strong>Dob:</strong> {{ searchedUser[0].dob | date: 'dd-MM-yyyy' }}</p>
+          <p class="mb-0"> <strong>Address Line 1:</strong> {{ searchedUser[0].addressline1 }}</p>
+          <p class="mb-0"> <strong>Address Line 2:</strong> {{ searchedUser[0].addressline2 }}</p>
+          <p class="mb-0"> <strong>City:</strong> {{ searchedUser[0].city }}</p>
+          <p class="mb-0"> <strong>State:</strong> {{ searchedUser[0].state }}</p>
+          <p class="mb-0"> <strong>Pincode:</strong> {{ searchedUser[0].pincode }}</p>
+          <p class="mb-0"> <strong>Permanent Address Line 1:</strong> {{ searchedUser[0].permanentAddressline1 }}</p>
+          <p class="mb-0"> <strong>Permanent Address Line 2:</strong> {{ searchedUser[0].permanentAddressline2 }}</p>
+          <p class="mb-0"> <strong>Permanent City:</strong> {{ searchedUser[0].permanentCity }}</p>
+          <p class="mb-0"> <strong>Permanent State:</strong> {{ searchedUser[0].permanentState }}</p>
+          <p class="mb-0"> <strong>Permanent Pincode:</strong> {{ searchedUser[0].permanentPin }}</p>
+          <p class="mb-0"> <strong>Emergency no & Relation:</strong> {{ searchedUser[0].emergency }} ({{ searchedUser[0].relation }})</p>
+          <p class="mb-0"> <strong>Personal Email:</strong> {{ searchedUser[0].personalemail }}</p>
+          <p class="mb-0"> <strong>Blood Group:</strong> {{ searchedUser[0].bloodgroup }}</p>
+          <p class="mb-0"> <strong>Doj:</strong> {{ searchedUser[0].doj| date: 'dd-MM-yyyy' }}</p>
+          <p class="mb-0"> <strong>PAN:</strong> {{ searchedUser[0].pan }}</p>
+          <p class="mb-0"> <strong>Aadhar:</strong> {{ searchedUser[0].aadhar }}</p>
+        </div>
+      </div>
     </div>
-    <div class="card-body">
-      <p class="mb-0"> <strong>Name:</strong> {{ searchedUser[0].firstname }} {{ searchedUser[0].middlename }} {{ searchedUser[0].lastname }}</p>
-      <p class="mb-0"> <strong>Email:</strong> {{ searchedUser[0].email }}</p>
-      <p class="mb-0"> <strong>Designation:</strong> {{ searchedUser[0].role }}</p>
-      <p class="mb-0"> <strong>Dob:</strong> {{ searchedUser[0].dob | date: 'dd-MM-yyyy' }}</p>
-      <p class="mb-0"> <strong>Address Line 1:</strong> {{ searchedUser[0].addressline1 }}</p>
-      <p class="mb-0"> <strong>Address Line 2:</strong> {{ searchedUser[0].addressline2 }}</p>
-      <p class="mb-0"> <strong>City:</strong> {{ searchedUser[0].city }}</p>
-      <p class="mb-0"> <strong>State:</strong> {{ searchedUser[0].state }}</p>
-      <p class="mb-0"> <strong>Pincode:</strong> {{ searchedUser[0].pincode }}</p>
-      <p class="mb-0"><strong>Permanent Address Line 1:</strong> {{ searchedUser[0].permanentAddressline1 }}</p>
-      <p class="mb-0"> <strong>Permanent Address Line 2:</strong> {{ searchedUser[0].permanentAddressline2 }}</p>
-      <p class="mb-0"> <strong>Permanent City:</strong> {{ searchedUser[0].permanentCity }}</p>
-      <p class="mb-0"> <strong>Permanent State:</strong> {{ searchedUser[0].permanentState }}</p>
-      <p class="mb-0"> <strong>Permanent Pincode:</strong> {{ searchedUser[0].permanentPin }}</p>
-      <p class="mb-0"> <strong>Emergency no & Relation:</strong> {{ searchedUser[0].emergency }} ({{ searchedUser[0].relation }})</p>
-      <p class="mb-0"> <strong>Personal Email:</strong> {{ searchedUser[0].personalemail }}</p>
-      <p class="mb-0"> <strong>Blood Group:</strong> {{ searchedUser[0].bloodgroup }}</p>
-      <p class="mb-0"> <strong>Doj:</strong> {{ searchedUser[0].doj| date: 'dd-MM-yyyy' }}</p>
-      <p class="mb-0"> <strong>PAN:</strong> {{ searchedUser[0].pan }}</p>
-      <p class="mb-0"> <strong>Aadhar:</strong> {{ searchedUser[0].aadhar }}</p>
-    </div>
-</div>
-</div>
   </div>
   <div class="tab-pane fade" id="profile1">
-      <div class="p-4 max-w-3xl mx-auto bg-white rounded-xl shadow space-y-6">
-          <h3 class="text-2xl font-semibold">Add New Client</h3>
-          <!-- Add Client Form -->
-          <form (ngSubmit)="addClient()" #clientForm="ngForm" class="space-y-3">
+    <div style="margin-left: 10px;">
+      <h4>Add a new client.</h4>
+           <form (ngSubmit)="addClient()" #clientForm="ngForm" class="space-y-3">
             <input type="text" name="groupName" [(ngModel)]="groupName" placeholder="Group Name" required
               class="w-full p-2 border rounded"/>
         
             <input type="text"name="clientName"[(ngModel)]="clientName"placeholder="Client Name"required
               class="w-full p-2 border rounded"/>
-
+            <input type="text"name="countryCode"[(ngModel)]="clientCode"placeholder="Country Code"required list="countrylist"
+              class="w-full p-2 border rounded"/>
             <button type="submit" [disabled]="clientForm.invalid" class="btn btn-info">
               Add Client
             </button>
           </form>
+          <br>
+          <div *ngIf="profile.country && profile.country.includes('+44')">
+          <div class="client-table-container">
+            <h2>All UK Clients</h2>
+          <table class="w-full border border-gray-300 text-left">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="p-2 border">Group Name</th>
+                <th class="p-2 border">Client Name</th>
+                <th class="p-2 border">Book Keeping</th>
+                <th class="p-2 border">VAT</th>
+                <th class="p-2 border">Year-End</th>
+              </tr>
+            </thead>
 
+            <tbody>
+              <tr *ngFor="let client of AllClients">
+                <ng-container *ngIf="client.country == '+44'">
+                  <td class="p-2 border">{{ client.groupName }}</td>
+                  <td class="p-2 border">{{ client.clientName }}</td>
+                  <td class="p-2 border">
+                    <span *ngIf="!client.bookkeeping">Not Applicable</span>
+                    <select class="form-control" [(ngModel)]="client.bookkeeping" (change)='updateField(client,"bookkeeping",client.bookkeeping)'>
+                      <option value="Not Applicable">Not Applicable</option>
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Annual">Annual</option>
+                    </select>
+                  </td>
+
+                  <td class="p-2 border">
+                    <span *ngIf="!client.vat">Not Applicable</span>
+                    <select class="form-control" [(ngModel)]="client.vat"(change)='updateField(client,"vat",client.vat)'>
+                      <option value="Not Applicable">Not Applicable</option>
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Annual">Annual</option>
+                    </select>
+                  </td>
+
+                  <td class="p-2 border">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="client.yearEnd" 
+                      (change)="toggleField(client,'yearEnd')" />
+                  </td>
+                </ng-container>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <br><br>
+      <div *ngIf="profile.country && profile.country.includes('+91')">
+          <!-- Add Client Form -->
           <!-- Excel Upload Section -->
-          <div class="mt-6">
+          <!-- <div class="mt-6">
             <h3 class="text-xl font-semibold mb-3">De-Activate Clients from Excel</h3>
             <div class="flex items-center space-x-4">
               <input type="file" id="excelUpload"accept=".xlsx, .xls"(change)="onFileChange($event)"
@@ -198,8 +230,8 @@
             <p class="text-sm text-gray-500 mt-2">
               Note: Excel file should have columns for "Group Name" and "Client Name".
             </p>
-          </div>
-          <div class="mt-6">
+          </div> -->
+          <!-- <div class="mt-6">
             <h3 class="text-xl font-semibold mb-3">Import Clients from Excel</h3>
             <div class="flex items-center space-x-4">
               <input type="file"id="excelUpload"accept=".xlsx, .xls"(change)="onFileChange($event)"
@@ -208,8 +240,7 @@
                   file:rounded-md file:border-0
                   file:text-sm file:font-semibold
                   file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100"
-              />
+                  hover:file:bg-blue-100"/>
               <button (click)="uploadExcel()" class="btn btn-success"[disabled]="!excelFile">
                 Upload Excel
               </button>
@@ -217,223 +248,345 @@
             <p class="text-sm text-gray-500 mt-2">
               Note: Excel file should have columns for "Group Name" and "Client Name".
             </p>
-          </div>
+          </div> -->
+          <br>
           <!-- Clients Table -->
           <div>
-            <h2 class="text-xl font-semibold mt-6 mb-2">Clients List</h2>
+            <h2 class="text-xl font-semibold mt-6 mb-2">Indian Clients List</h2>
             <table class="w-full border border-gray-300 text-left">
               <thead>
                 <tr class="bg-gray-100">
                   <th class="p-2 border">Group Name</th>
                   <th class="p-2 border">Client Name</th>
                   <th class="p-2 border">Status</th>
+                  <th class="p-2 border">PF</th>
+                  <th class="p-2 border">PT</th>
+                  <th class="p-2 border">ESIC</th>
+                  <th class="p-2 border">LWF</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let client of AllClients">
+                  <ng-container *ngIf='client.country=="+91"'>
                   <td class="p-2 border">{{ client.groupName }}</td>
                   <td class="p-2 border">{{ client.clientName }}</td>
                   <td class="p-2 border">
                     <label class="flex items-center space-x-2">
                       <div class="form-check form-switch">
-                        <input type="checkbox" role="switch"class="form-check-input"
-                        [checked]="client.status === 'Active'"(change)="toggleStatus(client)"/>
+                        <input type="checkbox" role="switch"class="form-check-input" [checked]="client.status === 'Active'"(change)="toggleStatus(client)"/>
                       </div>
                     </label>
                   </td>
+                  <td class="p-2 border">
+                    <label class="flex items-center space-x-2">
+                      <div class="form-check form-switch">
+                        <input type="checkbox" role="switch"class="form-check-input"
+                        [checked]="client.pf === 'Active'"(change)="toggleField(client,'pf')"/>
+                      </div>
+                    </label>
+                  </td>
+                  <td class="p-2 border">
+                    <label class="flex items-center space-x-2">
+                      <div class="form-check form-switch">
+                        <input type="checkbox" role="switch"class="form-check-input"
+                        [checked]="client.pt === 'Active'"(change)="toggleField(client,'pt')"/>
+                      </div>
+                    </label>
+                  </td>
+                  <td class="p-2 border">
+                    <label class="flex items-center space-x-2">
+                      <div class="form-check form-switch">
+                        <input type="checkbox" role="switch"class="form-check-input"
+                        [checked]="client.esic === 'Active'"(change)="toggleField(client,'esic')"/>
+                      </div>
+                    </label>
+                  </td>
+                  <td class="p-2 border">
+                    <label class="flex items-center space-x-2">
+                      <div class="form-check form-switch">
+                        <input type="checkbox" role="switch"class="form-check-input"
+                        [checked]="client.lwf === 'Active'"(change)="toggleField(client,'lwf')"/>
+                      </div>
+                    </label>
+                  </td>
+                  </ng-container>
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
+          </div>
+          </div>
     </div>
+    <div class="tab-pane fade" id="profile12">
+      <div style="margin-left: 10px;">
+        <h3 class="text-2xl font-semibold">Add New State</h3>
+         <div class="task-assignment-container">
+      <div class="form-group">
+        <div class="form-group">
+        <label for="taskDescription" class="form-label">Name:</label>
+        <input type="text" class="form-control" id="taskDescription" [(ngModel)]="newState.name"style="width: 400px;">
+      </div>
+        <label for="memberSelect" class="form-label">Select PT Freq:</label>
+        <select class="form-select" id="pfFreq" [(ngModel)]="newState.pt" style="width: 200px;">
+       <option value="Select Frequency for PT" disabled selected>Select Frequency for PT</option>
+               <option value="NA">NA</option>
+               <option value="Monthly">Monthly</option>
+               <option value="Quarterly">Quarterly</option>
+               <option value="Half yearly">Half yearly</option>
+               <option value="Yearly">Yearly</option>
+        </select>
+      </div>
+        <div class="form-group">
+        <label for="memberSelect" class="form-label">Select LWF Freq:</label>
+        <select class="form-select" id="ptFreq" [(ngModel)]="newState.lwf" style="width: 200px;">
+             <option value="Select Frequency for LWF" disabled selected>Select Frequency for Lwf</option>
+               <option value="NA">NA</option>
+               <option value="Monthly">Monthly</option>
+               <option value="Quarterly">Quarterly</option>
+               <option value="Half yearly">Half yearly</option>
+               <option value="Yearly">Yearly</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="memberSelect" class="form-label">Select PT Return Freq:</label>
+        <select class="form-select" id="ptFreq" [(ngModel)]="newState.ptReturn" style="width: 200px;">
+             <option value="Select Frequency for PT Return" disabled selected>Select Frequency for Lwf</option>
+               <option value="NA">NA</option>
+               <option value="Monthly">Monthly</option>
+               <option value="Quarterly">Quarterly</option>
+               <option value="Half yearly">Half yearly</option>
+               <option value="Yearly">Yearly</option>
+        </select>
+      </div>
+      <br>
+      <button (click)="addState()"class="btn btn-primary">Add State</button>
+      </div>
+       <br>
+      <div>
+        <div>
+            <h2 class="text-xl font-semibold mt-6 mb-2">State List</h2>
+            <table class="w-full border border-gray-300 text-left">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th class="p-2 border">State Name</th>
+                  <th class="p-2 border">PT</th>
+                  <th class="p-2 border">LWF</th>
+                  <th class="p-2 border">PT Return</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let state of allStates">
+                  <td class="p-2 border">{{ state.name }}</td>
+                  <td class="p-2 border">{{ state.ptFreq }}</td>
+                  <td class="p-2 border">{{ state.lwfFreq }}</td>
+                  <td class="p-2 border">{{ state.ptReturn }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+      </div>
+    </div>
+</div>
    <div class="tab-pane fade" id="profile8">
-  <div class="task-assignment-container">
-    <h2 class="section-title">Assign Tasks to Executives</h2>
-    
-    <div class="form-group">
-      <label for="memberSelect" class="form-label">Select Team Lead:</label>
-      <select class="form-select" id="memberSelect" [(ngModel)]="boss" style="width: 200px;">
-        <option *ngFor="let manager of managers" [value]="manager.id">
-          {{ manager.name }} 
-        </option>
-      </select>
+    <div class="task-assignment-container">
+      <h2 class="section-title">Assign Tasks to Executives</h2>
+      <div class="form-group">
+        <label for="memberSelect" class="form-label">Select Team Lead:</label>
+        <select class="form-select" id="memberSelect" [(ngModel)]="boss" style="width: 200px;">
+          <option *ngFor="let manager of managers" [value]="manager.id">
+            {{ manager.name }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="memberSelect" class="form-label">Assign To:</label>
+        <select class="form-select" id="memberSelect" [(ngModel)]="ops" style="width: 200px;">
+          <option *ngFor="let member of membersWithNames" [value]="member.id">
+            {{ member.name }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="Client" class="form-label">Group Name:</label>
+        <input type="text" class="form-control" id="Client" [(ngModel)]="GroupName" list="GroupList">
+        <datalist id="GroupList">
+          <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
+        </datalist>
+      </div>
+      
+      <div class="form-group">
+        <label for="Client" class="form-label">Client Name:</label>
+        <input type="text" class="form-control" id="Client" [(ngModel)]="ClientName" list="ClientList"style="width: 400px;">
+        <datalist id="ClientList">
+          <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+        </datalist>
+      </div>
+      <div>
+          <label for="">Period:</label>
+          <input type="text" placeholder="E.g, November 2025"class="form-control" id="period"[(ngModel)]="payperiod"list="pps">
+        <datalist id="pps">
+          <option *ngFor="let p of pps" [value]="p"></option>
+        </datalist>
+        </div>
+      <div class="form-group">
+        <label for="taskDescription" class="form-label">Task Description:</label>
+        <input type="text" class="form-control" list="dropdownOptions" id="taskDescription" [(ngModel)]="taskDescription"style="width: 400px;">
+        <datalist id="dropdownOptions">
+          <option value="Payroll Input Received">
+          <option value="Payroll Processing">
+          <option value="Payroll Reports to QC">
+          <option value="Bank file to QC">
+          <option value="Payroll reports sent to client">
+          <option value="Customer Approves the Payroll Reports">
+          <option value="Upload individual IT report on UKG portal">
+          <option value="Incentive Reports to QC">
+          <option value="LWF Reports to QC">
+          <option value="PF Reports to QC">
+          <option value="PT Reports to QC">
+          <option value="ESIC Reports to QC">
+          <option value="TDS Reports to QC">
+          <option value="E-TDS Reco to QC">
+          <option value="TDS return Reports to QC">
+          <option value="Form 16 Reports to QC">
+          <option value="Statutory reports sent to client">
+          <option value="Check PAN of new joiner on Traces">
+          <option value="Send new joiner details to compliance team to generate UAN number">
+          <option value="ESIC return (Even Nil)">
+          <option value="PF return (IW)">
+          <option value="PT return">
+          <option value="Payslip, IT Sheet, FnF on ESS Portal">
+        </datalist>
+      </div>
+      
+      <div class="form-group">
+        <label for="taskDeadline" class="form-label">Deadline:</label>
+        <input class="form-control" id="taskDeadline" type="datetime-local" [(ngModel)]="taskDeadline" [min]="minDeadline"/>
+      </div>
+      <br>
+      <div class="form-group">
+        <button (click)="assignTask()" class="btn btn-primary assign-btn">Assign Task</button>
+      </div>
     </div>
-    
-    <div class="form-group">
-      <label for="memberSelect" class="form-label">Assign To:</label>
-      <select class="form-select" id="memberSelect" [(ngModel)]="ops" style="width: 200px;">
-        <option *ngFor="let member of membersWithNames" [value]="member.id">
-          {{ member.name }}
-        </option>
-      </select>
-    </div>
-    
-    <div class="form-group">
-      <label for="Client" class="form-label">Group Name:</label>
-      <input type="text" class="form-control" id="Client" [(ngModel)]="GroupName" list="GroupList">
-      <datalist id="GroupList">
-        <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
-      </datalist>
-    </div>
-    
-    <div class="form-group">
-      <label for="Client" class="form-label">Client Name:</label>
-      <input type="text" class="form-control" id="Client" [(ngModel)]="ClientName" list="ClientList"style="width: 400px;">
-      <datalist id="ClientList">
-        <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
-      </datalist>
-    </div>
-    
-    <div class="form-group">
-      <label for="taskDescription" class="form-label">Task Description:</label>
-      <input type="text" class="form-control" list="dropdownOptions" id="taskDescription" [(ngModel)]="taskDescription"style="width: 400px;">
-      <datalist id="dropdownOptions">
-        <option value="Payroll Input Received">
-        <option value="Payroll Processing">
-        <option value="Payroll Reports to QC">
-        <option value="Payroll reports sent to client">
-        <option value="Customer Approves the Payroll Reports">
-        <option value="Bank file">
-        <option value="Upload individual IT report on UKG portal">
-        <option value="Statutory reports sent to QC">
-        <option value="Statutory reports sent to client">
-        <option value="Check PAN of new joiner on Traces">
-        <option value="Send new joiner details to compliance team to generate UAN number">
-        <option value="ESIC return (Even Nil)">
-        <option value="PF return (IW)">
-        <option value="PT return">
-        <option value="Payslip, IT Sheet, FnF on ESS Portal">
-      </datalist>
-    </div>
-    
-    <div class="form-group">
-      <label for="taskDeadline" class="form-label">Deadline:</label>
-      <input class="form-control" id="taskDeadline" type="datetime-local" [(ngModel)]="taskDeadline" [min]="minDeadline"/>
-    </div>
-    <br>
-    <div class="form-group">
-      <button (click)="assignTask()" class="btn btn-primary assign-btn">Assign Task</button>
-    </div>
-  </div>
-  <br><br>
-  <div class="accordion" id="accordion4">
-    <div class="accordion-item">
-      <h2 class="accordion-header">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-          Upload Pay Calendar
-        </button>
-      </h2>
-      <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-        <div class="accordion-body">
-          <div class="task-assignment-container">
-            <h2 class="section-title">Assign Tasks By Uploading Pay Calendar</h2>
+    <br><br>
+    <div class="accordion" id="accordion4">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+            Upload Pay Calendar
+          </button>
+        </h2>
+        <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+          <div class="accordion-body">
+            <div class="task-assignment-container">
+              <h2 class="section-title">Assign Tasks By Uploading Pay Calendar</h2>
+                <div class="form-group">
+                  <label for="memberSelect" class="form-label">Select Team Lead:</label>
+                  <select class="form-select" id="memberSelect" [(ngModel)]="boss" style="width: 200px;">
+                    <option *ngFor="let manager of managers" [value]="manager.id">
+                      {{ manager.name }} 
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="memberSelect" class="form-label">Assign To:</label>
+                  <select class="form-select" id="memberSelect" [(ngModel)]="ops" style="width: 200px;">
+                    <option *ngFor="let member of membersWithNames" [value]="member.id">
+                      {{ member.name }}
+                    </option>
+                  </select>
+                </div>
+              
               <div class="form-group">
-                <label for="memberSelect" class="form-label">Select Team Lead:</label>
-                <select class="form-select" id="memberSelect" [(ngModel)]="boss" style="width: 200px;">
-                  <option *ngFor="let manager of managers" [value]="manager.id">
-                    {{ manager.name }} 
-                  </option>
-                </select>
+                <label for="Client" class="form-label">Group Name:</label>
+                <input type="text" class="form-control" id="Client" [(ngModel)]="GroupName" list="GroupList">
+                <datalist id="GroupList">
+                  <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
+                </datalist>
               </div>
               
               <div class="form-group">
-                <label for="memberSelect" class="form-label">Assign To:</label>
-                <select class="form-select" id="memberSelect" [(ngModel)]="ops" style="width: 200px;">
-                  <option *ngFor="let member of membersWithNames" [value]="member.id">
-                    {{ member.name }}
-                  </option>
-                </select>
+                <label for="Client" class="form-label">Client Name:</label>
+                <input type="text" class="form-control" id="Client" [(ngModel)]="ClientName" list="ClientList"style="width: 400px;">
+                <datalist id="ClientList">
+                  <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+                </datalist>
               </div>
-            
-            <div class="form-group">
-              <label for="Client" class="form-label">Group Name:</label>
-              <input type="text" class="form-control" id="Client" [(ngModel)]="GroupName" list="GroupList">
-              <datalist id="GroupList">
-                <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
-              </datalist>
+              
+              <div class="form-group">
+                <label for="taskFile" class="form-label">Upload Task File:</label>
+                <input type="file" class="form-control" id="taskFile" (change)="onFileChange2($event)" accept=".xlsx, .xls" />
+              </div>
+              <br>
+              <div class="form-group">
+                <button (click)="assignTasksFromExcel()" class="btn btn-primary assign-btn">
+                  Assign Tasks
+                </button>
+              </div>
             </div>
-            
-            <div class="form-group">
-              <label for="Client" class="form-label">Client Name:</label>
-              <input type="text" class="form-control" id="Client" [(ngModel)]="ClientName" list="ClientList"style="width: 400px;">
-              <datalist id="ClientList">
-                <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
-              </datalist>
-            </div>
-            
-            <div class="form-group">
-              <label for="taskFile" class="form-label">Upload Task File:</label>
-              <input type="file" class="form-control" id="taskFile" (change)="onFileChange2($event)" accept=".xlsx, .xls" />
-            </div>
-            <br>
-            <div class="form-group">
-              <button (click)="assignTasksFromExcel()" class="btn btn-primary assign-btn">
-                Assign Tasks
-              </button>
-            </div>
-          </div>
-          <br><br>
-           <div class="task-assignment-container">
-            <h2 class="section-title">Delete calendar</h2>
-            
-            <div class="form-group">
-              <label for="Client" class="form-label">Group Name:</label>
-              <input type="text" class="form-control" id="Client" [(ngModel)]="deleteGroupName" list="GroupList">
-              <datalist id="GroupList">
-                <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
-              </datalist>
-            </div>
-            
-            <div class="form-group">
-              <label for="Client" class="form-label">Client Name:</label>
-              <input type="text" class="form-control" id="Client" [(ngModel)]="deleteClientName" list="ClientList"style="width: 400px;">
-              <datalist id="ClientList">
-                <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
-              </datalist>
-            </div>
-            <br>
-            <div class="form-group">
-              <button (click)="DeletePayCalendar()" class="btn btn-primary assign-btn">
-                Delete Pay Calendar
-              </button>
-            </div>
-            <br>
-            <h2 class="section-title">Delete a single task from a client or all clients</h2>
-             <div class="form-group">
-              <label for="Client" class="form-label">Group Name:</label>
-              <input type="text" class="form-control" id="Client" [(ngModel)]="deleteGroupName" list="GroupList">
-              <datalist id="GroupList">
-                <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
-              </datalist>
-            </div>
-            
-            <div class="form-group">
-              <label for="Client" class="form-label">Client Name:</label>
-              <input type="text" class="form-control" id="Client" [(ngModel)]="deleteClientName" list="ClientList"style="width: 400px;">
-              <datalist id="ClientList">
-                <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
-              </datalist>
-            </div>
-            <div class="form-group">
-              <label for="Client" class="form-label">Task Description:</label>
-              <input type="text" class="form-control" id="Client" [(ngModel)]="deletetaskDescription"style="width: 400px;">
-              <datalist id="ClientList">
-                <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
-              </datalist>
-            </div>
-            <br>
-            <div class="form-group">
-              <button (click)="DeleteTaskofcalendar()" class="btn btn-primary assign-btn">
-                Delete Task
-              </button>
+            <br><br>
+            <div class="task-assignment-container">
+              <h2 class="section-title">Delete calendar</h2>
+              
+              <div class="form-group">
+                <label for="Client" class="form-label">Group Name:</label>
+                <input type="text" class="form-control" id="Client" [(ngModel)]="deleteGroupName" list="GroupList">
+                <datalist id="GroupList">
+                  <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
+                </datalist>
+              </div>
+              
+              <div class="form-group">
+                <label for="Client" class="form-label">Client Name:</label>
+                <input type="text" class="form-control" id="Client" [(ngModel)]="deleteClientName" list="ClientList"style="width: 400px;">
+                <datalist id="ClientList">
+                  <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+                </datalist>
+              </div>
+              <br>
+              <div class="form-group">
+                <button (click)="DeletePayCalendar()" class="btn btn-primary assign-btn">
+                  Delete Pay Calendar
+                </button>
+              </div>
+              <br>
+              <h2 class="section-title">Delete a single task from a client or all clients</h2>
+              <div class="form-group">
+                <label for="Client" class="form-label">Group Name:</label>
+                <input type="text" class="form-control" id="Client" [(ngModel)]="deleteGroupName" list="GroupList">
+                <datalist id="GroupList">
+                  <option *ngFor="let value of AllClientsAndGroups" [value]="value.groupName">
+                </datalist>
+              </div>
+              
+              <div class="form-group">
+                <label for="Client" class="form-label">Client Name:</label>
+                <input type="text" class="form-control" id="Client" [(ngModel)]="deleteClientName" list="ClientList"style="width: 400px;">
+                <datalist id="ClientList">
+                  <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+                </datalist>
+              </div>
+              <div class="form-group">
+                <label for="Client" class="form-label">Task Description:</label>
+                <input type="text" class="form-control" id="Client" [(ngModel)]="deletetaskDescription"style="width: 400px;">
+                <datalist id="ClientList">
+                  <option *ngFor="let value of AllClientsAndGroups" [value]="value.clientName">
+                </datalist>
+              </div>
+              <br>
+              <div class="form-group">
+                <button (click)="DeleteTaskofcalendar()" class="btn btn-primary assign-btn">
+                  Delete Task
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
     <div class="tab-pane fade" id="profile2">
   <form [formGroup]="reportForm" (ngSubmit)="generateReport()" class="row g-3">
     
@@ -653,7 +806,7 @@
 </div>
 <div class="tab-pane fade show active" id="profile5">
   Welcome, {{nm}} <br><br>
-      <div *ngIf="tasksWithNames.length > 0">
+      <div *ngIf="tasksWithNames.length > 0"style="margin-left:5px;margin-right:5px;">
         <h3>All Today's Tasks</h3><br>
         <div  style="display: flex;justify-content: center; vertical-align: middle; gap: 10px; padding: 15px; border: 2px solid #ffffff; border-radius: 10px; background-color: #ffffff;">
             <input type="text"style="width: 120px;" class="form-control" [(ngModel)]="filters.group" list="groupList" (focus)="getFilteredGroups()"placeholder="Filter Groups">
@@ -663,7 +816,7 @@
             <input type="text" class="form-control"style="width: 120px;" [(ngModel)]="filters.status"  list="statusList" placeholder="Filter Status" (focus)="getFilteredStatus()"/> 
         </div>
         <br>
-        <table id="myTable" class="table  table-bordered">
+          <table id="myTable" class="table  table-bordered">
             <thead>
               <tr>
                 <th>
@@ -749,7 +902,7 @@
           </table>
         </div>
         <br>
-        <div>
+        <div style="margin-left:10px;margin-right:10px;">
           <h3>All In-Progress and unassigned-QC's</h3>
             <br>
                <table id="myTable" class="table  table-bordered">
@@ -788,7 +941,7 @@
               </table>
           </div>
           <br>
-          <div *ngIf="ComplianceTasks.length > 0">
+          <div *ngIf="ComplianceTasks.length > 0"style="margin-left:10px;margin-right:10px;">
           <h3>All In-Progress Compliance</h3>
             <br>
                <table id="myTable" class="table  table-bordered">
@@ -1052,80 +1205,6 @@
           Transfer
         </button>
   </div>
-  <div class="tab-pane fade" id="profile17">
-     <div class="container profile-form">
-    <h2 class="form-title">Your Profile</h2>
-    <form (ngSubmit)="UpdateProfile()">
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label class="form-label">First Name</label>
-          <input type="text" [value]="profile[0].firstname"[(ngModel)]="firstname" name="firstname" class="form-control" placeholder="First Name" required >
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Middle Name</label>
-          <input type="text"[value]="profile[0].middlename"[(ngModel)]="middlename" name="middlename" class="form-control" placeholder="Middle Name">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Last Name</label>
-          <input type="text"[value]="profile[0].lastname" class="form-control"[(ngModel)]="lastname" name="lastname" placeholder="Last Name" required>
-        </div>
-      </div>
-
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label class="form-label">Date of Birth</label>
-          <input type="date"[value]="profile[0].dob" class="form-control" name="dob" [(ngModel)]="dob" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">PAN</label>
-          <input type="text"[value]="profile[0].pan" class="form-control" name="pan" [(ngModel)]="pan" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">UAN</label>
-          <input type="text" class="form-control"[value]="profile[0].uan" name="uan" [(ngModel)]="uan" required>
-        </div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Date of Joining</label>
-        <input type="date"[value]="profile[0].doj" name="doj" class="form-control"[(ngModel)]="doj" required>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Address</label>
-        <textarea class="form-control"[value]="profile[0].address" name="address" [(ngModel)]="address" rows="3" placeholder="Your full address" required ></textarea>
-      </div>
-
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label class="form-label">Emergency Contact Number</label>
-          <input type="tel" class="form-control" name="emergency" [value]="profile[0].emergency"[(ngModel)]="emergency" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Relation</label>
-          <input type="text"name="relation" class="form-control"[value]="profile[0].relation"[(ngModel)]="relation" placeholder="e.g. Father, Spouse" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Blood Group</label>
-          <input type="text"[value]="profile[0].bloodgroup"list="bloodgrouplist" class="form-control"name="bloodgroup" required [(ngModel)]="bloodgroup" placeholder="Blood group" required>
-            <datalist id="bloodgrouplist">
-              <option value="A+">
-              <option value="A-">
-              <option value="B+">
-              <option value="B-">
-              <option value="O+">
-              <option value="O-">
-              <option value="AB+">
-              <option value="AB-">
-            </datalist>
-        </div>
-      </div>
-      <div class="d-grid">
-        <button type="submit" class="btn btn-primary btn-lg">Update Profile</button>
-      </div>
-    </form>
-  </div>
-  </div>
 </div>
 <div class="modal fade" id="updateTaskModal" tabindex="-1" aria-labelledby="updateTaskModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -1164,6 +1243,264 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-success"data-bs-dismiss="modal" (click)="updateTask()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+ <div class="modal fade" id="updateCountryModal" tabindex="-2" aria-labelledby="addComebackModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addComebackModalLabel">Edit Countries of {{userToEdit.name}}</h5>
+       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Add Comebacks Section -->
+        <div class="add-finding">
+          <h4>Add Countries</h4>
+
+          <!-- Findings List -->
+          <div class="findings-list">
+            <div *ngIf="!userToEdit.country || userToEdit.country.length === 0">
+              No country is assigned yet.
+            </div>
+
+            <div *ngFor="let country of userToEdit.country; let i = index" class="finding-item border p-2 my-2 rounded bg-light">
+              <div class="finding-header d-flex align-items-center">
+                <span class="fw-bold me-2">{{ country }}</span>
+                <button (click)="deleteCountry(i)" class="btn btn-sm btn-outline-danger ms-auto">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div>
+          <input type="text"[(ngModel)]="tempCountry"placeholder="Type country code/name"list="countrylist"class="form-control my-2">
+          <datalist id="countrylist">
+          <option value="+1">United States / Canada / NANP</option>
+          <option value="+7">Russia</option>
+          <option value="+7">Kazakhstan</option>
+          <option value="+20">Egypt</option>
+          <option value="+27">South Africa</option>
+          <option value="+30">Greece</option>
+          <option value="+31">Netherlands</option>
+          <option value="+32">Belgium</option>
+          <option value="+33">France</option>
+          <option value="+34">Spain</option>
+          <option value="+36">Hungary</option>
+          <option value="+39">Italy</option>
+          <option value="+40">Romania</option>
+          <option value="+41">Switzerland</option>
+          <option value="+43">Austria</option>
+          <option value="+44">United Kingdom UK</option>
+          <option value="+45">Denmark</option>
+          <option value="+46">Sweden</option>
+          <option value="+47">Norway</option>
+          <option value="+48">Poland</option>
+          <option value="+49">Germany</option>
+          <option value="+51">Peru</option>
+          <option value="+52">Mexico</option>
+          <option value="+53">Cuba</option>
+          <option value="+54">Argentina</option>
+          <option value="+55">Brazil</option>
+          <option value="+56">Chile</option>
+          <option value="+57">Colombia</option>
+          <option value="+58">Venezuela</option>
+          <option value="+60">Malaysia</option>
+          <option value="+61">Australia</option>
+          <option value="+62">Indonesia</option>
+          <option value="+63">Philippines</option>
+          <option value="+64">New Zealand</option>
+          <option value="+65">Singapore</option>
+          <option value="+66">Thailand</option>
+          <option value="+81">Japan</option>
+          <option value="+82">South Korea</option>
+          <option value="+84">Vietnam</option>
+          <option value="+86">China</option>
+          <option value="+90">Turkey</option>
+          <option value="+91">India</option>
+          <option value="+92">Pakistan</option>
+          <option value="+93">Afghanistan</option>
+          <option value="+94">Sri Lanka</option>
+          <option value="+95">Myanmar</option>
+          <option value="+98">Iran</option>
+          <option value="+211">South Sudan</option>
+          <option value="+212">Morocco</option>
+          <option value="+213">Algeria</option>
+          <option value="+216">Tunisia</option>
+          <option value="+218">Libya</option>
+          <option value="+220">Gambia</option>
+          <option value="+221">Senegal</option>
+          <option value="+222">Mauritania</option>
+          <option value="+223">Mali</option>
+          <option value="+224">Guinea</option>
+          <option value="+225">Ivory Coast</option>
+          <option value="+226">Burkina Faso</option>
+          <option value="+227">Niger</option>
+          <option value="+228">Togo</option>
+          <option value="+229">Benin</option>
+          <option value="+230">Mauritius</option>
+          <option value="+231">Liberia</option>
+          <option value="+233">Ghana</option>
+          <option value="+234">Nigeria</option>
+          <option value="+235">Chad</option>
+          <option value="+236">Central African Republic</option>
+          <option value="+237">Cameroon</option>
+          <option value="+238">Cape Verde</option>
+          <option value="+240">Equatorial Guinea</option>
+          <option value="+241">Gabon</option>
+          <option value="+242">Congo</option>
+          <option value="+243">DR Congo</option>
+          <option value="+244">Angola</option>
+          <option value="+245">Guinea-Bissau</option>
+          <option value="+246">Diego Garcia</option>
+          <option value="+247">Ascension Island</option>
+          <option value="+248">Seychelles</option>
+          <option value="+249">Sudan</option>
+          <option value="+250">Rwanda</option>
+          <option value="+251">Ethiopia</option>
+          <option value="+252">Somalia</option>
+          <option value="+253">Djibouti</option>
+          <option value="+254">Kenya</option>
+          <option value="+255">Tanzania</option>
+          <option value="+256">Uganda</option>
+          <option value="+257">Burundi</option>
+          <option value="+258">Mozambique</option>
+          <option value="+260">Zambia</option>
+          <option value="+261">Madagascar</option>
+          <option value="+263">Zimbabwe</option>
+          <option value="+264">Namibia</option>
+          <option value="+265">Malawi</option>
+          <option value="+266">Lesotho</option>
+          <option value="+267">Botswana</option>
+          <option value="+268">Eswatini</option>
+          <option value="+269">Comoros</option>
+          <option value="+290">Saint Helena</option>
+          <option value="+291">Eritrea</option>
+          <option value="+297">Aruba</option>
+          <option value="+298">Faroe Islands</option>
+          <option value="+299">Greenland</option>
+          <option value="+350">Gibraltar</option>
+          <option value="+351">Portugal</option>
+          <option value="+352">Luxembourg</option>
+          <option value="+353">Ireland</option>
+          <option value="+354">Iceland</option>
+          <option value="+355">Albania</option>
+          <option value="+356">Malta</option>
+          <option value="+357">Cyprus</option>
+          <option value="+358">Finland</option>
+          <option value="+359">Bulgaria</option>
+          <option value="+370">Lithuania</option>
+          <option value="+371">Latvia</option>
+          <option value="+372">Estonia</option>
+          <option value="+373">Moldova</option>
+          <option value="+374">Armenia</option>
+          <option value="+375">Belarus</option>
+          <option value="+376">Andorra</option>
+          <option value="+377">Monaco</option>
+          <option value="+378">San Marino</option>
+          <option value="+380">Ukraine</option>
+          <option value="+381">Serbia</option>
+          <option value="+382">Montenegro</option>
+          <option value="+383">Kosovo</option>
+          <option value="+385">Croatia</option>
+          <option value="+386">Slovenia</option>
+          <option value="+387">Bosnia and Herzegovina</option>
+          <option value="+389">North Macedonia</option>
+          <option value="+420">Czech Republic</option>
+          <option value="+421">Slovakia</option>
+          <option value="+423">Liechtenstein</option>
+          <option value="+500">Falkland Islands</option>
+          <option value="+501">Belize</option>
+          <option value="+502">Guatemala</option>
+          <option value="+503">El Salvador</option>
+          <option value="+504">Honduras</option>
+          <option value="+505">Nicaragua</option>
+          <option value="+506">Costa Rica</option>
+          <option value="+507">Panama</option>
+          <option value="+508">Saint Pierre and Miquelon</option>
+          <option value="+509">Haiti</option>
+          <option value="+590">Guadeloupe</option>
+          <option value="+591">Bolivia</option>
+          <option value="+592">Guyana</option>
+          <option value="+593">Ecuador</option>
+          <option value="+594">French Guiana</option>
+          <option value="+595">Paraguay</option>
+          <option value="+596">Martinique</option>
+          <option value="+597">Suriname</option>
+          <option value="+598">Uruguay</option>
+          <option value="+599">Curaçao / Caribbean Netherlands</option>
+          <option value="+670">Timor-Leste</option>
+          <option value="+672">Antarctica / Australian Territories</option>
+          <option value="+673">Brunei</option>
+          <option value="+674">Nauru</option>
+          <option value="+675">Papua New Guinea</option>
+          <option value="+676">Tonga</option>
+          <option value="+677">Solomon Islands</option>
+          <option value="+678">Vanuatu</option>
+          <option value="+679">Fiji</option>
+          <option value="+680">Palau</option>
+          <option value="+681">Wallis and Futuna</option>
+          <option value="+682">Cook Islands</option>
+          <option value="+683">Niue</option>
+          <option value="+685">Samoa</option>
+          <option value="+686">Kiribati</option>
+          <option value="+687">New Caledonia</option>
+          <option value="+688">Tuvalu</option>
+          <option value="+689">French Polynesia</option>
+          <option value="+690">Tokelau</option>
+          <option value="+691">Micronesia</option>
+          <option value="+692">Marshall Islands</option>
+          <option value="+850">North Korea</option>
+          <option value="+852">Hong Kong</option>
+          <option value="+853">Macau</option>
+          <option value="+855">Cambodia</option>
+          <option value="+856">Laos</option>
+          <option value="+870">Inmarsat</option>
+          <option value="+878">Universal Personal Telecommunications</option>
+          <option value="+880">Bangladesh</option>
+          <option value="+881">Global Mobile Satellite</option>
+          <option value="+882">International Networks</option>
+          <option value="+883">International Networks</option>
+          <option value="+886">Taiwan</option>
+          <option value="+960">Maldives</option>
+          <option value="+961">Lebanon</option>
+          <option value="+962">Jordan</option>
+          <option value="+963">Syria</option>
+          <option value="+964">Iraq</option>
+          <option value="+965">Kuwait</option>
+          <option value="+966">Saudi Arabia</option>
+          <option value="+967">Yemen</option>
+          <option value="+968">Oman</option>
+          <option value="+970">Palestine</option>
+          <option value="+971">United Arab Emirates</option>
+          <option value="+972">Israel</option>
+          <option value="+973">Bahrain</option>
+          <option value="+974">Qatar</option>
+          <option value="+975">Bhutan</option>
+          <option value="+976">Mongolia</option>
+          <option value="+977">Nepal</option>
+          <option value="+992">Tajikistan</option>
+          <option value="+993">Turkmenistan</option>
+          <option value="+994">Azerbaijan</option>
+          <option value="+995">Georgia</option>
+          <option value="+996">Kyrgyzstan</option>
+          <option value="+998">Uzbekistan</option>
+          </datalist>
+          </div>
+          <button class="btn btn-primary mt-2"
+                  (click)="addCountry()">
+            Add Country
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal"(click)="updateEmployeeCountry(userToEdit)">
+          Save
+        </button>
       </div>
     </div>
   </div>

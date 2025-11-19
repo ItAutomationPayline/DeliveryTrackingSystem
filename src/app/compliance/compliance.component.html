@@ -1,0 +1,323 @@
+<app-navbar></app-navbar>
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <!-- <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home">Add/Manage Employees</button>
+  </li> -->
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" routerLink="/profile">Profile</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile5">Today's Status</button>
+  </li>
+</ul>
+<div class="tab-content mt-3">
+  <div class="tab-pane fade show active" id="profile5">
+    <div class="accordion" id="accordion4">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+              View Today's Tasks
+            </button>
+          </h2>
+          <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+            <div class="accordion-body">
+              <div>
+                <div *ngIf="tasks.length > 0; else noSelfTasks">
+                  <h3>Your Pending Tasks</h3>
+                  <table class="table table-striped table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Group</th>
+                        <th>Client</th>
+                        <th>Period</th>
+                        <th>Description</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                        <th>Comment</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Loop over tasks and filter for pending status -->
+                      <tr *ngFor="let task of tasks">
+                          <ng-container *ngIf="task.status !== 'Completed'; else noSelfTasks">
+                          <td>{{ task.group }}</td>
+                          <td>{{ task.client }}</td>
+                          <td>{{ task.period }}</td>
+                          <td>{{ task.description }}</td>
+                          <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a,EEE' }}</td> <!-- Formatting deadline as date with time -->
+                          <td>{{ task.status }}</td>
+                          <td>
+                            <div class="dropdown">
+                                <button  class="btn-select-lookalike" type="button"id="taskActionsDropdown"
+                                  data-bs-toggle="dropdown"aria-expanded="false" style="width: 70px; height: 30px;">
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                                  <li>
+                                    <a class="dropdown-item"(click)="updateTaskStatus(task.id)">
+                                      Mark as Complete
+                                    </a>
+                                  </li>
+                                  <li>
+                                    <a class="dropdown-item"(click)="openReportModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
+                                      Reschedule Task
+                                    </a>
+                                  </li>
+                                </ul>
+                              </div>
+                          </td>
+                          <td>{{ task.comment}}</td>
+                        </ng-container>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+                 <div *ngIf="Alltasks.length > 0; else noTasks">
+                  <h3>Today's Tasks Assigned by You</h3>
+                  <table class="table table-striped table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Group</th>
+                        <th>Client</th>
+                        <th>Period</th>
+                        <th>Description</th>
+                        <th>Assigned To</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                        <th>Comments</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let task of Alltasks">
+                          <td>{{ task.group }}</td>
+                          <td>{{ task.client }}</td>
+                          <td>{{ task.period }}</td>
+                          <td>{{ task.description }}</td>
+                          <td>{{ task.assignedToName }}</td>
+                          <td>{{ task.deadline | date: 'dd-MM-yyyy h:mm a' }}</td>
+                          <td>{{ task.status }}</td>
+                          <td>
+                            <div class="dropdown">
+                                <button  class="btn-select-lookalike" type="button"id="taskActionsDropdown"
+                                  data-bs-toggle="dropdown"aria-expanded="false" style="width: 70px; height: 30px;">
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                                  <li>
+                                    <a class="dropdown-item"(click)="openEditModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
+                                      Update
+                                    </a>
+                                  </li>
+                                  <li>
+                                    <a class="dropdown-item"(click)="updateTaskStatus(task)">
+                                      Mark as Complete
+                                    </a>
+                                  </li>
+                                </ul>
+                              </div>
+                            <!-- <button (click)="deleteTask(task.id)" class="btn btn-dark">Delete</button> -->
+                            <!-- <button (click)="openEditModal(task)" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button> -->
+                          </td>
+                          <td>{{ task.comment }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+<div class="qc-container">
+  <h2>Compliance Dashboard</h2>
+  <p>Welcome, {{ nm }}</p>
+  <div class="qc-sections">
+    <!-- Section for Assigned Requests -->
+    <div class="assigned-requests">
+      <h3>Requests pending for Compliance</h3>
+      <div *ngIf="assignedRequests.length === 0" class="no-requests">
+        No requests currently available for Compliance.
+      </div>
+      <div *ngFor="let request of assignedRequests" class="request-card">
+        <ng-container *ngIf="request.AssignedTo === 'Pending'";else noCompliacnes>
+          <h6>Client: {{ request.clientName }}</h6>
+          Type: {{ request.reportType}}<br>
+          Period: {{ request.Period}}<br>
+          Ops: {{ request.opsName}}<br>
+          link:{{request.link}}<br>
+          note:{{request.note}}<br>
+          <button class="btn btn-primary"(click)="startComplianceReport(request.id)">Start Compliance</button>
+        </ng-container>
+      </div>
+    </div>
+    <!-- Section for Active QC Reports -->
+    <div class="qc-reports">
+      <h3>Your Compliance Reports in progress</h3>
+      <div *ngIf="ComplianceReports.length === 0" class="no-reports">
+        You have no active Compliance report.
+      </div>
+      <div *ngFor="let report of ComplianceReports" class="report-card">
+        <div *ngIf="report.status != 'completed' &&report.AssignedTo==this.employeeId">
+        <h6>{{ report.clientName }}</h6><br>
+        Type: {{ report.reportType}}<br>
+        Ops: {{ report.opsName}}<br>
+        <p>Period: {{ report.Period }}</p>
+        link: {{report.link}}<br>
+        note:{{report.note}}<br>
+        <p>Status: {{ report.status }}</p>
+        <p>Queries: {{ report.findings?.length || 0 }}</p>
+        <button class="btn btn-primary" (click)="loadReport(report.id)">Open Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QC Report Editor (shown when a report is selected) -->
+  <div *ngIf="currentReport" class="report-editor">
+    <h3>Compliance Report Editor <button class="btn btn-warning" (click)="openCreateTaskModal()">Add Task</button></h3> 
+    <div class="report-status">
+      Status: {{ currentReport.status }} | 
+      Request ID: {{ currentReport.requestId }}
+    </div>
+
+    <div class="findings-list">
+  <h4>Queries</h4>
+  <div *ngIf="!currentReport.findings || currentReport.findings.length === 0">
+    No findings added yet.
+  </div>
+  <div *ngFor="let finding of currentReport.findings; let i = index" class="finding-item">
+    <div class="finding-header">
+      <span class="category">{{ finding.category }}</span>
+      <span class="timestamp">{{ finding.timestamp?.toDate() | date:'short' }}</span>
+    </div>
+    <div class="finding-description">{{ finding.description }}</div>
+    <div class="finding-description">Resolution:<div style="color: red;">{{ finding.resolution }}</div>
+  </div>
+</div>
+
+    <div class="add-finding">
+      <h4>Add New Query</h4>
+      <textarea [(ngModel)]="newFinding.description" placeholder="Finding description"style="white-space: pre-wrap; word-wrap: break-word; width: 100%; min-height: 100px;"></textarea>
+     
+      <input type="text" [(ngModel)]="newFinding.category" placeholder="Category" list="categoryList">
+      <datalist id="categoryList">
+        <option value="PF Related">
+        <option value="PT Related">
+        <option value="ESIC Related">
+        <option value="LWF Related">
+        <option value="Employee Related">
+        <option value="Credentials Related">
+        <option value="Payment Receipt Related">
+      </datalist>
+      <button class="btn btn-primary" (click)="addQuery()" [disabled]="!newFinding.description || !newFinding.category">
+        Add Query
+      </button>
+    </div>
+
+    <div class="report-actions">
+      <button class="btn btn-success"(click)="completeComplianceReport()" [disabled]="currentReport.status === 'completed'">
+        Complete Entire compliance     </button>
+      <button class="btn btn-primary"(click)="currentReport = null">Save</button>
+    </div>
+  </div>
+  <br>
+
+</div>
+  <div *ngIf="AllActiveComplianceReports.length > 0; else noQC">
+    <h3>All In-Progress and unassigned-compliances</h3>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th> Group</th>
+          <th>Client</th>
+          <th> Ops</th>
+          <th> Report Type</th>
+          <th>Compliance Person</th>
+          <th>Period</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let task of AllActiveComplianceReports">
+          <ng-container *ngIf="task.status != 'completed'">
+            <td>{{ task.groupName }}</td>
+            <td>{{ task.clientName }}</td>
+            <td>{{ task.opsName }}</td>
+            <td>{{ task.reportType }}</td>
+            <td>{{ task.qcName }}</td>
+            <td>{{ task.Period }}</td>
+            <td>{{ task.status }}</td>
+            <td class="d-flex align-items-center gap-2">
+            <select class="form-select" id="role" [(ngModel)]="selectedComplianceMap[task.id]" required>
+              <option value="" disabled selected>Select Compliance</option>
+              <option *ngFor="let qc of membersWithNames" [value]="qc.id">
+                {{ qc.name }}
+              </option>
+            </select>
+            <button (click)="assignCompliance(task.id,selectedComplianceMap[task.id],task)" class="btn btn-dark"[disabled]="!selectedComplianceMap[task.id]">Assign</button>
+          </td>
+          </ng-container>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+   <div *ngIf="showModal" class="modal">
+    <div class="modal-content">
+      <h3>Report Task: {{ selectedTask?.description }}</h3>
+      <label for="reason">Reason:</label>
+      <input class="form-control" list="reasonsList" [(ngModel)]="reasonInput" id="reason" />
+      <datalist id="reasonsList">
+        <option value="Input delayed from client.">
+        <option value="Query not resolved by client.">
+        <option value="Additional Input received.">
+        <option value="QC pending.">
+        <option value="Approval pending from client.">
+        <option value="Document pending from client.">
+        <option value="Working on compliance">
+        <option value="Paid receipt not received from client.">
+      </datalist>
+      <div class="modal-actions">
+        <button (click)="submitReport()" class="btn btn-primary">Submit</button>
+        <button (click)="closeModal()"class="btn btn-danger">Cancel</button>
+      </div>
+    </div>
+  </div>
+    <div *ngIf="showNewTaskModal" class="modal">
+    <div class="modal-content">
+      <h3>Create Task</h3>
+      <label for="reason">Description:</label>
+      <input class="form-control" list="DescriptionsList" [(ngModel)]="reasonInput" id="reason" />
+      <datalist id="DescriptionsList">
+        <option value="PF Reports To QC">
+        <option value="PT Reports To QC">
+        <option value="ESIC Reports To QC">
+        <option value="LWF Reports To QC">
+      </datalist>
+      <div class="modal-actions">
+        <button (click)="addTask()" class="btn btn-primary">Add Task</button>
+        <button (click)="closeModal()"class="btn btn-danger">Cancel</button>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+</div>
+  <ng-template #noCompliances>
+    <p>
+      No requests currently available for Compliance.
+    </p>
+  </ng-template>
+   <ng-template #noQC>
+    <p>
+    </p>
+  </ng-template>
+    <ng-template #noSelfTasks>
+    <p>
+    </p>
+  </ng-template>
+      <ng-template #noTasks>
+    <p>
+    </p>
+  </ng-template>
+

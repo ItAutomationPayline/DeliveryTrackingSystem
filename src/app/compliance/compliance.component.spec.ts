@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { QcLeadComponent } from './qc-lead.component';
+import { ComplianceComponent } from './compliance.component';
 
-describe('QcLeadComponent', () => {
-  let component: QcLeadComponent;
-  let fixture: ComponentFixture<QcLeadComponent>;
+describe('ComplianceComponent', () => {
+  let component: ComplianceComponent;
+  let fixture: ComponentFixture<ComplianceComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [QcLeadComponent]
+      declarations: [ComplianceComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(QcLeadComponent);
+    fixture = TestBed.createComponent(ComplianceComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

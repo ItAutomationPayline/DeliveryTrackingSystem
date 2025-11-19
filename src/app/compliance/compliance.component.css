@@ -1,3 +1,31 @@
+ .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050; /* higher than Bootstrap accordion */
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+  }
 .qc-container {
     padding: 20px;
     max-width: 1200px;
@@ -57,6 +85,7 @@
     display: flex;
     gap: 10px;
     margin-bottom: 5px;
+    word-wrap: break-word;
     font-size: 0.9em;
     color: #555;
   }
@@ -70,7 +99,7 @@
   
   .add-finding textarea {
     width: 100%;
-    min-height: 80px;
+    min-height: 200px;
     margin-bottom: 10px;
   }
   
@@ -91,7 +120,7 @@
     background: #95a5a6;
     cursor: not-allowed;
   }
-    .profile-form {
+        .profile-form {
       max-width: 800px;
       margin: 50px auto;
       padding: 30px;
@@ -104,3 +133,26 @@
       margin-bottom: 30px;
       font-weight: 600;
     }
+    .btn-select-lookalike::after {
+  content: '⌄';
+  position: absolute;
+  right: 0.55rem;
+  top: 30%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  pointer-events: none;
+}
+  .btn-select-lookalike {
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem; /* Bootstrap default radius */
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem; /* space for arrow on right */
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #212529;
+  position: relative;
+  cursor: pointer;
+  appearance: none;
+  width: 200px; /* optional */
+  text-align: left;
+}

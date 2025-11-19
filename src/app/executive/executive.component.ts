@@ -32,28 +32,12 @@ export class ExecutiveComponent {
  selectedTask: any = null;
  AllClientsAndGroups:any[] = [];
  reasonInput: string = '';
- bankfile: any
- pf:any
- pt: any
- esic: any
- lwf: any
- tds: any
  employeeId: any= localStorage.getItem('id');
- profile: any[] = [];
+ profile:any = {};
+ Leader:any = {};
  nm:any=localStorage.getItem('nm');
 public sessionTimeout: any;
 public inactivityDuration = 15 * 60 * 1000;
-firstname:string='';
-middlename:string='';
-lastname:string='';
-dob:string='';
-doj:string='';
-pan:string='';
-uan:string='';
-address:string='';
-emergency:string='';
-relation:string='';
-bloodgroup:string='';
   ngOnInit() {
     const role = localStorage.getItem('role');
     const token=localStorage.getItem('authToken');
@@ -64,10 +48,8 @@ bloodgroup:string='';
     }
 
     const id = localStorage.getItem('id');
-    this.profile[0]="";
-    this.fetchprofile();
     this.fetchTasks();
-    this.fetchClients();
+    // this.fetchClients();
     this.sortTasks(this.tasks);
     if (!sessionStorage.getItem('hasReloaded')) {
       sessionStorage.setItem('hasReloaded', 'true'); // Mark reload in session storage
@@ -76,53 +58,61 @@ bloodgroup:string='';
       sessionStorage.removeItem('hasReloaded'); // Clear the reload marker after the first load
       console.log('Component initialized after reload');
     }
-    
+    this.fetchprofile();
+    this.fetchSelfLeaderProfile();
     this.startSessionTimer();
    }
-   UpdateProfile()
-   {
-    console.log(this.firstname);
-    console.log(this.lastname);
-    console.log(this.address);
-     this.firestore
-          .collection('users')
-          .doc(this.employeeId)
-          .update({
-            firstname:this.firstname,
-            middlename:this.middlename,
-            lastname:this.lastname,
-            dob:this.dob,
-            pan:this.pan,
-            uan:this.uan,
-            doj:this.doj,
-            address:this.address,
-            emergency:this.emergency,
-            relation:this.relation,
-            bloodgroup:this.bloodgroup
-          }).then(() => {
-            alert('Profile details updated successfully!');
-            // this.fetchTasks();
-          })
-   }
+   
+   fetchSelfLeaderProfile() {
+  this.firestore
+    .collection('teams', ref => ref.where('employees', 'array-contains', this.employeeId))
+    .valueChanges()
+    .pipe(take(1))
+    .subscribe(
+      (data: any[]) => {
+        if (data && data.length > 0) {
+          const team = data[0]; // assuming one team per employee
+          const managerId = team.managerId;
+          if (managerId) {
+            console.log('✅ Manager found with ID:', managerId);
+              this.firestore.collection('users')
+              .doc(managerId).valueChanges()
+              .subscribe(user => {
+                this.Leader = user || {};
+                console.log('✅ LEADER:', this.Leader);
+              });
+          } else {
+            console.warn('⚠️ Team found but managerId is missing.');
+          }
+        }
+      },
+      (error) => {
+        alert('Failed to fetch team data. Please try again later.');
+        console.error('Error fetching team:', error);
+      }
+    );
+}
    fetchprofile()
    {
-     this.firestore
-          .collection('users', (ref) => ref.where('id', '==', this.employeeId))
-          .valueChanges()
-          .pipe(take(1)) // ✅ Only take one result, avoids multiple pushes
-          .subscribe((users: any[]) => {
-            this.profile[0]=users[0];
-          })
-    }
-  fetchClients()
-  {
-    this.firestore
-    .collection('clients', ref => ref.where('status', '==', 'Active'))
-    .valueChanges({ idField: 'id' })
-    .subscribe((tasks: any[]) => {
-      this.AllClientsAndGroups = tasks;
+      this.firestore
+    .collection('users')
+    .doc(this.employeeId)
+    .valueChanges()
+    .subscribe(user => {
+      this.profile = user || {};
+      console.log("Profile loaded:", this.profile);
     });
-  }
+          console.log("prof:::"+this.profile);
+    }
+  // fetchClients()
+  // {
+  //   this.firestore
+  //   .collection('clients', ref => ref.where('status', '==', 'Active'))
+  //   .valueChanges({ idField: 'id' })
+  //   .subscribe((tasks: any[]) => {
+  //     this.AllClientsAndGroups = tasks;
+  //   });
+  // }
    sortTasks(tasksWithNames: { group: string; deadline: string }[]): { group: string; deadline: string }[] {
     return tasksWithNames.sort((a, b) => {
       const clientCompare = a.group.localeCompare(b.group);
@@ -147,7 +137,7 @@ bloodgroup:string='';
     // Set both dates to midnight to compare only the date part
     today.setHours(0, 0, 0, 0);
     taskDate.setHours(0, 0, 0, 0);
-
+    
     // Calculate tomorrow's date
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 2);
@@ -167,7 +157,7 @@ bloodgroup:string='';
         if(taskToUpdate.description=="Customer Provides Payroll Inputs"||taskToUpdate.description=="Payroll Input Received"||taskToUpdate.description=="Payroll Inputs to Partner")
         {
           const bodydata = {
-          recipients: [taskToUpdate.leadermail],
+          recipients: [this.Leader.email],
           subject: [taskToUpdate.group] + `: Payroll Input Received`,
           body: `This is to inform you that the payroll input of client ${taskToUpdate.client} has been received.<br>I will proceed with the necessary processing as per the defined timelines.<br><br>Best regards,<br>${this.nm}`,
           };
@@ -191,6 +181,83 @@ bloodgroup:string='';
                               });
                             });
           }
+        if(taskToUpdate.description.includes("Query")||taskToUpdate.description.includes("query"))
+        {
+          let resolution = prompt("Kindly provide the resolution:");
+          if (!resolution || resolution.trim() === '') {
+              alert("resolution is required. Submission cancelled.");
+              return; // Stop execution
+            }
+           // Step 1: Get the document
+            this.firestore.collection('compliancerequests')
+              .doc(taskToUpdate.reportid)
+              .get()
+              .subscribe((doc: any) => {
+                const data = doc.data();
+                const findings = data.findings || [];
+                // Step 2: Find the specific finding
+                const index = findings.findIndex((f: any) =>
+                  f.findingId === taskToUpdate.findingId
+              );
+                if (index !== -1) {
+                  findings[index].resolution = resolution;
+                  this.firestore.collection('compliancerequests')
+                    .doc(taskToUpdate.reportid)
+                    .update({ findings })
+                    .then(() => alert("Resolution added successfully ✅"))
+                    .catch((error) => alert("Error updating resolution:"+ error));
+                }
+              });
+      this.firestore
+      .collection('users', ref => ref.where('role', '==', ['Compliance Lead']))
+      .get()
+      .subscribe((querySnapshot: any) => {
+         querySnapshot.forEach((doc: any) => {
+          const userData = doc.data();
+          if (userData.email) {
+            this.rec.push(userData.email);
+          }
+      })});
+          this.firestoreService.getUserById(taskToUpdate.complianceid).subscribe(userData => {
+       if (userData.length > 0) {
+         const user = userData[0];
+         this.rec.push(user.email);
+         this.rec.push(this.Leader.email);
+        //  this.rec.push(this.profilemail);
+         let recipients= [...new Set(this.rec)];
+         console.log("Sorted recipents:",recipients);
+         let bodydata = {
+          "recipients": recipients,
+          "subject": `${taskToUpdate.group}: Query Resolution`,
+          "body": `
+            <html>
+              <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <div style="max-width: 800px; margin: 0 auto;">
+                  <p>Hi ${user.name},</p>
+                  <p>Hope you're doing well.</p>
+                  <p>Please find attached resolution for the query of the client,
+                  <b>${taskToUpdate.client}</b> for the period of
+                  <b>${taskToUpdate.period}</b>.</p>
+                  <ul>
+                    <li>${taskToUpdate.description}</li>
+                  </ul>
+                  <p><b>Resolution:</b></p>
+                  <ul>
+                    <li>${resolution}</li>
+                  </ul>
+                  <p>Please review and confirm if any further action is required.</p>
+                  <p>Best regards,<br>
+                    ${this.nm}
+                  </p>
+                </div>
+              </body>
+            </html>`
+        };
+        console.log(bodydata);
+      this.firestoreService.sendMail(bodydata);
+       }
+     });
+        }
         if(taskToUpdate.description.includes("Payroll Approval Notification to Partner")||taskToUpdate.description.includes("Customer Approves the Payroll Reports"))
         {
           let headcount = prompt("Kindly provide the headcount");
@@ -219,13 +286,11 @@ bloodgroup:string='';
             createdBy:taskToUpdate.createdBy,
             leadermail: taskToUpdate.leadermail,
             clientStatus:'Active',
-            comment:""
+            comment:"",
+            country:taskToUpdate.country
           };
-          this.firestore
-          .collection('tasks')
-          .add(task2)
-          .then(() => {
-          })
+          this.firestore.collection('tasks')
+          .add(task2).then(() => {})
           .catch((error) => {
             alert('Failed to assign task. Please try again.');
           });
@@ -245,10 +310,90 @@ bloodgroup:string='';
           .catch((error) => {
             alert('Failed to assign task. Please try again.');
           });
+
+        }
+        if(taskToUpdate.description=="Payroll Reports To Compliance")
+        { 
+          let desc;
+           const regex = /\bto\b/i; // Matches the word 'to' as a whole word, case-insensitive
+           const match = taskToUpdate.description.match(regex);
+           if (match && match.index !== undefined) {
+              desc=taskToUpdate.description.substring(0, match.index).trim();
+            }
+            let link = prompt("Paste the link of reports if any:");
+            if (!link || link.trim() === '') {
+              alert("Link is required. Submission cancelled. Kindly submit again");
+              return; // Stop execution
+            }
+            let userNote = prompt("Enter a note/special instruction for compliance if any:");
+            let finalData = {
+              taskId:taskId,
+              reportType:"Compliance Request",
+              groupName:taskToUpdate.group,
+              clientName: taskToUpdate.client,
+              Period:taskToUpdate.period,
+              ops:this.employeeId,
+              opsmail:this.profile.email,
+              AssignedTo:"Pending",
+              opsName:this.nm,
+              status:"Pending",
+              note:userNote,
+              createdBy:taskToUpdate.createdBy,
+              link:link,
+              createdAt: new Date(),
+              leadermail:taskToUpdate.leadermail
+            };
+             this.firestore
+              .collection('users', ref => ref.where('role', 'in', ['Compliance Lead', 'Compliance']))
+              .get()
+              .subscribe((querySnapshot: any) => {
+                let recipients: string[] = [];
+                querySnapshot.forEach((doc: any) => {
+                  const userData = doc.data();
+                  if (userData.email) {
+                    recipients.push(userData.email);
+                  }
+            
+                });
+            recipients.push(this.Leader.email);
+              if (recipients.length > 0) {
+                const subject = `${taskToUpdate.group}: Compliance Request: ${taskToUpdate.reportType}`;
+                const body = `
+                  <p>Dear Compliance Team,</p>
+                  Please check ${taskToUpdate.reportType} of client<br> ${taskToUpdate.client}<br>
+                  of period:${taskToUpdate.period}.<br>
+                  link:${link}<br>
+                  note:${userNote}<br>
+                  For any issues or queries or if link is not given, feel free to reach out.<br>
+                  <p>Best regards,
+                  <br>${localStorage.getItem('nm')}</p>`;
+                recipients=[...new Set(recipients)];
+                const bodydata = {
+                  recipients: recipients,
+                  subject: subject,
+                  body: body
+                };
+                console.log("qcteam:"+recipients);
+                this.firestoreService.sendMail(bodydata);
+              }
+              else {
+                console.warn('No manager emails found to send notification.');
+              }
+              }, (error: any) => {
+                console.error('Error fetching managers:', error);
+              });
+            try {
+              this.firestore.collection('compliancerequests').add(finalData);
+              alert('Request Sent To Compliance Successfully!');
+              //this.clientForm.reset();
+              
+            } catch (error) {
+              console.error('Error saving to Firebase:', error);
+            }
         }
         if(taskToUpdate.QcApproval=="Pending")
         { 
-       let desc;
+          let desc;
            const regex = /\bto\b/i; // Matches the word 'to' as a whole word, case-insensitive
            const match = taskToUpdate.description.match(regex);
            if (match && match.index !== undefined) {
@@ -267,6 +412,7 @@ bloodgroup:string='';
             let finalData = {
               taskId:taskId,
               reportType:desc,
+              createdBy:taskToUpdate.createdBy,
               groupName:taskToUpdate.group,
               clientName: taskToUpdate.client,
               Period:taskToUpdate.period,
@@ -291,7 +437,7 @@ bloodgroup:string='';
                   }
             
                 });
-            recipients.push(taskToUpdate.leadermail);
+            recipients.push(this.Leader.email);
               if (recipients.length > 0) {
                 const subject = `${taskToUpdate.group}: QC Request: ${taskToUpdate.reportType}`;
                 const body = `

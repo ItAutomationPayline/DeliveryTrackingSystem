@@ -62,6 +62,14 @@ export class LoginComponent {
                 this.router.navigateByUrl('/manager');
                 localStorage.setItem('role', role);
               }
+              else if (role === "Compliance") {
+                this.router.navigateByUrl('/compliance');
+                localStorage.setItem('role', role);
+              }
+              else if (role === "Compliance Lead") {
+                this.router.navigateByUrl('/compliance');
+                localStorage.setItem('role', role);
+              }
               else if (role === "General Manager") {
                 this.router.navigateByUrl('/manager');
                 localStorage.setItem('role', role);

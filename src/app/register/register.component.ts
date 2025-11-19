@@ -17,7 +17,10 @@ export class RegisterComponent {
     const role = localStorage.getItem('role');
     const token = localStorage.getItem('authToken');
 
-    if (!token && role !== 'Manager') {
+    if ((role === 'Manager')||(role === 'Director')||(role === 'General Manager')) {
+    }
+    else
+    {
       this.router.navigateByUrl('/login');
       return;
     }
@@ -51,7 +54,8 @@ export class RegisterComponent {
           id: collectionId, // Add the generated document ID to the data
           email: this.email,
           role: 'Executive',
-          name: this.name
+          name: this.name,
+          country:[]
         }).then(() => {
           alert('Registration Successful');
           this.router.navigateByUrl('/login');

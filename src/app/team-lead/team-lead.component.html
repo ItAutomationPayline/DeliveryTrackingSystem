@@ -35,78 +35,6 @@
 <br>
 <div class="tab-content mt-3">
    <div class="tab-pane fade" id="profile17">
-     <div class="container profile-form">
-    <h2 class="form-title">Your Profile</h2>
-    <form (ngSubmit)="UpdateProfile()">
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label class="form-label">First Name</label>
-          <input type="text" [value]="profile[0].firstname"[(ngModel)]="firstname" name="firstname" class="form-control" placeholder="First Name" required >
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Middle Name</label>
-          <input type="text"[value]="profile[0].middlename"[(ngModel)]="middlename" name="middlename" class="form-control" placeholder="Middle Name">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Last Name</label>
-          <input type="text"[value]="profile[0].lastname" class="form-control"[(ngModel)]="lastname" name="lastname" placeholder="Last Name" required>
-        </div>
-      </div>
-
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label class="form-label">Date of Birth</label>
-          <input type="date"[value]="profile[0].dob" class="form-control" name="dob" [(ngModel)]="dob" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">PAN</label>
-          <input type="text"[value]="profile[0].pan" class="form-control" name="pan" [(ngModel)]="pan" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">UAN</label>
-          <input type="text" class="form-control"[value]="profile[0].uan" name="uan" [(ngModel)]="uan" required>
-        </div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Date of Joining</label>
-        <input type="date"[value]="profile[0].doj" name="doj" class="form-control"[(ngModel)]="doj" required>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Address</label>
-        <textarea class="form-control"[value]="profile[0].address" name="address" [(ngModel)]="address" rows="3" placeholder="Your full address" required ></textarea>
-      </div>
-
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label class="form-label">Emergency Contact Number</label>
-          <input type="tel" class="form-control" name="emergency" [value]="profile[0].emergency"[(ngModel)]="emergency" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Relation</label>
-          <input type="text"name="relation" class="form-control"[value]="profile[0].relation"[(ngModel)]="relation" placeholder="e.g. Father, Spouse" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Blood Group</label>
-          <input type="text"[value]="profile[0].bloodgroup"list="bloodgrouplist" class="form-control"name="bloodgroup" required [(ngModel)]="bloodgroup" placeholder="Blood group" required>
-            <datalist id="bloodgrouplist">
-              <option value="A+">
-              <option value="A-">
-              <option value="B+">
-              <option value="B-">
-              <option value="O+">
-              <option value="O-">
-              <option value="AB+">
-              <option value="AB-">
-            </datalist>
-        </div>
-      </div>
-      <div class="d-grid">
-        <button type="submit" class="btn btn-primary btn-lg">Update Profile</button>
-      </div>
-    </form>
-  </div>
   </div>
     <div class="tab-pane fade" id="profile4">
         <div class="task-assignment-container" style=" margin-left: 25px;">
@@ -412,9 +340,24 @@
                 <td>{{ task.deadline | date: ' dd-MM-yyyy h:mm:ss a, EEE' }}</td>
                 <td>{{ task.status }}</td>
                 <td>
-                  <!-- <button (click)="deleteTask(task.id)" class="btn btn-danger">Delete</button> -->
-                  <button (click)="openEditModal(task)" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#updateTaskModal">Update</button>
-                </td>
+              <div class="dropdown">
+                  <button  class="btn-select-lookalike" type="button"id="taskActionsDropdown"
+                    data-bs-toggle="dropdown"aria-expanded="false" style="width: 70px; height: 30px;">
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="taskActionsDropdown">
+                    <li>
+                      <a class="dropdown-item"(click)="openEditModal(task)"data-bs-toggle="modal"data-bs-target="#updateTaskModal">
+                        Update
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item"(click)="markTaskasComplete(task)">
+                        Mark as Complete
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+            </td>
                 <td>{{ task.comment }}</td>
               </ng-container>
               </tr>
@@ -474,7 +417,8 @@
                 <option value="Payroll Input Received">
                 <option value="Payroll Processing">
                 <option value="Payroll Reports to QC">
-                  <option value="Revised Reports to QC">
+                <option value="Off-Cycle Payroll Reports to QC">
+                <option value="Revised Reports to QC">
                 <option value="Incentive Reports to QC">
                 <option value="LWF Reports to QC">
                 <option value="PF Reports to QC">
@@ -489,6 +433,7 @@
                 <option value="Statutory Reports to QC">
                 <option value="Payroll Reports sent to client">
                 <option value="Customer Approves the Payroll Reports">
+                <option value="Payroll Reports To Compliance">
                 <option value="Bank file">
                 <option value="Upload individual IT report on UKG portal">
                 <option value="Statutory reports sent to client">
@@ -666,11 +611,7 @@
             <option value="Bank IFSC code not updated">
             <option value="Bank Format Incorrect">
           </datalist>
-          <input 
-            type="number" 
-            [(ngModel)]="newFinding.employees" 
-            placeholder="Type no of Affected employees." 
-            class="form-control my-2">
+          <input type="number" [(ngModel)]="newFinding.employees" placeholder="Type no of Affected employees." class="form-control my-2">
           <button class="btn btn-primary mt-2" 
                   (click)="addFinding()" 
                   [disabled]="!newFinding.description || !newFinding.category|| !newFinding.employees">
